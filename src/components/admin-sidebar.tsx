@@ -4,14 +4,18 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  ChevronDown,
   ClipboardCheck,
+  Database,
   Flag,
   Gift,
   GraduationCap,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Medal,
   Menu,
+  MoreHorizontal,
   School,
   ScrollText,
   Trophy,
@@ -22,18 +26,46 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+type NavLink = { href: string; label: string; icon: typeof LayoutDashboard };
+type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavLink[] };
+
+// Item tunggal (tanpa grup) di paling atas.
+const TOP: NavLink[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/participants", label: "Peserta", icon: GraduationCap },
-  { href: "/admin/voters", label: "Voter", icon: Users },
-  { href: "/admin/submissions", label: "Submission", icon: ClipboardCheck },
-  { href: "/admin/log", label: "Log Aktivitas", icon: ScrollText },
-  { href: "/admin/quests", label: "Quest", icon: Trophy },
-  { href: "/admin/rounds", label: "Gelombang", icon: Flag },
-  { href: "/admin/hasil", label: "Hasil Lolos", icon: Medal },
-  { href: "/admin/undian", label: "Undian", icon: Gift },
-  { href: "/admin/schools", label: "Sekolah", icon: School },
 ];
+
+// Grup accordion.
+const GROUPS: NavGroup[] = [
+  {
+    label: "Kompetisi",
+    icon: LayoutGrid,
+    items: [
+      { href: "/admin/rounds", label: "Gelombang", icon: Flag },
+      { href: "/admin/hasil", label: "Hasil Lolos", icon: Medal },
+      { href: "/admin/quests", label: "Quest", icon: Trophy },
+      { href: "/admin/submissions", label: "Submission", icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: "Data",
+    icon: Database,
+    items: [
+      { href: "/admin/participants", label: "Peserta", icon: GraduationCap },
+      { href: "/admin/schools", label: "Sekolah", icon: School },
+      { href: "/admin/voters", label: "Voter", icon: Users },
+    ],
+  },
+  {
+    label: "Lainnya",
+    icon: MoreHorizontal,
+    items: [
+      { href: "/admin/undian", label: "Undian", icon: Gift },
+      { href: "/admin/log", label: "Log Aktivitas", icon: ScrollText },
+    ],
+  },
+];
+
+const ALL_LINKS: NavLink[] = [...TOP, ...GROUPS.flatMap((g) => g.items)];
 
 function useLogout() {
   const router = useRouter();
@@ -45,6 +77,85 @@ function useLogout() {
   };
 }
 
+function NavLinkRow({
+  link,
+  active,
+  onNavigate,
+}: {
+  link: NavLink;
+  active: boolean;
+  onNavigate?: () => void;
+}) {
+  const Icon = link.icon;
+  return (
+    <Link
+      href={link.href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        active
+          ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {link.label}
+    </Link>
+  );
+}
+
+function NavGroupBlock({
+  group,
+  activeHref,
+  onNavigate,
+}: {
+  group: NavGroup;
+  activeHref: string;
+  onNavigate?: () => void;
+}) {
+  const hasActive = group.items.some((i) => i.href === activeHref);
+  const [open, setOpen] = React.useState(hasActive);
+  const GroupIcon = group.icon;
+
+  // Buka grup otomatis saat halaman aktif pindah ke dalamnya.
+  React.useEffect(() => {
+    if (hasActive) setOpen(true);
+  }, [hasActive]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <GroupIcon className="h-4 w-4 shrink-0" />
+        <span className="flex-1 text-left">{group.label}</span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 transition-transform duration-200",
+            open ? "rotate-180" : "",
+          )}
+        />
+      </button>
+      {open && (
+        <div className="mt-0.5 space-y-1 pl-2">
+          {group.items.map((l) => (
+            <NavLinkRow
+              key={l.href}
+              link={l}
+              active={l.href === activeHref}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
@@ -54,34 +165,31 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
     if (pathname.startsWith(href + "/")) return href.length;
     return -1;
   };
-  const activeHref = NAV.reduce(
+  const activeHref = ALL_LINKS.reduce(
     (best, l) => (matchLen(l.href) > matchLen(best) ? l.href : best),
     "",
   );
 
   return (
-    <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-      {NAV.map((l) => {
-        const active = l.href === activeHref;
-        const Icon = l.icon;
-        return (
-          <Link
+    <nav className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="space-y-1">
+        {TOP.map((l) => (
+          <NavLinkRow
             key={l.href}
-            href={l.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            {l.label}
-          </Link>
-        );
-      })}
+            link={l}
+            active={l.href === activeHref}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </div>
+      {GROUPS.map((g) => (
+        <NavGroupBlock
+          key={g.label}
+          group={g}
+          activeHref={activeHref}
+          onNavigate={onNavigate}
+        />
+      ))}
     </nav>
   );
 }

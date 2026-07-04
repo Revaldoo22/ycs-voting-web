@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Flag,
   Loader2,
+  MoreVertical,
   Play,
   Plus,
   Rocket,
@@ -25,6 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -218,63 +226,77 @@ export default function AdminRoundsPage() {
                       {formatNumber(r.total_points ?? 0)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setManageTarget(r)}
-                        >
-                          <Settings2 className="h-4 w-4" /> Kelola
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setStandingsTarget(r)}
-                        >
-                          <Trophy className="h-4 w-4" /> Klasemen
-                        </Button>
-                        {r.status !== "closed" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setPopulateTarget(r)}
-                          >
-                            <Users className="h-4 w-4" /> Isi Sekolah
-                          </Button>
-                        )}
-                        {r.status === "draft" && (
-                          <Button size="sm" onClick={() => activate(r)}>
-                            <Play className="h-4 w-4" /> Aktifkan
-                          </Button>
-                        )}
-                        {r.status === "active" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setBoostTarget(r)}
-                          >
-                            <Rocket className="h-4 w-4" /> Boost
-                          </Button>
-                        )}
-                        {r.status === "active" && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => setCloseTarget(r)}
-                          >
-                            <Flag className="h-4 w-4" /> Tutup
-                          </Button>
-                        )}
-                        {r.status !== "active" && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={() => remove(r)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="Aksi"
+                              aria-label="Aksi gelombang"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => setManageTarget(r)}>
+                              <Settings2 /> Kelola
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setStandingsTarget(r)}
+                            >
+                              <Trophy /> Klasemen
+                            </DropdownMenuItem>
+                            {r.status !== "closed" && (
+                              <DropdownMenuItem
+                                onClick={() => setPopulateTarget(r)}
+                              >
+                                <Users /> Isi Sekolah
+                              </DropdownMenuItem>
+                            )}
+                            {r.status === "active" && (
+                              <DropdownMenuItem
+                                onClick={() => setBoostTarget(r)}
+                              >
+                                <Rocket /> Boost Vote
+                              </DropdownMenuItem>
+                            )}
+
+                            {r.status === "draft" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-primary focus:text-primary"
+                                  onClick={() => activate(r)}
+                                >
+                                  <Play /> Aktifkan
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {r.status === "active" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setCloseTarget(r)}
+                                >
+                                  <Flag /> Tutup Gelombang
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {r.status !== "active" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => remove(r)}
+                                >
+                                  <Trash2 /> Hapus
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
