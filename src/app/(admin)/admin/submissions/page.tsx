@@ -193,7 +193,11 @@ export default function AdminSubmissionsPage() {
                     src={main}
                     alt="bukti"
                     fill
-                    sizes="(max-width:1024px) 50vw, 33vw"
+                    // Grid = thumbnail: minta ukuran kecil + kualitas rendah;
+                    // gambar penuh hanya diambil saat dibuka di preview.
+                    sizes="(max-width:768px) 45vw, 380px"
+                    quality={45}
+                    loading="lazy"
                     className="cursor-zoom-in object-contain"
                     onClick={() => setPreview(main)}
                   />
@@ -211,6 +215,8 @@ export default function AdminSubmissionsPage() {
                         alt={`bukti ${i + 1}`}
                         width={48}
                         height={48}
+                        quality={40}
+                        loading="lazy"
                         className="h-12 w-12 shrink-0 cursor-zoom-in rounded object-cover"
                         onClick={() => setPreview(u)}
                       />
