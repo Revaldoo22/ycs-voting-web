@@ -29,7 +29,7 @@ export function generatePassword(): string {
   let out = "";
   const bytes = new Uint8Array(8);
   // crypto is available in the Edge/Node runtimes used by route handlers.
-  (globalThis.crypto ?? require("crypto").webcrypto).getRandomValues(bytes);
+  globalThis.crypto.getRandomValues(bytes);
   for (const b of bytes) out += chars[b % chars.length];
   return `STK-${out.slice(0, 4)}-${out.slice(4)}`;
 }

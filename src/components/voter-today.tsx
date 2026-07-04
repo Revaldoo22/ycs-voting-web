@@ -61,7 +61,6 @@ export function VoterTodayPanel() {
   if (!enabled || !data) return null;
 
   const daily = data.votes.filter((v) => v.vote_kind === "daily5");
-  const fav = data.votes.filter((v) => v.vote_kind === "fav20");
 
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr,340px]">

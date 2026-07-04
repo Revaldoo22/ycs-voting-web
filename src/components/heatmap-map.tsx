@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MapContainer, TileLayer, GeoJSON, Tooltip } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import type { Feature, FeatureCollection } from "geojson";
 import type { Layer, PathOptions } from "leaflet";
 import "leaflet/dist/leaflet.css";
