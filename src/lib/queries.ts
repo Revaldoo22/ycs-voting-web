@@ -545,6 +545,10 @@ export type Round = {
   status: "draft" | "active" | "closed";
   starts_at: string | null;
   ends_at: string | null;
+  scheduled_close_at: string | null;
+  select_mode: "per_region" | "global";
+  sequence: number;
+  top_n: number;
   created_at: string;
   school_count?: number;
   lolos_count?: number;
@@ -557,6 +561,8 @@ export type RoundStanding = {
   status: "active" | "lolos" | "gugur";
   region_id: string | null;
   region_name: string;
+  carry_points: number;
+  round_points: number;
   points: number;
   votes: number;
 };

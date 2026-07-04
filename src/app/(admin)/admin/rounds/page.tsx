@@ -6,6 +6,7 @@ import {
   Loader2,
   Play,
   Plus,
+  Rocket,
   Settings2,
   Trash2,
   Trophy,
@@ -62,6 +63,7 @@ export default function AdminRoundsPage() {
   const [closeTarget, setCloseTarget] = React.useState<Round | null>(null);
   const [standingsTarget, setStandingsTarget] = React.useState<Round | null>(null);
   const [manageTarget, setManageTarget] = React.useState<Round | null>(null);
+  const [boostTarget, setBoostTarget] = React.useState<Round | null>(null);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["rounds"] });
@@ -128,8 +130,9 @@ export default function AdminRoundsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Gelombang</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Adu voting antar sekolah per kabupaten. Yang lolos lanjut; yang gugur
-          bisa ikut gelombang berikutnya.
+          Adu voting antar sekolah per kabupaten. Sekolah yang punya peserta
+          otomatis ikut gelombang aktif. Saat ditutup, yang gugur otomatis
+          lanjut ke gelombang berikutnya dengan poin dipotong 50%.
         </p>
       </div>
 
@@ -190,6 +193,18 @@ export default function AdminRoundsPage() {
                         {r.ends_at &&
                           ` s/d ${new Date(r.ends_at).toLocaleDateString("id-ID")}`}
                       </p>
+                      {r.scheduled_close_at && (
+                        <p className="text-xs text-amber-600">
+                          auto-tutup{" "}
+                          {new Date(r.scheduled_close_at).toLocaleDateString(
+                            "id-ID",
+                            { day: "numeric", month: "short", year: "numeric" },
+                          )}
+                          {r.select_mode === "global"
+                            ? ` · top ${r.top_n} global`
+                            : ` · top ${r.top_n}/kab`}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell>{statusBadge(r.status)}</TableCell>
                     <TableCell className="text-right tabular-nums">
@@ -229,6 +244,15 @@ export default function AdminRoundsPage() {
                         {r.status === "draft" && (
                           <Button size="sm" onClick={() => activate(r)}>
                             <Play className="h-4 w-4" /> Aktifkan
+                          </Button>
+                        )}
+                        {r.status === "active" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setBoostTarget(r)}
+                          >
+                            <Rocket className="h-4 w-4" /> Boost
                           </Button>
                         )}
                         {r.status === "active" && (
@@ -278,6 +302,11 @@ export default function AdminRoundsPage() {
       <ManageDialog
         round={manageTarget}
         onClose={() => setManageTarget(null)}
+        onDone={invalidate}
+      />
+      <BoostDialog
+        round={boostTarget}
+        onClose={() => setBoostTarget(null)}
         onDone={invalidate}
       />
     </div>
@@ -335,7 +364,8 @@ function PopulateDialog({
         <DialogHeader>
           <DialogTitle>Isi Sekolah: {round?.name}</DialogTitle>
           <DialogDescription>
-            Tentukan sekolah mana yang ikut bertanding di gelombang ini.
+            Opsional — sekolah yang punya peserta sudah otomatis ikut. Pakai ini
+            hanya untuk menarik manual sekolah gugur dari gelombang lain.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -410,12 +440,15 @@ function CloseDialog({
     if (!round) return;
     setBusy(true);
     try {
-      await api(`/api/admin/rounds/${round.id}/close`, {
-        method: "POST",
-        body: JSON.stringify({ top_n: topN }),
-      });
+      await api<{ next_round_id: string }>(
+        `/api/admin/rounds/${round.id}/close`,
+        {
+          method: "POST",
+          body: JSON.stringify({ top_n: topN }),
+        },
+      );
       toast.success(
-        `${round.name} ditutup. Top ${topN} per kabupaten lolos.`,
+        `${round.name} ditutup. Top ${topN}/kabupaten lolos. Gelombang lanjutan otomatis dibuat & diaktifkan (sekolah gugur + poin 50%).`,
       );
       onDone();
       onClose();
@@ -432,9 +465,10 @@ function CloseDialog({
         <DialogHeader>
           <DialogTitle>Tutup {round?.name}</DialogTitle>
           <DialogDescription>
-            Sekolah dengan poin vote terbanyak per kabupaten dinyatakan lolos;
-            sisanya gugur (bisa ikut gelombang berikutnya). Tidak bisa
-            dibatalkan.
+            Sekolah dengan poin terbanyak per kabupaten dinyatakan lolos.
+            Sisanya gugur dan <b>otomatis masuk gelombang lanjutan</b> (dibuat
+            &amp; diaktifkan langsung) dengan poin dipotong 50%. Sekolah lolos
+            tidak ikut. Tidak bisa dibatalkan.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -524,8 +558,16 @@ function StandingsDialog({
                           <Badge variant="destructive">Gugur</Badge>
                         )}
                       </div>
-                      <span className="shrink-0 font-semibold tabular-nums text-primary">
-                        {formatNumber(row.points)} poin
+                      <span className="shrink-0 text-right">
+                        <span className="font-semibold tabular-nums text-primary">
+                          {formatNumber(row.points)} poin
+                        </span>
+                        {row.carry_points > 0 && (
+                          <span className="block text-[11px] text-muted-foreground">
+                            bawaan {formatNumber(row.carry_points)} + vote{" "}
+                            {formatNumber(row.round_points)}
+                          </span>
+                        )}
                       </span>
                     </div>
                   ))}
@@ -544,22 +586,164 @@ type RoundSchoolRow = {
   school_name: string;
   region_name: string;
   status: "active" | "lolos" | "gugur";
+  carry_points: number;
+  round_points: number;
   points: number;
   participants: number;
 };
+
+function BoostDialog({
+  round,
+  onClose,
+  onDone,
+}: {
+  round: Round | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const confirm = useConfirm();
+  const [schoolId, setSchoolId] = React.useState("");
+  const [votes, setVotes] = React.useState(50);
+  const [busy, setBusy] = React.useState(false);
+
+  const { data: schools, refetch } = useQuery({
+    queryKey: ["round-schools", round?.id],
+    enabled: !!round,
+    queryFn: () =>
+      api<RoundSchoolRow[]>(`/api/admin/rounds/${round!.id}/schools`),
+  });
+
+  React.useEffect(() => {
+    if (round) {
+      setSchoolId("");
+      setVotes(50);
+    }
+  }, [round]);
+
+  async function submit() {
+    if (!round) return;
+    if (!schoolId) return void toast.error("Pilih sekolah target.");
+    if (votes < 1) return void toast.error("Jumlah vote minimal 1.");
+    setBusy(true);
+    try {
+      const res = await api<{ points: number; votes: number }>(
+        `/api/admin/rounds/${round.id}/bot-boost`,
+        {
+          method: "POST",
+          body: JSON.stringify({ school_id: schoolId, votes }),
+        },
+      );
+      toast.success(
+        `+${res.votes} vote (${formatNumber(res.points)} poin) ditambahkan.`,
+      );
+      refetch();
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal boost.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function rollback() {
+    if (!round) return;
+    confirm({
+      title: "Hapus semua vote bot?",
+      description:
+        "Semua vote sintetis (boost) di gelombang ini dihapus dan poin peserta dikembalikan. Vote asli tidak terpengaruh.",
+      confirmText: "Hapus Vote Bot",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          const res = await api<{ removed: number }>(
+            `/api/admin/rounds/${round.id}/bot-boost`,
+            { method: "DELETE" },
+          );
+          toast.success(`${res.removed} vote bot dihapus.`);
+          refetch();
+          onDone();
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Gagal menghapus.");
+        }
+      },
+    });
+  }
+
+  return (
+    <Dialog open={!!round} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Boost Vote: {round?.name}</DialogTitle>
+          <DialogDescription>
+            Tambah vote sintetis ke sekolah target. Tiap vote = +5 poin, dibagi
+            acak ke peserta aktif sekolah itu. Ditandai sebagai bot dan bisa
+            dihapus kapan saja.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Sekolah target</Label>
+            <select
+              className="select-ui"
+              value={schoolId}
+              onChange={(e) => setSchoolId(e.target.value)}
+            >
+              <option value="">Pilih sekolah</option>
+              {(schools ?? []).map((s) => (
+                <option key={s.school_id} value={s.school_id}>
+                  {s.school_name} ({s.participants} peserta)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Jumlah vote</Label>
+            <Input
+              type="number"
+              min={1}
+              max={10000}
+              value={votes}
+              onChange={(e) => setVotes(Number(e.target.value) || 0)}
+            />
+            <p className="text-xs text-muted-foreground">
+              = {formatNumber((votes || 0) * 5)} poin
+            </p>
+          </div>
+          <Button className="w-full" onClick={submit} disabled={busy}>
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            <Rocket className="h-4 w-4" /> Boost Sekarang
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full text-destructive"
+            onClick={rollback}
+            disabled={busy}
+          >
+            <Trash2 className="h-4 w-4" /> Hapus Semua Vote Bot
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function ManageDialog({
   round,
   onClose,
   onDone,
 }: {
-  round: (Round & { top_n?: number }) | null;
+  round: Round | null;
   onClose: () => void;
   onDone: () => void;
 }) {
   const [name, setName] = React.useState("");
   const [endsAt, setEndsAt] = React.useState("");
   const [topN, setTopN] = React.useState(1);
+  const [selectMode, setSelectMode] = React.useState<"per_region" | "global">(
+    "per_region",
+  );
+  const [scheduledClose, setScheduledClose] = React.useState("");
+  const [sequence, setSequence] = React.useState(0);
   const [addId, setAddId] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
@@ -578,18 +762,20 @@ function ManageDialog({
   // Prefill saat round berganti.
   React.useEffect(() => {
     if (!round) return;
-    setName(round.name);
-    setTopN(round.top_n ?? 1);
-    setEndsAt(
-      round.ends_at
+    const toLocalInput = (iso: string | null) =>
+      iso
         ? new Date(
-            new Date(round.ends_at).getTime() -
-              new Date().getTimezoneOffset() * 60000,
+            new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000,
           )
             .toISOString()
             .slice(0, 16)
-        : "",
-    );
+        : "";
+    setName(round.name);
+    setTopN(round.top_n ?? 1);
+    setSelectMode(round.select_mode ?? "per_region");
+    setSequence(round.sequence ?? 0);
+    setScheduledClose(toLocalInput(round.scheduled_close_at));
+    setEndsAt(toLocalInput(round.ends_at));
     setAddId("");
   }, [round]);
 
@@ -606,6 +792,11 @@ function ManageDialog({
         body: JSON.stringify({
           name: name.trim(),
           top_n: topN,
+          select_mode: selectMode,
+          sequence: sequence,
+          scheduled_close_at: scheduledClose
+            ? new Date(scheduledClose).toISOString()
+            : null,
           ends_at: endsAt ? new Date(endsAt).toISOString() : null,
         }),
       });
@@ -669,11 +860,42 @@ function ManageDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Lolos / kabupaten</Label>
+              <Label>Urutan</Label>
+              <Input
+                type="number"
+                min={0}
+                max={1000}
+                value={sequence}
+                onChange={(e) => setSequence(Number(e.target.value) || 0)}
+                disabled={closed}
+              />
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Cara pilih yang lolos</Label>
+              <select
+                className="select-ui"
+                value={selectMode}
+                onChange={(e) =>
+                  setSelectMode(e.target.value as "per_region" | "global")
+                }
+                disabled={closed}
+              >
+                <option value="per_region">Top per kabupaten</option>
+                <option value="global">Top global (mis. 200 semifinalis)</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>
+                {selectMode === "global"
+                  ? "Jumlah lolos (global)"
+                  : "Lolos / kabupaten"}
+              </Label>
               <Input
                 type="number"
                 min={1}
-                max={100}
+                max={selectMode === "global" ? 5000 : 100}
                 value={topN}
                 onChange={(e) => setTopN(Number(e.target.value) || 1)}
                 disabled={closed}
@@ -681,6 +903,15 @@ function ManageDialog({
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Auto-tutup terjadwal</Label>
+              <Input
+                type="datetime-local"
+                value={scheduledClose}
+                onChange={(e) => setScheduledClose(e.target.value)}
+                disabled={closed}
+              />
+            </div>
             <div className="space-y-1.5">
               <Label>Berakhir (countdown + auto-stop vote)</Label>
               <Input
@@ -690,21 +921,20 @@ function ManageDialog({
                 disabled={closed}
               />
             </div>
-            <div className="flex items-end">
-              <Button
-                className="w-full"
-                onClick={saveSettings}
-                disabled={busy || closed}
-              >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                Simpan Pengaturan
-              </Button>
-            </div>
           </div>
+          <Button
+            className="w-full"
+            onClick={saveSettings}
+            disabled={busy || closed}
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            Simpan Pengaturan
+          </Button>
           <p className="text-xs text-muted-foreground">
-            Kosongkan &quot;Berakhir&quot; = tanpa batas waktu. Nilai
-            &quot;Lolos/kabupaten&quot; dipakai sebagai bawaan saat menutup
-            gelombang.
+            &quot;Auto-tutup terjadwal&quot; = gelombang ditutup otomatis saat
+            waktu itu tiba (ambil yang lolos, gugur digulir ke gelombang
+            berurutan berikutnya dengan poin 50%). Kosong = tutup manual.
+            Gelombang tetap dibuka sampai waktu itu, tak peduli tanggal lewat.
           </p>
         </div>
 

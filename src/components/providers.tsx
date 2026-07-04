@@ -21,7 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={client}>
         <ConfirmProvider>{children}</ConfirmProvider>
         <Toaster
-          position="top-center"
+          position="top-right"
           duration={3500}
           gap={10}
           toastOptions={{
