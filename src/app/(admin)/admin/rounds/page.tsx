@@ -42,6 +42,7 @@ import {
   useRounds,
   useRoundStandings,
   type Round,
+  type RoundStanding,
 } from "@/lib/queries";
 import { api } from "@/lib/api-client";
 import { formatNumber } from "@/lib/utils";
@@ -201,7 +202,7 @@ export default function AdminRoundsPage() {
                             { day: "numeric", month: "short", year: "numeric" },
                           )}
                           {r.select_mode === "global"
-                            ? ` · top ${r.top_n} global`
+                            ? ` · top ${r.top_n} nasional`
                             : ` · top ${r.top_n}/kab`}
                         </p>
                       )}
@@ -497,6 +498,38 @@ function CloseDialog({
   );
 }
 
+function StandingRow({
+  row,
+  rank,
+}: {
+  row: RoundStanding;
+  rank: number;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-sm">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="w-6 shrink-0 text-center text-xs font-bold text-muted-foreground">
+          {rank}
+        </span>
+        <span className="truncate font-medium">{row.school_name}</span>
+        {row.status === "lolos" && <Badge variant="success">Lolos</Badge>}
+        {row.status === "gugur" && <Badge variant="destructive">Gugur</Badge>}
+      </div>
+      <span className="shrink-0 text-right">
+        <span className="font-semibold tabular-nums text-primary">
+          {formatNumber(row.points)} poin
+        </span>
+        {row.carry_points > 0 && (
+          <span className="block text-[11px] text-muted-foreground">
+            bawaan {formatNumber(row.carry_points)} + vote{" "}
+            {formatNumber(row.round_points)}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 function StandingsDialog({
   round,
   onClose,
@@ -505,17 +538,25 @@ function StandingsDialog({
   onClose: () => void;
 }) {
   const { data, isLoading } = useRoundStandings(round?.id);
+  const [view, setView] = React.useState<"kabupaten" | "nasional">("kabupaten");
 
-  // Kelompokkan per kabupaten.
+  // Kabupaten: kelompok per kabupaten, terurut poin di tiap grup.
   const groups = React.useMemo(() => {
-    const map = new Map<string, typeof data>();
+    const map = new Map<string, RoundStanding[]>();
     for (const row of data ?? []) {
       const arr = map.get(row.region_name) ?? [];
       arr.push(row);
       map.set(row.region_name, arr);
     }
+    for (const arr of map.values()) arr.sort((a, b) => b.points - a.points);
     return Array.from(map.entries());
   }, [data]);
+
+  // Nasional: satu daftar peringkat lintas kabupaten.
+  const nasional = React.useMemo(
+    () => [...(data ?? [])].sort((a, b) => b.points - a.points),
+    [data],
+  );
 
   return (
     <Dialog open={!!round} onOpenChange={(o) => !o && onClose()}>
@@ -523,53 +564,48 @@ function StandingsDialog({
         <DialogHeader>
           <DialogTitle>Klasemen: {round?.name}</DialogTitle>
           <DialogDescription>
-            Poin vote per sekolah dalam gelombang ini, dikelompokkan per
-            kabupaten.
+            Poin per sekolah dalam gelombang ini.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Toggle Kabupaten / Nasional */}
+        <div className="inline-flex w-fit rounded-lg border bg-muted/40 p-0.5 text-sm">
+          {(["kabupaten", "nasional"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={
+                "rounded-md px-3 py-1 font-medium capitalize transition-colors " +
+                (view === v
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : groups.length === 0 ? (
+        ) : (data ?? []).length === 0 ? (
           <EmptyState title="Belum ada sekolah di gelombang ini" />
+        ) : view === "nasional" ? (
+          <div className="max-h-[60vh] space-y-1.5 overflow-y-auto">
+            {nasional.map((row, i) => (
+              <StandingRow key={row.school_id} row={row} rank={i + 1} />
+            ))}
+          </div>
         ) : (
           <div className="max-h-[60vh] space-y-4 overflow-y-auto">
             {groups.map(([region, rows]) => (
               <div key={region}>
                 <p className="mb-1.5 text-sm font-semibold">{region}</p>
                 <div className="space-y-1.5">
-                  {(rows ?? []).map((row, i) => (
-                    <div
-                      key={row.school_id}
-                      className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-sm"
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="w-6 shrink-0 text-center text-xs font-bold text-muted-foreground">
-                          {i + 1}
-                        </span>
-                        <span className="truncate font-medium">
-                          {row.school_name}
-                        </span>
-                        {row.status === "lolos" && (
-                          <Badge variant="success">Lolos</Badge>
-                        )}
-                        {row.status === "gugur" && (
-                          <Badge variant="destructive">Gugur</Badge>
-                        )}
-                      </div>
-                      <span className="shrink-0 text-right">
-                        <span className="font-semibold tabular-nums text-primary">
-                          {formatNumber(row.points)} poin
-                        </span>
-                        {row.carry_points > 0 && (
-                          <span className="block text-[11px] text-muted-foreground">
-                            bawaan {formatNumber(row.carry_points)} + vote{" "}
-                            {formatNumber(row.round_points)}
-                          </span>
-                        )}
-                      </span>
-                    </div>
+                  {rows.map((row, i) => (
+                    <StandingRow key={row.school_id} row={row} rank={i + 1} />
                   ))}
                 </div>
               </div>
@@ -883,13 +919,15 @@ function ManageDialog({
                 disabled={closed}
               >
                 <option value="per_region">Top per kabupaten</option>
-                <option value="global">Top global (mis. 200 semifinalis)</option>
+                <option value="global">
+                  Top nasional (mis. 200 semifinalis)
+                </option>
               </select>
             </div>
             <div className="space-y-1.5">
               <Label>
                 {selectMode === "global"
-                  ? "Jumlah lolos (global)"
+                  ? "Jumlah lolos (nasional)"
                   : "Lolos / kabupaten"}
               </Label>
               <Input
