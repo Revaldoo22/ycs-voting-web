@@ -26,7 +26,8 @@ export function FilterBar({
         className,
       )}
     >
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      {/* Auto-fit: tiap kontrol minimal ~190px agar label & isi tak terpotong. */}
+      <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
         {children}
       </div>
       {showReset && onReset && (
@@ -51,13 +52,8 @@ export function FilterField({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "min-w-0 space-y-1",
-        span === 2 && "col-span-2",
-      )}
-    >
-      <span className="block text-xs font-medium text-muted-foreground">
+    <div className={cn("min-w-0 space-y-1.5", span === 2 && "sm:col-span-2")}>
+      <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       {children}
