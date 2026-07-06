@@ -24,10 +24,13 @@ import type {
   VoterGrowthRow,
 } from "@/types/database";
 
-const qs = (params: Record<string, string | number | undefined | null>) => {
+const qs = (
+  params: Record<string, string | number | boolean | undefined | null>,
+) => {
   const search = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== null && v !== "") search.set(k, String(v));
+    if (v !== undefined && v !== null && v !== "" && v !== false)
+      search.set(k, String(v));
   }
   const s = search.toString();
   return s ? `?${s}` : "";
@@ -472,19 +475,26 @@ export function useAdminStats() {
   });
 }
 
-export function useDailyVoteSeries(days = 14) {
+export type SeriesRange = {
+  days?: number;
+  from?: string;
+  to?: string;
+  lifetime?: boolean;
+};
+
+export function useDailyVoteSeries(range: SeriesRange = { days: 14 }) {
   return useQuery({
-    queryKey: ["daily-vote-series", days],
+    queryKey: ["daily-vote-series", range],
     queryFn: () =>
-      api<DailyVoteSeriesRow[]>(`/api/admin/vote-series${qs({ days })}`),
+      api<DailyVoteSeriesRow[]>(`/api/admin/vote-series${qs({ ...range })}`),
   });
 }
 
-export function useVoterGrowth(days = 14) {
+export function useVoterGrowth(range: SeriesRange = { days: 14 }) {
   return useQuery({
-    queryKey: ["voter-growth", days],
+    queryKey: ["voter-growth", range],
     queryFn: () =>
-      api<VoterGrowthRow[]>(`/api/admin/voter-growth${qs({ days })}`),
+      api<VoterGrowthRow[]>(`/api/admin/voter-growth${qs({ ...range })}`),
   });
 }
 
@@ -576,7 +586,8 @@ export type HeatmapRow = {
   region_id: string;
   region_name: string;
   code: string | null;
-  province: string | null;
+  province_name: string | null;
+  province_code: string | null;
   schools: number;
   participants: number;
   points: number;

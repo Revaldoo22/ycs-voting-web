@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   LogOut,
+  MapPin,
   Medal,
   Menu,
   MoreHorizontal,
@@ -53,6 +54,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/participants", label: "Peserta", icon: GraduationCap },
       { href: "/admin/schools", label: "Sekolah", icon: School },
       { href: "/admin/voters", label: "Voter", icon: Users },
+      { href: "/admin/daerah", label: "Daerah", icon: MapPin },
     ],
   },
   {

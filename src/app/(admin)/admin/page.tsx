@@ -1,6 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import * as React from "react";
 import {
   BarChart3,
   Flame,
@@ -28,15 +28,15 @@ import {
   useLeaderboard,
   usePmbInsight,
   useVoterGrowth,
+  type SeriesRange,
 } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
 import { EventToggle } from "@/components/event-toggle";
-
-// Leaflet menyentuh window — client-only.
-const HeatmapMap = dynamic(() => import("@/components/heatmap-map"), {
-  ssr: false,
-  loading: () => <LoadingState />,
-});
+import { RegionHeatmap } from "@/components/region-heatmap";
+import {
+  DateRangePicker,
+  type DateRange,
+} from "@/components/date-range-picker";
 import { cn } from "@/lib/utils";
 
 type Tone = "indigo" | "violet" | "sky" | "emerald" | "amber";
@@ -119,9 +119,15 @@ function ChartCard({
 }
 
 export default function AdminDashboard() {
+  // null = Lifetime; else custom range dari picker.
+  const [dateRange, setDateRange] = React.useState<DateRange | null>(null);
+  const range: SeriesRange = dateRange
+    ? { from: dateRange.from, to: dateRange.to }
+    : { lifetime: true };
+
   const { data: stats, isLoading, isError, refetch } = useAdminStats();
-  const { data: votes } = useDailyVoteSeries(14);
-  const { data: growth } = useVoterGrowth(14);
+  const { data: votes } = useDailyVoteSeries(range);
+  const { data: growth } = useVoterGrowth(range);
   const { data: top } = useLeaderboard(8);
   const { data: pmb } = usePmbInsight();
 
@@ -133,9 +139,10 @@ export default function AdminDashboard() {
             Dashboard Admin
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Ringkasan event 14 hari terakhir.
+            Ringkasan event.
           </p>
         </div>
+        <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
 
       <EventToggle />
@@ -183,7 +190,7 @@ export default function AdminDashboard() {
         <ChartCard
           icon={BarChart3}
           title="Vote Harian"
-          desc="Jumlah vote masuk per hari, 14 hari terakhir"
+          desc="Jumlah vote masuk per hari"
         >
           {votes && votes.length > 0 ? (
             <DailyVotesChart data={votes} />
@@ -230,11 +237,11 @@ export default function AdminDashboard() {
 
         <ChartCard
           icon={Flame}
-          title="Heatmap Kabupaten"
+          title="Sebaran Daerah"
           desc="Persaingan poin antar kabupaten (Jawa Tengah)"
           className="lg:col-span-2"
         >
-          <HeatmapMap />
+          <RegionHeatmap compact />
         </ChartCard>
 
         <ChartCard
