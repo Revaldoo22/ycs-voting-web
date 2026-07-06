@@ -47,6 +47,113 @@ const INTENT_OPTIONS = [
   { value: "tidak", label: "Tidak" },
 ];
 
+type ComboItem = { value: string; label: string; hint?: string };
+
+/**
+ * Dropdown searchable seragam: ketik untuk cari, klik untuk pilih. Dipakai
+ * untuk provinsi, kabupaten, dan sekolah agar konsisten. `onQuery` opsional
+ * untuk sumber data server-side (sekolah); tanpa itu, filter client-side.
+ */
+function Combobox({
+  value,
+  label,
+  placeholder,
+  items,
+  disabled,
+  onSelect,
+  onQuery,
+  emptyText = "Tidak ditemukan.",
+}: {
+  value: ComboItem | null;
+  label: string;
+  placeholder: string;
+  items: ComboItem[];
+  disabled?: boolean;
+  onSelect: (item: ComboItem | null) => void;
+  onQuery?: (q: string) => void;
+  emptyText?: string;
+}) {
+  const [q, setQ] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+
+  const filtered = onQuery
+    ? items // server sudah memfilter
+    : items.filter((i) => i.label.toLowerCase().includes(q.trim().toLowerCase()));
+
+  if (value) {
+    return (
+      <div className="space-y-1.5">
+        <Label>{label}</Label>
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-primary bg-primary/5 p-2.5 text-sm">
+          <span className="min-w-0 truncate font-medium">
+            {value.label}
+            {value.hint ? (
+              <span className="ml-1 text-xs text-muted-foreground">
+                {value.hint}
+              </span>
+            ) : null}
+          </span>
+          <button
+            type="button"
+            className="shrink-0 text-xs text-primary hover:underline"
+            onClick={() => {
+              onSelect(null);
+              setQ("");
+              setOpen(true);
+            }}
+          >
+            Ganti
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Input
+        value={q}
+        disabled={disabled}
+        placeholder={placeholder}
+        autoComplete="off"
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+          onQuery?.(e.target.value);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && !disabled && filtered.length > 0 && (
+        <div className="max-h-44 overflow-y-auto rounded-lg border">
+          {filtered.map((i) => (
+            <button
+              key={i.value}
+              type="button"
+              onClick={() => {
+                onSelect(i);
+                setOpen(false);
+                setQ("");
+              }}
+              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+            >
+              <span className="min-w-0 truncate">{i.label}</span>
+              {i.hint && (
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {i.hint}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {open && !disabled && q.trim() && filtered.length === 0 && (
+        <p className="text-xs text-muted-foreground">{emptyText}</p>
+      )}
+    </div>
+  );
+}
+
 type Region = { id: string; name: string; code: string };
 type SchoolHit = {
   id: string;
@@ -76,6 +183,17 @@ export default function OnboardingPage() {
   const [schoolQ, setSchoolQ] = React.useState("");
   const [schoolHits, setSchoolHits] = React.useState<SchoolHit[]>([]);
   const [school, setSchool] = React.useState<SchoolHit | null>(null);
+  // Guru/keluarga isi sekolah & kelas manual (opsional).
+  const [schoolManual, setSchoolManual] = React.useState("");
+  const [classManual, setClassManual] = React.useState("");
+
+  // teman_sekolah = siswa SMA/SMK/MA → pilih sekolah master + kelas dropdown.
+  // teman_luar bisa SMP dll → sekolah & kelas MANUAL (wajib).
+  // guru/keluarga → sekolah & kelas manual (opsional).
+  const fromMaster = status === "teman_sekolah";
+  const manualRequired = status === "teman_luar";
+  const manualOptional = status === "guru" || status === "keluarga";
+  const showManual = manualRequired || manualOptional;
 
   // Guard: must be logged in; already-onboarded users go home.
   React.useEffect(() => {
@@ -135,9 +253,16 @@ export default function OnboardingPage() {
     if (s === 1) {
       if (!provinceCode) return "Pilih provinsi.";
       if (!regencyCode) return "Pilih kabupaten/kota.";
-      if (!school) return "Pilih sekolahmu dari daftar.";
-      if (!kelas) return "Pilih kelas.";
       if (!status) return "Pilih statusmu.";
+      if (fromMaster) {
+        if (!school) return "Pilih sekolahmu dari daftar.";
+        if (!kelas) return "Pilih kelas.";
+      }
+      if (manualRequired) {
+        if (!schoolManual.trim()) return "Isi asal sekolahmu.";
+        if (!classManual.trim()) return "Isi kelasmu.";
+      }
+      // Guru/keluarga: sekolah & kelas opsional — tak divalidasi.
     }
     if (s === 2) {
       if (!intent) return "Pilih niat kuliahmu.";
@@ -161,8 +286,14 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           name: name.trim(),
           phone_number: phone.trim(),
-          school_id: school?.id,
-          class: kelas,
+          // Siswa: sekolah dari master (id) + kelas dropdown.
+          // Guru/keluarga: sekolah & kelas manual (opsional).
+          ...(fromMaster
+            ? { school_id: school?.id, class: kelas }
+            : {
+                school_name: schoolManual.trim() || undefined,
+                class: classManual.trim() || undefined,
+              }),
           status,
           region_code: regencyCode,
           college_intent: intent,
@@ -269,116 +400,43 @@ export default function OnboardingPage() {
 
           {step === 1 && (
             <>
-              <div className="space-y-1.5">
-                <Label>Provinsi</Label>
-                <select
-                  className="select-ui"
-                  value={provinceCode}
-                  onChange={(e) => setProvinceCode(e.target.value)}
-                >
-                  <option value="">Pilih provinsi</option>
-                  {provinces.map((p) => (
-                    <option key={p.id} value={p.code}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Kabupaten / Kota</Label>
-                <select
-                  className="select-ui"
-                  value={regencyCode}
-                  onChange={(e) => setRegencyCode(e.target.value)}
-                  disabled={!provinceCode}
-                >
-                  <option value="">
-                    {provinceCode ? "Pilih kabupaten/kota" : "Pilih provinsi dulu"}
-                  </option>
-                  {regencies.map((r) => (
-                    <option key={r.id} value={r.code}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Asal Sekolah</Label>
-                {school ? (
-                  <div className="flex items-center justify-between gap-2 rounded-lg border border-primary bg-primary/5 p-2.5 text-sm">
-                    <span className="min-w-0 truncate font-medium">
-                      {school.name}
-                      {school.jenjang ? (
-                        <span className="ml-1 text-xs text-muted-foreground">
-                          {school.jenjang}
-                        </span>
-                      ) : null}
-                    </span>
-                    <button
-                      type="button"
-                      className="shrink-0 text-xs text-primary hover:underline"
-                      onClick={() => setSchool(null)}
-                    >
-                      Ganti
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <Input
-                      value={schoolQ}
-                      onChange={(e) => setSchoolQ(e.target.value)}
-                      placeholder={
-                        regencyCode
-                          ? "Ketik nama sekolah…"
-                          : "Pilih kabupaten dulu"
+              <Combobox
+                label="Provinsi"
+                placeholder="Cari provinsi…"
+                value={
+                  provinceCode
+                    ? {
+                        value: provinceCode,
+                        label:
+                          provinces.find((p) => p.code === provinceCode)?.name ??
+                          provinceCode,
                       }
-                      disabled={!regencyCode}
-                      autoComplete="off"
-                    />
-                    {regencyCode && schoolHits.length > 0 && (
-                      <div className="max-h-44 overflow-y-auto rounded-lg border">
-                        {schoolHits.map((s) => (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => {
-                              setSchool(s);
-                              setSchoolQ("");
-                            }}
-                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
-                          >
-                            <span className="min-w-0 truncate">{s.name}</span>
-                            {s.jenjang && (
-                              <span className="shrink-0 text-xs text-muted-foreground">
-                                {s.jenjang}
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {regencyCode && schoolQ.trim() && schoolHits.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Sekolah tak ditemukan. Coba kata kunci lain.
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label>Kelas</Label>
-                <select
-                  className="select-ui"
-                  value={kelas}
-                  onChange={(e) => setKelas(e.target.value)}
-                >
-                  <option value="">Pilih kelas</option>
-                  <option value="10">Kelas 10</option>
-                  <option value="11">Kelas 11</option>
-                  <option value="12">Kelas 12</option>
-                  <option value="alumni">Alumni</option>
-                </select>
-              </div>
+                    : null
+                }
+                items={provinces.map((p) => ({ value: p.code, label: p.name }))}
+                onSelect={(it) => setProvinceCode(it?.value ?? "")}
+                emptyText="Provinsi tak ditemukan."
+              />
+              <Combobox
+                label="Kabupaten / Kota"
+                placeholder={
+                  provinceCode ? "Cari kabupaten/kota…" : "Pilih provinsi dulu"
+                }
+                disabled={!provinceCode}
+                value={
+                  regencyCode
+                    ? {
+                        value: regencyCode,
+                        label:
+                          regencies.find((r) => r.code === regencyCode)?.name ??
+                          regencyCode,
+                      }
+                    : null
+                }
+                items={regencies.map((r) => ({ value: r.code, label: r.name }))}
+                onSelect={(it) => setRegencyCode(it?.value ?? "")}
+                emptyText="Kabupaten tak ditemukan."
+              />
               <div className="space-y-1.5">
                 <Label>Status Kamu</Label>
                 <select
@@ -394,6 +452,90 @@ export default function OnboardingPage() {
                   ))}
                 </select>
               </div>
+
+              {/* teman_sekolah: sekolah dari master (SMA/SMK/MA) + kelas dropdown. */}
+              {fromMaster ? (
+                <>
+                  <Combobox
+                    label="Asal Sekolah"
+                    placeholder={
+                      regencyCode ? "Ketik nama sekolah…" : "Pilih kabupaten dulu"
+                    }
+                    disabled={!regencyCode}
+                    value={
+                      school
+                        ? {
+                            value: school.id,
+                            label: school.name,
+                            hint: school.jenjang ?? undefined,
+                          }
+                        : null
+                    }
+                    items={schoolHits.map((s) => ({
+                      value: s.id,
+                      label: s.name,
+                      hint: s.jenjang ?? undefined,
+                    }))}
+                    onQuery={(q) => setSchoolQ(q)}
+                    onSelect={(it) => {
+                      const hit = schoolHits.find((s) => s.id === it?.value);
+                      setSchool(hit ?? null);
+                      setSchoolQ("");
+                    }}
+                    emptyText="Sekolah tak ditemukan. Coba kata kunci lain."
+                  />
+                  <div className="space-y-1.5">
+                    <Label>Kelas</Label>
+                    <select
+                      className="select-ui"
+                      value={kelas}
+                      onChange={(e) => setKelas(e.target.value)}
+                    >
+                      <option value="">Pilih kelas</option>
+                      <option value="10">Kelas 10</option>
+                      <option value="11">Kelas 11</option>
+                      <option value="12">Kelas 12</option>
+                      <option value="alumni">Alumni</option>
+                    </select>
+                  </div>
+                </>
+              ) : showManual ? (
+                /* teman_luar (bisa SMP): manual & wajib. Guru/keluarga: opsional. */
+                <>
+                  <div className="space-y-1.5">
+                    <Label>
+                      Asal Sekolah{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {manualOptional ? "(opsional)" : ""}
+                      </span>
+                    </Label>
+                    <Input
+                      value={schoolManual}
+                      onChange={(e) => setSchoolManual(e.target.value)}
+                      placeholder={
+                        manualOptional
+                          ? "Ketik nama sekolah/instansi (boleh dikosongkan)"
+                          : "Ketik nama sekolahmu"
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>
+                      Kelas{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {manualOptional ? "(opsional)" : ""}
+                      </span>
+                    </Label>
+                    <Input
+                      value={classManual}
+                      onChange={(e) => setClassManual(e.target.value)}
+                      placeholder={
+                        manualOptional ? "Boleh dikosongkan" : "Ketik kelasmu"
+                      }
+                    />
+                  </div>
+                </>
+              ) : null}
             </>
           )}
 

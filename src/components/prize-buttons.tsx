@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Award, Gift, Smartphone, Star, Trophy } from "lucide-react";
+import { Gift, GraduationCap, Smartphone, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,76 +12,59 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-type Prize = { icon: React.ElementType; title: string; desc: string };
-
-const VOTER_PRIZES: Prize[] = [
-  { icon: Gift, title: "Tumbler Eksklusif", desc: "Untuk Top 5 voter teraktif." },
-  { icon: Award, title: "Sertifikat", desc: "Penghargaan resmi sebagai pendukung teraktif." },
-];
-
-const PARTICIPANT_PRIZES: Prize[] = [
-  { icon: Smartphone, title: "Smartphone", desc: "Untuk peserta dengan dukungan terbanyak." },
-  { icon: Award, title: "Sertifikat", desc: "Penghargaan resmi Universitas STEKOM." },
-  { icon: Star, title: "Duta Teladan STEKOM", desc: "Benefit khusus sebagai Duta Teladan Universitas STEKOM." },
-];
-
-function PrizeDialog({
-  label,
-  title,
-  prizes,
-  variant,
-}: {
-  label: string;
-  title: string;
-  prizes: Prize[];
-  variant: "default" | "accent";
-}) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button size="sm" variant={variant} className="rounded-full">
-          <Trophy className="h-4 w-4" />
-          {label}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>Hadiah yang diperebutkan.</DialogDescription>
-        </DialogHeader>
-        <ul className="space-y-3">
-          {prizes.map((p) => (
-            <li key={p.title} className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <p.icon className="h-5 w-5 text-primary" />
-              </span>
-              <div>
-                <p className="font-semibold">{p.title}</p>
-                <p className="text-sm text-muted-foreground">{p.desc}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function PrizeButtons() {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
-      <PrizeDialog
-        label="Hadiah Voter Terbaik"
-        title="Hadiah Voter Terbaik"
-        prizes={VOTER_PRIZES}
-        variant="default"
-      />
-      <PrizeDialog
-        label="Hadiah Peserta Terbaik"
-        title="Hadiah Peserta Terbaik"
-        prizes={PARTICIPANT_PRIZES}
-        variant="accent"
-      />
+    <div className="flex justify-center">
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button size="sm" variant="accent" className="rounded-full">
+            <Gift className="h-4 w-4" />
+            Reward
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reward YCS</DialogTitle>
+            <DialogDescription>
+              Pilih perjalananmu di Youth Character Summit.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* Jadi Peserta */}
+            <div className="flex flex-col gap-2 rounded-2xl border border-primary/30 bg-primary/[0.04] p-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <GraduationCap className="h-6 w-6" />
+              </span>
+              <p className="font-bold">Jadi Peserta</p>
+              <p className="text-sm text-muted-foreground">
+                Berkesempatan mengikuti acara <b>Youth Character Summit</b> dan
+                tampil sebagai peserta unggulan.
+              </p>
+              <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                Ikut acara YCS
+              </div>
+            </div>
+
+            {/* Jadi Voter */}
+            <div className="flex flex-col gap-2 rounded-2xl border border-accent/30 bg-accent/[0.05] p-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/15 text-accent">
+                <Users className="h-6 w-6" />
+              </span>
+              <p className="font-bold">Jadi Voter</p>
+              <p className="text-sm text-muted-foreground">
+                Beri dukungan sesuai syarat yang berlaku, dapatkan kupon undian,
+                dan berkesempatan memenangkan <b>Handphone</b>.
+              </p>
+              <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-accent">
+                <Smartphone className="h-3.5 w-3.5" />
+                Undian Handphone
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

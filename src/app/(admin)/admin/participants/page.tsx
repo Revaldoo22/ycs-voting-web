@@ -45,7 +45,6 @@ import { FilterBar, FilterField } from "@/components/filter-bar";
 import {
   useAdminParticipants,
   useParticipantPointLog,
-  useSchools,
 } from "@/lib/queries";
 import { api } from "@/lib/api-client";
 import { compressImage } from "@/lib/image-compress";
@@ -60,9 +59,13 @@ const selectCls =
 export default function AdminParticipantsPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
-  const { data: schools } = useSchools();
   const { data: participants, isLoading, isError, refetch } =
     useAdminParticipants();
+
+  // Sekolah dicari dari DB (master) via endpoint search — bukan load semua.
+  const [schoolHits, setSchoolHits] = React.useState<
+    { id: string; name: string }[]
+  >([]);
 
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ParticipantWithSchool | null>(null);
@@ -146,13 +149,33 @@ export default function AdminParticipantsPage() {
     },
   });
 
+  // Cari sekolah dari DB (debounce) saat admin mengetik.
   React.useEffect(() => {
-    const match = schools?.find(
-      (s) => s.name.trim().toLowerCase() === schoolText.trim().toLowerCase()
+    const q = schoolText.trim();
+    if (q.length < 2) {
+      setSchoolHits([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      api<{ id: string; name: string }[]>(
+        `/api/public/schools/search?q=${encodeURIComponent(q)}`,
+      )
+        .then(setSchoolHits)
+        .catch(() => setSchoolHits([]));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [schoolText]);
+
+  // Cocokkan input ke sekolah master; kalau tak ada, kirim sebagai nama baru.
+  React.useEffect(() => {
+    const match = schoolHits.find(
+      (s) => s.name.trim().toLowerCase() === schoolText.trim().toLowerCase(),
     );
     form.setValue("school_id", match?.id ?? "", { shouldValidate: true });
-    form.setValue("school_name", match ? "" : schoolText, { shouldValidate: true });
-  }, [schoolText, schools, form]);
+    form.setValue("school_name", match ? "" : schoolText, {
+      shouldValidate: true,
+    });
+  }, [schoolText, schoolHits, form]);
 
   function openCreate() {
     setEditing(null);
@@ -546,7 +569,7 @@ export default function AdminParticipantsPage() {
                 autoComplete="off"
               />
               <datalist id="school-options">
-                {schools?.map((s) => (
+                {schoolHits.map((s) => (
                   <option key={s.id} value={s.name} />
                 ))}
               </datalist>
