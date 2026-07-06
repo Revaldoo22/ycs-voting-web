@@ -173,6 +173,17 @@ export default function PublicParticipantPage({
                     <p className="text-sm text-muted-foreground">
                       {participant.schools?.name}
                     </p>
+                    {(participant.schools?.kabupaten ||
+                      participant.schools?.provinsi) && (
+                      <p className="text-xs text-muted-foreground">
+                        {[
+                          participant.schools?.kabupaten,
+                          participant.schools?.provinsi,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    )}
                   </div>
                   <Badge variant="accent" className="shrink-0">
                     {formatNumber(participant.total_points)} poin

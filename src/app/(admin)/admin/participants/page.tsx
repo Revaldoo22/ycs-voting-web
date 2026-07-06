@@ -448,7 +448,14 @@ export default function AdminParticipantsPage() {
                       {p.profiles?.phone_number ?? "-"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {p.schools?.name ?? "-"}
+                      <span>{p.schools?.name ?? "-"}</span>
+                      {(p.schools?.kabupaten || p.schools?.provinsi) && (
+                        <span className="block text-xs">
+                          {[p.schools?.kabupaten, p.schools?.provinsi]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
                       {formatNumber(p.total_points)}
