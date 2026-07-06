@@ -75,9 +75,16 @@ export function AuthNav() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
-        <p className="truncate px-2 py-1.5 text-sm font-semibold">
+        <p className="truncate px-2 pt-1.5 text-sm font-semibold">
           {profile.name || "Pendukung"}
         </p>
+        {profile.is_participant && (
+          <p className="px-2 pb-1.5">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              Peserta
+            </span>
+          </p>
+        )}
         {profile.role === "admin" && (
           <DropdownMenuItem asChild>
             <Link href="/admin" className="gap-2">

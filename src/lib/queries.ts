@@ -50,6 +50,10 @@ export type MyProfile = {
   college_intent: "ya" | "tidak" | "ragu" | null;
   onboarded: boolean;
   followed: boolean;
+  /** Voter ini juga terdaftar sebagai peserta (email cocok). */
+  is_participant: boolean;
+  /** ID peserta miliknya sendiri (tak boleh vote ini). */
+  self_participant_id: string | null;
 };
 
 export function useMyProfile() {

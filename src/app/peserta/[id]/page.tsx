@@ -75,13 +75,16 @@ export default function PublicParticipantPage({
 
   // Aksi dukung/quest wajib login sebagai pendukung.
   // gate = null berarti boleh lanjut; selain itu fungsi pengalihan.
+  const isSelf = !!me && me.self_participant_id === id;
   const gate: (() => void) | null = !me
     ? () => router.push(`/login?next=/peserta/${id}`)
     : me.role === "voter" && !me.onboarded
       ? () => router.push("/onboarding")
       : me.role !== "voter"
         ? () => toast.error("Akun admin/peserta tidak bisa memberi dukungan.")
-        : null;
+        : isSelf
+          ? () => toast.error("Kamu tidak bisa mendukung dirimu sendiri.")
+          : null;
 
   // Voter yang sudah login + lengkapi wizard: identitas dari profil,
   // tidak perlu isi form lagi di tiap vote/quest.
