@@ -366,9 +366,6 @@ function RegionManager({
                 >
                   <span className="min-w-0 truncate">
                     <span className="font-medium">{r.name}</span>
-                    {r.province && (
-                      <span className="text-muted-foreground"> · {r.province}</span>
-                    )}
                   </span>
                   <Button
                     size="icon"

@@ -539,8 +539,9 @@ export function useTopVoters(limit = 5) {
 export type Region = {
   id: string;
   name: string;
-  code: string | null;
-  province: string | null;
+  code: string;
+  level?: "province" | "regency" | "district";
+  parent_id?: string | null;
 };
 
 export type Round = {
@@ -582,10 +583,11 @@ export type HeatmapRow = {
   votes: number;
 };
 
+/** Kabupaten/kota (regency) — dipakai filter admin, akun voter, peringkat. */
 export function useRegions() {
   return useQuery({
-    queryKey: ["regions"],
-    queryFn: () => api<Region[]>("/api/public/regions"),
+    queryKey: ["regions", "regency"],
+    queryFn: () => api<Region[]>("/api/public/regions?level=regency"),
   });
 }
 
