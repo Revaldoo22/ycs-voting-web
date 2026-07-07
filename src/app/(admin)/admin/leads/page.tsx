@@ -164,6 +164,9 @@ export default function AdminLeadsPage() {
                   <th className="px-3 py-2 text-left font-medium">Sekolah</th>
                   <th className="px-3 py-2 text-left font-medium">Wilayah</th>
                   <th className="px-3 py-2 text-left font-medium">Niat</th>
+                  <th className="px-3 py-2 text-left font-medium">
+                    Kenal Universitas STEKOM
+                  </th>
                   <th className="px-3 py-2 text-left font-medium">Sumber</th>
                 </tr>
               </thead>
@@ -184,6 +187,9 @@ export default function AdminLeadsPage() {
                     </td>
                     <td className="px-3 py-2">
                       {INTENT_LABEL[l.college_intent ?? ""] ?? "-"}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {AWARE_LABEL[l.stekom_awareness ?? ""] ?? "-"}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">
                       {l.stekom_source ?? "-"}
