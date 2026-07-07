@@ -31,7 +31,7 @@ type Me = {
 const STEPS = [
   { title: "Akun", icon: UserRound },
   { title: "Sekolah", icon: SchoolIcon },
-  { title: "Lainnya", icon: MapPin },
+  { title: "Survey", icon: MapPin },
 ];
 
 const STATUS_OPTIONS = [
@@ -45,6 +45,12 @@ const INTENT_OPTIONS = [
   { value: "ya", label: "Ya, ada rencana kuliah" },
   { value: "ragu", label: "Masih ragu / belum tahu" },
   { value: "tidak", label: "Tidak" },
+];
+
+const AWARENESS_OPTIONS = [
+  { value: "belum_tahu", label: "Belum tahu sama sekali" },
+  { value: "pernah_dengar", label: "Pernah dengar" },
+  { value: "sudah_minat", label: "Sudah tahu & tertarik" },
 ];
 
 type ComboItem = { value: string; label: string; hint?: string };
@@ -174,6 +180,8 @@ export default function OnboardingPage() {
   const [kelas, setKelas] = React.useState("");
   const [status, setStatus] = React.useState("");
   const [intent, setIntent] = React.useState("");
+  const [awareness, setAwareness] = React.useState("");
+  const [stekomSource, setStekomSource] = React.useState("");
 
   // Wilayah bertingkat (kode BPS) + sekolah terpilih.
   const [provinces, setProvinces] = React.useState<Region[]>([]);
@@ -194,6 +202,52 @@ export default function OnboardingPage() {
   const manualRequired = status === "teman_luar";
   const manualOptional = status === "guru" || status === "keluarga";
   const showManual = manualRequired || manualOptional;
+
+  const DRAFT_KEY = "onboarding_draft";
+  const restored = React.useRef(false);
+
+  // Pulihkan draft dari localStorage sekali (jaga-jaga refresh).
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.name) setName(d.name);
+      if (d.phone) setPhone(d.phone);
+      if (d.provinceCode) setProvinceCode(d.provinceCode);
+      if (d.regencyCode) setRegencyCode(d.regencyCode);
+      if (d.school) setSchool(d.school);
+      if (d.schoolManual) setSchoolManual(d.schoolManual);
+      if (d.classManual) setClassManual(d.classManual);
+      if (d.kelas) setKelas(d.kelas);
+      if (d.status) setStatus(d.status);
+      if (d.intent) setIntent(d.intent);
+      if (d.awareness) setAwareness(d.awareness);
+      if (d.stekomSource) setStekomSource(d.stekomSource);
+      if (typeof d.step === "number") setStep(d.step);
+    } catch {
+      /* draft rusak — abaikan */
+    } finally {
+      restored.current = true;
+    }
+  }, []);
+
+  // Simpan draft tiap perubahan (setelah restore, agar tak menimpa).
+  React.useEffect(() => {
+    if (!restored.current) return;
+    const draft = {
+      name, phone, provinceCode, regencyCode, school, schoolManual,
+      classManual, kelas, status, intent, awareness, stekomSource, step,
+    };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      /* storage penuh — abaikan */
+    }
+  }, [
+    name, phone, provinceCode, regencyCode, school, schoolManual, classManual,
+    kelas, status, intent, awareness, stekomSource, step,
+  ]);
 
   // Guard: must be logged in; already-onboarded users go home.
   React.useEffect(() => {
@@ -219,13 +273,22 @@ export default function OnboardingPage() {
     })();
   }, [router]);
 
-  // Provinsi berubah → muat kabupaten, reset pilihan di bawahnya.
+  // Provinsi berubah → muat kabupaten. Reset pilihan di bawahnya HANYA saat
+  // user benar-benar ganti provinsi (bukan saat restore draft awal).
+  const prevProvince = React.useRef<string | null>(null);
   React.useEffect(() => {
-    setRegencyCode("");
-    setRegencies([]);
-    setSchool(null);
+    const isUserChange =
+      prevProvince.current !== null && prevProvince.current !== provinceCode;
+    prevProvince.current = provinceCode;
+    if (isUserChange) {
+      setRegencyCode("");
+      setSchool(null);
+    }
     setSchoolHits([]);
-    if (!provinceCode) return;
+    if (!provinceCode) {
+      setRegencies([]);
+      return;
+    }
     api<Region[]>(`/api/public/regions?level=regency&parent_code=${provinceCode}`)
       .then(setRegencies)
       .catch(() => {});
@@ -297,9 +360,19 @@ export default function OnboardingPage() {
           status,
           region_code: regencyCode,
           college_intent: intent,
+          stekom_awareness: awareness || undefined,
+          stekom_source:
+            awareness === "pernah_dengar" || awareness === "sudah_minat"
+              ? stekomSource.trim() || undefined
+              : undefined,
         }),
       });
       toast.success("Profil lengkap. Selamat mendukung!");
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        /* abaikan */
+      }
       router.replace("/");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal menyimpan profil.");
@@ -567,6 +640,65 @@ export default function OnboardingPage() {
                   ))}
                 </div>
               </div>
+
+              <div className="space-y-1.5">
+                <Label>
+                  Apakah kamu sudah mengenal Universitas STEKOM?{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (opsional)
+                  </span>
+                </Label>
+                <select
+                  className="select-ui"
+                  value={awareness}
+                  onChange={(e) => setAwareness(e.target.value)}
+                >
+                  <option value="">Pilih salah satu</option>
+                  {AWARENESS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {(awareness === "pernah_dengar" ||
+                awareness === "sudah_minat") && (
+                <div className="space-y-1.5">
+                  <Label>
+                    Tahu STEKOM dari mana?{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      (opsional)
+                    </span>
+                  </Label>
+                  <select
+                    className="select-ui"
+                    value={stekomSource}
+                    onChange={(e) => setStekomSource(e.target.value)}
+                  >
+                    <option value="">Pilih sumber</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="whatsapp">WhatsApp / grup WA</option>
+                    <option value="google">Google / pencarian</option>
+                    <option value="maps">Google Maps</option>
+                    <option value="teman">Teman</option>
+                    <option value="keluarga">Keluarga</option>
+                    <option value="duta_stekom">Duta STEKOM</option>
+                    <option value="pendaftar_ycs">Pendaftar / peserta YCS</option>
+                    <option value="alumni">Alumni STEKOM</option>
+                    <option value="guru_sekolah">Guru / sekolah</option>
+                    <option value="acara">Acara / pameran / sosialisasi</option>
+                    <option value="brosur">Brosur / spanduk / baliho</option>
+                    <option value="di_jalan">Lihat di jalan / gedung kampus</option>
+                    <option value="radio_tv">Radio / TV</option>
+                    <option value="koran">Koran / majalah</option>
+                    <option value="lainnya">Lainnya</option>
+                  </select>
+                </div>
+              )}
             </>
           )}
 
