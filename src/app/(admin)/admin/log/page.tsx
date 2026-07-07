@@ -21,6 +21,7 @@ import {
 } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
 import { FilterBar, FilterField } from "@/components/filter-bar";
+import { SelectBox } from "@/components/ui/select-box";
 
 const PAGE_SIZE = 30;
 
@@ -139,45 +140,36 @@ export default function AdminLogPage() {
           />
         </FilterField>
         <FilterField label="Jenis">
-          <select
-            className="select-ui"
+          <SelectBox
             value={kind}
-            onChange={(e) => setKind(e.target.value)}
-          >
-            {KIND_OPTS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={setKind}
+            options={KIND_OPTS.map((o) => ({ value: o.value, label: o.label }))}
+          />
         </FilterField>
         <FilterField label="Peserta">
-          <select
-            className="select-ui"
+          <SelectBox
             value={participantId}
-            onChange={(e) => setParticipantId(e.target.value)}
-          >
-            <option value="">Semua peserta</option>
-            {(participants ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            onChange={setParticipantId}
+            placeholder="Semua peserta"
+            options={[
+              { value: "", label: "Semua peserta" },
+              ...(participants ?? []).map((p) => ({
+                value: p.id,
+                label: p.name,
+              })),
+            ]}
+          />
         </FilterField>
         {showQstatus && (
           <FilterField label="Status quest">
-            <select
-              className="select-ui"
+            <SelectBox
               value={qstatus}
-              onChange={(e) => setQstatus(e.target.value)}
-            >
-              {QSTATUS_OPTS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              onChange={setQstatus}
+              options={QSTATUS_OPTS.map((o) => ({
+                value: o.value,
+                label: o.label,
+              }))}
+            />
           </FilterField>
         )}
         <FilterField label="Dari tanggal">

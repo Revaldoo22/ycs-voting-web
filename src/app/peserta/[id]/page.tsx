@@ -270,7 +270,7 @@ function validateVoter(data: VoterFormData): string | null {
 function ShareButton({ name }: { name: string }) {
   async function share() {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `Dukung ${name} di Youth Character Summit STEKOM! 🔥`;
+    const text = `Dukung ${name} di Youth Character Summit Universitas STEKOM! 🔥`;
     if (navigator.share) {
       try {
         await navigator.share({ title: name, text, url });
@@ -451,7 +451,7 @@ function VoteDialog({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Instagram STEKOM
+                Instagram Universitas STEKOM
               </a>
             </Button>
             <Button variant="outline" asChild>
@@ -460,7 +460,7 @@ function VoteDialog({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                TikTok STEKOM
+                TikTok Universitas STEKOM
               </a>
             </Button>
           </div>
@@ -472,7 +472,7 @@ function VoteDialog({
               onChange={(e) => setFollowProof(e.target.files?.[0] ?? null)}
             />
             <p className="text-xs text-muted-foreground">
-              Screenshot profil STEKOM yang menunjukkan kamu sudah follow.
+              Screenshot profil Universitas STEKOM yang menunjukkan kamu sudah follow.
             </p>
           </div>
           <Button

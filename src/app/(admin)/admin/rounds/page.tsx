@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { SelectBox } from "@/components/ui/select-box";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -419,18 +420,15 @@ function PopulateDialog({
           {source === "gugur" && (
             <div className="space-y-1.5">
               <Label>Gelombang sumber</Label>
-              <select
-                className="select-ui"
+              <SelectBox
                 value={fromRound}
-                onChange={(e) => setFromRound(e.target.value)}
-              >
-                <option value="">Pilih gelombang selesai</option>
-                {closedRounds.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setFromRound}
+                placeholder="Pilih gelombang selesai"
+                options={closedRounds.map((r) => ({
+                  value: r.id,
+                  label: r.name,
+                }))}
+              />
             </div>
           )}
           <Button className="w-full" onClick={submit} disabled={busy}>
@@ -741,18 +739,15 @@ function BoostDialog({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Sekolah target</Label>
-            <select
-              className="select-ui"
+            <SelectBox
               value={schoolId}
-              onChange={(e) => setSchoolId(e.target.value)}
-            >
-              <option value="">Pilih sekolah</option>
-              {(schools ?? []).map((s) => (
-                <option key={s.school_id} value={s.school_id}>
-                  {s.school_name} ({s.participants} peserta)
-                </option>
-              ))}
-            </select>
+              onChange={setSchoolId}
+              placeholder="Pilih sekolah"
+              options={(schools ?? []).map((s) => ({
+                value: s.school_id,
+                label: `${s.school_name} (${s.participants} peserta)`,
+              }))}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Jumlah vote</Label>
@@ -932,19 +927,15 @@ function ManageDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Cara pilih yang lolos</Label>
-              <select
-                className="select-ui"
+              <SelectBox
                 value={selectMode}
-                onChange={(e) =>
-                  setSelectMode(e.target.value as "per_region" | "global")
-                }
+                onChange={(v) => setSelectMode(v as "per_region" | "global")}
                 disabled={closed}
-              >
-                <option value="per_region">Top per kabupaten</option>
-                <option value="global">
-                  Top nasional (mis. 200 semifinalis)
-                </option>
-              </select>
+                options={[
+                  { value: "per_region", label: "Top per kabupaten" },
+                  { value: "global", label: "Top nasional (mis. 200 semifinalis)" },
+                ]}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>
@@ -1006,18 +997,17 @@ function ManageDialog({
             </p>
             {!closed && (
               <div className="flex gap-2">
-                <select
-                  className="select-ui h-8 w-56 pl-2 pr-8 text-xs"
-                  value={addId}
-                  onChange={(e) => setAddId(e.target.value)}
-                >
-                  <option value="">Tambah sekolah</option>
-                  {addable.map((sc) => (
-                    <option key={sc.id} value={sc.id}>
-                      {sc.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-56">
+                  <SelectBox
+                    value={addId}
+                    onChange={setAddId}
+                    placeholder="Tambah sekolah"
+                    options={addable.map((sc) => ({
+                      value: sc.id,
+                      label: sc.name,
+                    }))}
+                  />
+                </div>
                 <Button size="sm" onClick={addSchool} disabled={!addId}>
                   <Plus className="h-4 w-4" />
                 </Button>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SelectBox } from "@/components/ui/select-box";
 import { api } from "@/lib/api-client";
 import { useMyProfile, useRegions, useSchools } from "@/lib/queries";
 
@@ -175,63 +176,57 @@ export default function AccountPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Kelas</Label>
-                <select
-                  className="select-ui"
+                <SelectBox
                   value={kelas}
-                  onChange={(e) => setKelas(e.target.value)}
-                >
-                  <option value="">Pilih</option>
-                  <option value="10">Kelas 10</option>
-                  <option value="11">Kelas 11</option>
-                  <option value="12">Kelas 12</option>
-                  <option value="alumni">Alumni</option>
-                </select>
+                  onChange={setKelas}
+                  placeholder="Pilih"
+                  options={[
+                    { value: "10", label: "Kelas 10" },
+                    { value: "11", label: "Kelas 11" },
+                    { value: "12", label: "Kelas 12" },
+                    { value: "alumni", label: "Alumni" },
+                  ]}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Status</Label>
-                <select
-                  className="select-ui"
+                <SelectBox
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="">Pilih</option>
-                  {STATUS_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setStatus}
+                  placeholder="Pilih"
+                  options={STATUS_OPTIONS.map((o) => ({
+                    value: o.value,
+                    label: o.label,
+                  }))}
+                />
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Kabupaten / Kota</Label>
-                <select
-                  className="select-ui"
+                <SelectBox
                   value={region}
-                  onChange={(e) => setRegion(e.target.value)}
-                >
-                  <option value="">Pilih</option>
-                  {(regions ?? []).map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setRegion}
+                  placeholder="Pilih"
+                  options={(regions ?? []).map((r) => ({
+                    value: r.id,
+                    label: r.name,
+                  }))}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Niat Kuliah</Label>
-                <select
-                  className="select-ui"
+                <SelectBox
                   value={intent}
-                  onChange={(e) => setIntent(e.target.value)}
-                >
-                  <option value="">Pilih</option>
-                  <option value="ya">Ya</option>
-                  <option value="ragu">Masih ragu</option>
-                  <option value="tidak">Tidak</option>
-                </select>
+                  onChange={setIntent}
+                  placeholder="Pilih"
+                  options={[
+                    { value: "ya", label: "Ya" },
+                    { value: "ragu", label: "Masih ragu" },
+                    { value: "tidak", label: "Tidak" },
+                  ]}
+                />
               </div>
             </div>
 

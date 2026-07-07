@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SelectBox } from "@/components/ui/select-box";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -46,8 +47,6 @@ const empty: QuestInput = {
   ref_image: "",
 };
 
-const selectCls =
-  "select-ui";
 
 export default function AdminQuestsPage() {
   const qc = useQueryClient();
@@ -345,28 +344,50 @@ export default function AdminQuestsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Frekuensi</Label>
-                <select className={selectCls} {...form.register("frequency")}>
-                  <option value="once">Sekali per peserta (permanen)</option>
-                  <option value="daily">Harian (ulang tiap hari)</option>
-                  <option value="global">
-                    Global - sekali untuk semua peserta (mis. follow)
-                  </option>
-                </select>
+                <SelectBox
+                  value={form.watch("frequency") ?? "once"}
+                  onChange={(v) =>
+                    form.setValue(
+                      "frequency",
+                      v as "once" | "daily" | "global",
+                    )
+                  }
+                  options={[
+                    { value: "once", label: "Sekali per peserta (permanen)" },
+                    { value: "daily", label: "Harian (ulang tiap hari)" },
+                    {
+                      value: "global",
+                      label: "Global - sekali untuk semua peserta (mis. follow)",
+                    },
+                  ]}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label>Jenis Bukti</Label>
-              <select className={selectCls} {...form.register("proof_type")}>
-                <option value="file">Upload File (screenshot)</option>
-                <option value="link">Link Postingan (video / poster)</option>
-              </select>
+              <SelectBox
+                value={form.watch("proof_type") ?? "file"}
+                onChange={(v) =>
+                  form.setValue("proof_type", v as "file" | "link")
+                }
+                options={[
+                  { value: "file", label: "Upload File (screenshot)" },
+                  { value: "link", label: "Link Postingan (video / poster)" },
+                ]}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Status</Label>
-              <select className={selectCls} {...form.register("status")}>
-                <option value="active">Aktif</option>
-                <option value="inactive">Nonaktif</option>
-              </select>
+              <SelectBox
+                value={form.watch("status") ?? "active"}
+                onChange={(v) =>
+                  form.setValue("status", v as "active" | "inactive")
+                }
+                options={[
+                  { value: "active", label: "Aktif" },
+                  { value: "inactive", label: "Nonaktif" },
+                ]}
+              />
             </div>
 
             <div className="space-y-3 rounded-lg border bg-muted/30 p-3">

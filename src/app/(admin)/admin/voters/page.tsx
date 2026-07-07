@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { FilterBar, FilterField } from "@/components/filter-bar";
+import { SelectBox } from "@/components/ui/select-box";
 import {
   fetchAllAdminVoters,
   useAdminVoters,
@@ -187,57 +188,51 @@ export default function AdminVotersPage() {
           />
         </FilterField>
         <FilterField label="Peserta">
-          <select
-            className="select-ui"
+          <SelectBox
             value={participantId}
-            onChange={(e) => setParticipantId(e.target.value)}
-          >
-            <option value="">Semua peserta</option>
-            {(participants ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            onChange={setParticipantId}
+            placeholder="Semua peserta"
+            options={[
+              { value: "", label: "Semua peserta" },
+              ...(participants ?? []).map((p) => ({
+                value: p.id,
+                label: p.name,
+              })),
+            ]}
+          />
         </FilterField>
         <FilterField label="Status">
-          <select
-            className="select-ui"
+          <SelectBox
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="">Semua status</option>
-            {STATUS_OPTS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+            onChange={setStatusFilter}
+            placeholder="Semua status"
+            options={[
+              { value: "", label: "Semua status" },
+              ...STATUS_OPTS.map((s) => ({ value: s.value, label: s.label })),
+            ]}
+          />
         </FilterField>
         <FilterField label="Sekolah">
-          <select
-            className="select-ui"
+          <SelectBox
             value={schoolFilter}
-            onChange={(e) => setSchoolFilter(e.target.value)}
-          >
-            <option value="">Semua sekolah</option>
-            {schools.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            onChange={setSchoolFilter}
+            placeholder="Semua sekolah"
+            options={[
+              { value: "", label: "Semua sekolah" },
+              ...schools.map((s) => ({ value: s, label: s })),
+            ]}
+          />
         </FilterField>
         <FilterField label="Urutkan">
-          <select
-            className="select-ui"
+          <SelectBox
             value={sort}
-            onChange={(e) => setSort(e.target.value as typeof sort)}
-          >
-            <option value="recent">Terbaru bergabung</option>
-            <option value="points_desc">Poin tertinggi</option>
-            <option value="points_asc">Poin terendah</option>
-          </select>
+            onChange={(v) => setSort(v as typeof sort)}
+            options={[
+              { value: "recent", label: "Terbaru bergabung" },
+              { value: "points_desc", label: "Poin tertinggi" },
+              { value: "points_asc", label: "Poin terendah" },
+            ]}
+          />
         </FilterField>
         <FilterField label="Dari tanggal">
           <Input

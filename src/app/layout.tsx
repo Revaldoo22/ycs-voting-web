@@ -9,7 +9,7 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const title = "Youth Character Summit - Universitas STEKOM";
 const description =
-  "Platform kompetisi karakter pelajar SMA/SMK. Dukung peserta favoritmu dan menangkan smartphone, sertifikat, & jadi Duta Teladan STEKOM!";
+  "Platform kompetisi karakter pelajar SMA/SMK. Dukung peserta favoritmu dan menangkan smartphone, sertifikat, & jadi Duta Teladan Universitas STEKOM!";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description,
   keywords: [
     "Youth Character Summit",
-    "STEKOM",
+    "Universitas STEKOM",
     "kompetisi pelajar",
     "voting",
     "SMA SMK",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    siteName: "Youth Character Summit STEKOM",
+    siteName: "Youth Character Summit Universitas STEKOM",
     type: "website",
     locale: "id_ID",
     url: siteUrl,

@@ -5,6 +5,7 @@ import { CheckCircle2, Trophy, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, LoadingState } from "@/components/states";
+import { SelectBox } from "@/components/ui/select-box";
 import { useRounds, useRoundStandings, type RoundStanding } from "@/lib/queries";
 import { cn, formatNumber } from "@/lib/utils";
 
@@ -59,21 +60,24 @@ export default function AdminHasilPage() {
               </button>
             ))}
           </div>
-          <select
-            className="select-ui w-52"
-            value={roundId}
-            onChange={(e) => setRoundId(e.target.value)}
-            aria-label="Pilih gelombang"
-          >
-            {(rounds ?? []).map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-                {r.status === "active" ? " · berjalan" : ""}
-                {r.status === "closed" ? " · selesai" : ""}
-                {r.status === "draft" ? " · draft" : ""}
-              </option>
-            ))}
-          </select>
+          <div className="w-52">
+            <SelectBox
+              value={roundId}
+              onChange={setRoundId}
+              aria-label="Pilih gelombang"
+              placeholder="Pilih gelombang"
+              options={(rounds ?? []).map((r) => ({
+                value: r.id,
+                label:
+                  r.name +
+                  (r.status === "active"
+                    ? " · berjalan"
+                    : r.status === "closed"
+                      ? " · selesai"
+                      : " · draft"),
+              }))}
+            />
+          </div>
         </div>
       </div>
 

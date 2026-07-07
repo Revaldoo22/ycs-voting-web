@@ -27,6 +27,7 @@ import {
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { useRegions, type Region } from "@/lib/queries";
+import { SelectBox } from "@/components/ui/select-box";
 import { api } from "@/lib/api-client";
 import { schoolSchema, type SchoolInput } from "@/lib/validations";
 import type { School } from "@/types/database";
@@ -179,18 +180,20 @@ export default function AdminSchoolsPage() {
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell>
-                      <select
-                        className="select-ui h-8 w-44 pl-2 pr-8 text-xs"
-                        value={(s as SchoolRow).region?.id ?? ""}
-                        onChange={(e) => setRegion(s.id, e.target.value || null)}
-                      >
-                        <option value="">Tanpa kabupaten</option>
-                        {(regions ?? []).map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="w-44">
+                        <SelectBox
+                          value={(s as SchoolRow).region?.id ?? ""}
+                          onChange={(v) => setRegion(s.id, v || null)}
+                          placeholder="Tanpa kabupaten"
+                          options={[
+                            { value: "", label: "Tanpa kabupaten" },
+                            ...(regions ?? []).map((r) => ({
+                              value: r.id,
+                              label: r.name,
+                            })),
+                          ]}
+                        />
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       {counts?.[s.id] ?? 0}

@@ -198,7 +198,7 @@ export default function CouponPage() {
         ) : !coupons || coupons.length === 0 ? (
           <EmptyState
             title="Belum ada kupon"
-            description="Vote peserta favoritmu dan follow akun STEKOM untuk mendapatkan kupon."
+            description="Vote peserta favoritmu dan follow akun Universitas STEKOM untuk mendapatkan kupon."
           />
         ) : (
           <div className="space-y-3">

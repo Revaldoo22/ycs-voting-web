@@ -20,6 +20,7 @@ import {
   School,
   ScrollText,
   Trophy,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -55,6 +56,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/schools", label: "Sekolah", icon: School },
       { href: "/admin/voters", label: "Voter", icon: Users },
       { href: "/admin/daerah", label: "Daerah", icon: MapPin },
+      { href: "/admin/leads", label: "Leads PMB", icon: UserPlus },
     ],
   },
   {

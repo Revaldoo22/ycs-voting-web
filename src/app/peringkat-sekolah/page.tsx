@@ -15,6 +15,7 @@ import {
   useSchoolRankings,
   type SchoolRankingRow,
 } from "@/lib/queries";
+import { SelectBox } from "@/components/ui/select-box";
 import { cn, formatNumber } from "@/lib/utils";
 
 /** Intensitas panas relatif → aksen baris. */
@@ -184,18 +185,15 @@ export default function HeatmapPage() {
             <span className="text-xs font-medium text-muted-foreground">
               Kabupaten{regionName ? `: ${regionName}` : ""}
             </span>
-            <select
-              className="select-ui"
+            <SelectBox
               value={regionId}
-              onChange={(e) => setRegionId(e.target.value)}
-            >
-              <option value="">Pilih kabupaten</option>
-              {(regions ?? []).map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onChange={setRegionId}
+              placeholder="Semua kabupaten"
+              options={[
+                { value: "", label: "Semua kabupaten" },
+                ...(regions ?? []).map((r) => ({ value: r.id, label: r.name })),
+              ]}
+            />
           </div>
         )}
 

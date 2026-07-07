@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useHeatmap, type HeatmapRow } from "@/lib/queries";
 import { EmptyState } from "@/components/states";
+import { SelectBox } from "@/components/ui/select-box";
 import { formatNumber } from "@/lib/utils";
 
 /** Warna intensitas berdasarkan rasio poin terhadap maksimum (heatmap). */
@@ -48,20 +49,19 @@ export function RegionHeatmap({ compact = false }: { compact?: boolean }) {
     <div className="space-y-3">
       {!compact && (
         <div className="flex flex-wrap gap-2">
-          <select
-            className="select-ui w-56"
-            value={province}
-            onChange={(e) => setProvince(e.target.value)}
-          >
-            <option value="">Semua provinsi</option>
-            {provinces.map((p) => (
-              <option key={p.code} value={p.code}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <div className="w-56">
+            <SelectBox
+              value={province}
+              onChange={setProvince}
+              placeholder="Semua provinsi"
+              options={[
+                { value: "", label: "Semua provinsi" },
+                ...provinces.map((p) => ({ value: p.code, label: p.name })),
+              ]}
+            />
+          </div>
           <input
-            className="h-10 flex-1 rounded-lg border bg-background px-3 text-sm"
+            className="h-9 flex-1 rounded-lg border bg-background px-3 text-sm"
             placeholder="Cari kabupaten/kota…"
             value={q}
             onChange={(e) => setQ(e.target.value)}

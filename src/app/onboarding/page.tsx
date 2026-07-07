@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SelectBox } from "@/components/ui/select-box";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,28 @@ const AWARENESS_OPTIONS = [
   { value: "belum_tahu", label: "Belum tahu sama sekali" },
   { value: "pernah_dengar", label: "Pernah dengar" },
   { value: "sudah_minat", label: "Sudah tahu & tertarik" },
+];
+
+const SOURCE_OPTIONS = [
+  { value: "instagram", label: "Instagram" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "facebook", label: "Facebook" },
+  { value: "youtube", label: "YouTube" },
+  { value: "whatsapp", label: "WhatsApp / grup WA" },
+  { value: "google", label: "Google / pencarian" },
+  { value: "maps", label: "Google Maps" },
+  { value: "teman", label: "Teman" },
+  { value: "keluarga", label: "Keluarga" },
+  { value: "duta_stekom", label: "Duta Universitas STEKOM" },
+  { value: "pendaftar_ycs", label: "Pendaftar / peserta YCS" },
+  { value: "alumni", label: "Alumni Universitas STEKOM" },
+  { value: "guru_sekolah", label: "Guru / sekolah" },
+  { value: "acara", label: "Acara / pameran / sosialisasi" },
+  { value: "brosur", label: "Brosur / spanduk / baliho" },
+  { value: "di_jalan", label: "Lihat di jalan / gedung kampus" },
+  { value: "radio_tv", label: "Radio / TV" },
+  { value: "koran", label: "Koran / majalah" },
+  { value: "lainnya", label: "Lainnya" },
 ];
 
 type ComboItem = { value: string; label: string; hint?: string };
@@ -512,18 +535,15 @@ export default function OnboardingPage() {
               />
               <div className="space-y-1.5">
                 <Label>Status Kamu</Label>
-                <select
-                  className="select-ui"
+                <SelectBox
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="">Pilih status</option>
-                  {STATUS_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setStatus}
+                  placeholder="Pilih status"
+                  options={STATUS_OPTIONS.map((o) => ({
+                    value: o.value,
+                    label: o.label,
+                  }))}
+                />
               </div>
 
               {/* teman_sekolah: sekolah dari master (SMA/SMK/MA) + kelas dropdown. */}
@@ -559,17 +579,17 @@ export default function OnboardingPage() {
                   />
                   <div className="space-y-1.5">
                     <Label>Kelas</Label>
-                    <select
-                      className="select-ui"
+                    <SelectBox
                       value={kelas}
-                      onChange={(e) => setKelas(e.target.value)}
-                    >
-                      <option value="">Pilih kelas</option>
-                      <option value="10">Kelas 10</option>
-                      <option value="11">Kelas 11</option>
-                      <option value="12">Kelas 12</option>
-                      <option value="alumni">Alumni</option>
-                    </select>
+                      onChange={setKelas}
+                      placeholder="Pilih kelas"
+                      options={[
+                        { value: "10", label: "Kelas 10" },
+                        { value: "11", label: "Kelas 11" },
+                        { value: "12", label: "Kelas 12" },
+                        { value: "alumni", label: "Alumni" },
+                      ]}
+                    />
                   </div>
                 </>
               ) : showManual ? (
@@ -648,55 +668,32 @@ export default function OnboardingPage() {
                     (opsional)
                   </span>
                 </Label>
-                <select
-                  className="select-ui"
+                <SelectBox
                   value={awareness}
-                  onChange={(e) => setAwareness(e.target.value)}
-                >
-                  <option value="">Pilih salah satu</option>
-                  {AWARENESS_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setAwareness}
+                  placeholder="Pilih salah satu"
+                  options={AWARENESS_OPTIONS.map((o) => ({
+                    value: o.value,
+                    label: o.label,
+                  }))}
+                />
               </div>
 
               {(awareness === "pernah_dengar" ||
                 awareness === "sudah_minat") && (
                 <div className="space-y-1.5">
                   <Label>
-                    Tahu STEKOM dari mana?{" "}
+                    Tahu Universitas STEKOM dari mana?{" "}
                     <span className="text-xs font-normal text-muted-foreground">
                       (opsional)
                     </span>
                   </Label>
-                  <select
-                    className="select-ui"
+                  <SelectBox
                     value={stekomSource}
-                    onChange={(e) => setStekomSource(e.target.value)}
-                  >
-                    <option value="">Pilih sumber</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="tiktok">TikTok</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="youtube">YouTube</option>
-                    <option value="whatsapp">WhatsApp / grup WA</option>
-                    <option value="google">Google / pencarian</option>
-                    <option value="maps">Google Maps</option>
-                    <option value="teman">Teman</option>
-                    <option value="keluarga">Keluarga</option>
-                    <option value="duta_stekom">Duta STEKOM</option>
-                    <option value="pendaftar_ycs">Pendaftar / peserta YCS</option>
-                    <option value="alumni">Alumni STEKOM</option>
-                    <option value="guru_sekolah">Guru / sekolah</option>
-                    <option value="acara">Acara / pameran / sosialisasi</option>
-                    <option value="brosur">Brosur / spanduk / baliho</option>
-                    <option value="di_jalan">Lihat di jalan / gedung kampus</option>
-                    <option value="radio_tv">Radio / TV</option>
-                    <option value="koran">Koran / majalah</option>
-                    <option value="lainnya">Lainnya</option>
-                  </select>
+                    onChange={setStekomSource}
+                    placeholder="Pilih sumber"
+                    options={SOURCE_OPTIONS}
+                  />
                 </div>
               )}
             </>
