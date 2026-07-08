@@ -20,6 +20,8 @@ export function voterStatusLabel(status: string | null | undefined): string {
       return "Keluarga";
     case "teman_luar":
       return "Teman di luar sekolah";
+    case "peserta":
+      return "Peserta";
     default:
       return "";
   }

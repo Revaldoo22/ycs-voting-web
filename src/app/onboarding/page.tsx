@@ -6,10 +6,10 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ClipboardList,
   GraduationCap,
   Loader2,
   MapPin,
-  School as SchoolIcon,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,8 +31,8 @@ type Me = {
 
 const STEPS = [
   { title: "Akun", icon: UserRound },
-  { title: "Sekolah", icon: SchoolIcon },
-  { title: "Survey", icon: MapPin },
+  { title: "Asal & Status", icon: MapPin },
+  { title: "Survey", icon: ClipboardList },
 ];
 
 const STATUS_OPTIONS = [

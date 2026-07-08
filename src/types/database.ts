@@ -141,6 +141,7 @@ export interface VoterGrowthRow {
 export type ParticipantWithSchool = Participant & {
   schools:
     | (Pick<School, "id" | "name"> & {
+        region_id?: string | null;
         kabupaten?: string | null;
         provinsi?: string | null;
       })

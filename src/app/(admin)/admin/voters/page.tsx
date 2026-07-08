@@ -44,6 +44,7 @@ const STATUS_OPTS = [
   { value: "guru", label: "Guru" },
   { value: "keluarga", label: "Keluarga" },
   { value: "teman_luar", label: "Teman di luar sekolah" },
+  { value: "peserta", label: "Peserta" },
 ];
 
 export default function AdminVotersPage() {

@@ -84,6 +84,7 @@ export const voterStatusEnum = z.enum([
   "guru",
   "keluarga",
   "teman_luar",
+  "peserta",
 ]);
 export type VoterStatus = z.infer<typeof voterStatusEnum>;
 

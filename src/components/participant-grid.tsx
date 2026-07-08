@@ -24,8 +24,10 @@ export function ParticipantGrid() {
   const [page, setPage] = React.useState(1);
   const [scope, setScope] = React.useState<Scope>("all");
 
-  // Voter login: default lihat peserta sekolahnya sendiri.
-  const voterReady = !!me && me.role === "voter" && me.onboarded;
+  // Filter lingkup muncul selama akun login punya identitas sekolah/daerah —
+  // baik voter yang sudah onboarding maupun peserta (email cocok record
+  // peserta → school_id/region_id terisi dari /me walau belum onboarding).
+  const voterReady = !!me && (!!me.school_id || !!me.region_id);
   React.useEffect(() => {
     if (voterReady && me?.school_id) setScope("school");
   }, [voterReady, me?.school_id]);
@@ -44,10 +46,8 @@ export function ParticipantGrid() {
     !voterReady || scope === "all"
       ? active
       : active.filter((p) => {
-          const sc = p.schools as
-            | { id: string; region_id?: string | null }
-            | null;
-          if (scope === "school") return sc?.id === me?.school_id;
+          const sc = p.schools;
+          if (scope === "school") return !!sc?.id && sc.id === me?.school_id;
           return !!sc?.region_id && sc.region_id === me?.region_id;
         });
 
