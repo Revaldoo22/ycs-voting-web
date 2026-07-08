@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
+
+// Google Analytics 4 — bisa di-override / dimatikan lewat env.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-FZZC7WVGJX";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
@@ -50,6 +54,22 @@ export default function RootLayout({
           shadow="0 0 10px hsl(24 95% 53% / 0.6)"
         />
         <Providers>{children}</Providers>
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
