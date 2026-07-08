@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Star, Trophy } from "lucide-react";
+import { Heart, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,7 @@ const PAGE_SIZE = 30;
 
 const KIND_OPTS = [
   { value: "all", label: "Semua jenis" },
-  { value: "daily5", label: "Vote Harian (+5)" },
-  { value: "fav20", label: "Vote Favorit (+20)" },
+  { value: "daily5", label: "Vote" },
   { value: "quest", label: "Quest" },
 ];
 const QSTATUS_OPTS = [
@@ -39,12 +38,6 @@ const QSTATUS_OPTS = [
 ];
 
 function kindBadge(kind: string) {
-  if (kind === "fav20")
-    return (
-      <Badge variant="accent" className="gap-1">
-        <Star className="h-3 w-3" /> Favorit
-      </Badge>
-    );
   if (kind === "quest")
     return (
       <Badge variant="secondary" className="gap-1">
@@ -53,7 +46,7 @@ function kindBadge(kind: string) {
     );
   return (
     <Badge variant="outline" className="gap-1">
-      <Heart className="h-3 w-3" /> Harian
+      <Heart className="h-3 w-3" /> Vote
     </Badge>
   );
 }

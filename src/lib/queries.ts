@@ -185,7 +185,7 @@ export function useParticipantSupporters(participantId?: string) {
 }
 
 export type ActivityLogRow = {
-  kind: "daily5" | "fav20" | "quest";
+  kind: "daily5" | "quest";
   source: string;
   voter_name: string;
   voter_phone: string;
@@ -653,13 +653,13 @@ export function useRoundResults(roundId?: string) {
 
 export type VoterToday = {
   votes: {
-    vote_kind: "daily5" | "fav20";
+    vote_kind: "daily5";
     points: number;
     created_at: string;
     participant_id: string;
     participant_name: string;
   }[];
-  fav_quota: { used: number; max: number };
+  has_voted: boolean;
 };
 
 export function useVoterToday(enabled: boolean) {

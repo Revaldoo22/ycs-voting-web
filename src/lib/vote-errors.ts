@@ -5,7 +5,7 @@ export function voteErrorMessage(raw: string | undefined | null): string {
     return "Perangkat ini sudah digunakan untuk memberikan dukungan hari ini.";
   }
   if (code.includes("ALREADYVOTED")) {
-    return "Kamu sudah mendukung peserta ini hari ini (terdeteksi dari perangkat/nomor/email). Kembali lagi besok!";
+    return "Kamu sudah menggunakan hak vote-mu (terdeteksi dari perangkat/nomor/email). Satu akun hanya bisa vote sekali.";
   }
   if (code.includes("MISSINGDATA")) {
     return "Lengkapi data dulu (nama, nomor WhatsApp, email, status).";
@@ -30,9 +30,6 @@ export function voteErrorMessage(raw: string | undefined | null): string {
   }
   if (code.includes("EVENTCLOSED")) {
     return "Event sedang ditutup. Dukungan belum/tidak bisa diberikan saat ini.";
-  }
-  if (code.includes("FAV_LIMIT")) {
-    return "Kamu sudah memilih 10 peserta favorit hari ini. Vote favorit (+20) terbatas 10 peserta per hari.";
   }
   if (code.includes("IPLIMIT")) {
     return "Terlalu banyak akun memberikan dukungan dari jaringan ini hari ini. Coba lagi besok atau gunakan jaringan lain.";

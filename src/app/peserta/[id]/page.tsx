@@ -13,7 +13,6 @@ import {
   Loader2,
   Plus,
   Share2,
-  Star,
   Trophy,
   Upload,
   X,
@@ -205,33 +204,18 @@ export default function PublicParticipantPage({
 
                 <ShareButton name={participant.name} />
 
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <VoteDialog
-                    kind="daily5"
-                    participantId={id}
-                    participantName={participant.name}
-                    voter={voter}
-                    locked={locked}
-                    followed={followed}
-                    gate={gate}
-                    disabled={eventClosed}
-                    onVoted={() => refetch()}
-                  />
-                  <VoteDialog
-                    kind="fav20"
-                    participantId={id}
-                    participantName={participant.name}
-                    voter={voter}
-                    locked={locked}
-                    followed={followed}
-                    gate={gate}
-                    disabled={eventClosed}
-                    onVoted={() => refetch()}
-                  />
-                </div>
+                <VoteDialog
+                  participantId={id}
+                  participantName={participant.name}
+                  voter={voter}
+                  locked={locked}
+                  followed={followed || isParticipant}
+                  gate={gate}
+                  disabled={eventClosed}
+                  onVoted={() => refetch()}
+                />
                 <p className="text-center text-xs text-muted-foreground">
-                  Vote harian +5 (semua peserta) · Vote favorit +20 (maks 10
-                  peserta/hari)
+                  Setiap akun hanya bisa memberi 1 vote seumur event.
                 </p>
               </CardContent>
             </Card>
@@ -305,7 +289,6 @@ function ShareButton({ name }: { name: string }) {
 }
 
 function VoteDialog({
-  kind,
   participantId,
   participantName,
   voter,
@@ -315,7 +298,6 @@ function VoteDialog({
   disabled,
   onVoted,
 }: {
-  kind: "daily5" | "fav20";
   participantId: string;
   participantName: string;
   voter: VoterCtx;
@@ -334,8 +316,7 @@ function VoteDialog({
   const [busy, setBusy] = React.useState(false);
   const qc = useQueryClient();
   const confirm = useConfirm();
-  const isFav = kind === "fav20";
-  const pts = isFav ? 20 : 5;
+  const pts = 1;
 
   function submit() {
     // Locked = identitas dari akun/record peserta (backend sumber kebenaran),
@@ -400,7 +381,6 @@ function VoteDialog({
           ...voter.data,
           participant_id: participantId,
           fingerprint,
-          kind,
           ...(followConfirmed
             ? { follow_confirmed: true, follow_proof_url: followProofUrl }
             : {}),
@@ -414,7 +394,6 @@ function VoteDialog({
       voter.persist(voter.data);
       trackEvent("vote_submit", {
         participant_id: participantId,
-        vote_kind: kind,
         points: pts,
       });
       if (followConfirmed) {
@@ -438,12 +417,12 @@ function VoteDialog({
     return (
       <Button
         className="w-full"
-        variant={isFav ? "accent" : "default"}
+        variant="default"
         disabled={disabled}
         onClick={gate}
       >
-        {isFav ? <Star className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
-        {disabled ? "Event ditutup" : isFav ? "Favorit (+20)" : "Dukung (+5)"}
+        <Heart className="h-4 w-4" />
+        {disabled ? "Event ditutup" : "Dukung"}
       </Button>
     );
   }
@@ -498,24 +477,22 @@ function VoteDialog({
             disabled={busy || !followProof}
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Kirim bukti &amp; vote (+{pts})
+            Kirim bukti &amp; vote
           </Button>
         </DialogContent>
       </Dialog>
       <Button
         className="w-full"
-        variant={isFav ? "accent" : "default"}
+        variant="default"
         disabled={disabled || busy}
         onClick={submit}
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" />
-        ) : isFav ? (
-          <Star className="h-4 w-4" />
         ) : (
           <Heart className="h-4 w-4" />
         )}
-        {disabled ? "Event ditutup" : isFav ? "Favorit (+20)" : "Dukung (+5)"}
+        {disabled ? "Event ditutup" : "Dukung"}
       </Button>
       </>
     );
@@ -526,32 +503,24 @@ function VoteDialog({
       <DialogTrigger asChild>
         <Button
           className="w-full"
-          variant={isFav ? "accent" : "default"}
+          variant="default"
           disabled={disabled}
         >
-          {isFav ? <Star className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
-          {disabled
-            ? "Event ditutup"
-            : isFav
-            ? "Favorit (+20)"
-            : "Dukung (+5)"}
+          <Heart className="h-4 w-4" />
+          {disabled ? "Event ditutup" : "Dukung"}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {isFav ? "Jadikan Favorit" : "Dukung"} {participantName}
-          </DialogTitle>
+          <DialogTitle>Dukung {participantName}</DialogTitle>
           <DialogDescription>
-            {isFav
-              ? "Vote favorit memberi +20 poin. Terbatas 10 peserta per hari, 1x per peserta per hari."
-              : "Vote harian memberi +5 poin. 1x per peserta per hari."}
+            Setiap akun hanya bisa memberi 1 vote seumur event.
           </DialogDescription>
         </DialogHeader>
         <VoterFormFields data={voter.data} onChange={voter.setData} />
         <Button onClick={submit} disabled={busy}>
           {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-          Kirim Dukungan (+{pts})
+          Kirim Dukungan
         </Button>
       </DialogContent>
     </Dialog>
