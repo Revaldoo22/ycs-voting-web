@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { SelectBox } from "@/components/ui/select-box";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
+import { cn, trackEvent } from "@/lib/utils";
 
 type Me = {
   id: string;
@@ -391,6 +391,10 @@ export default function OnboardingPage() {
         }),
       });
       toast.success("Profil lengkap. Selamat mendukung!");
+      trackEvent("onboarding_complete", {
+        college_intent: intent,
+        stekom_awareness: awareness || undefined,
+      });
       try {
         localStorage.removeItem(DRAFT_KEY);
       } catch {

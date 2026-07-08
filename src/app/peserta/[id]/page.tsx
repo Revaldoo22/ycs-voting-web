@@ -49,7 +49,7 @@ import { CheckCircle2, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { getFingerprint } from "@/lib/fingerprint";
 import { compressImage } from "@/lib/image-compress";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, trackEvent } from "@/lib/utils";
 import { voterInfoSchema } from "@/lib/validations";
 import {
   VoterFormFields,
@@ -412,8 +412,14 @@ function VoteDialog({
         return;
       }
       voter.persist(voter.data);
+      trackEvent("vote_submit", {
+        participant_id: participantId,
+        vote_kind: kind,
+        points: pts,
+      });
       if (followConfirmed) {
         toast.success("Vote terkirim. Kupon undian handphone masuk ke akunmu!");
+        trackEvent("follow_confirmed");
         qc.invalidateQueries({ queryKey: ["profile", "me"] });
         qc.invalidateQueries({ queryKey: ["my-coupons"] });
       } else {

@@ -9,6 +9,18 @@ export function formatNumber(n: number | null | undefined): string {
   return new Intl.NumberFormat("id-ID").format(n ?? 0);
 }
 
+/** Kirim event ke GA4 (gtag) bila tersedia. Aman dipanggil di mana saja. */
+export function trackEvent(
+  name: string,
+  params?: Record<string, unknown>,
+): void {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as {
+    gtag?: (...args: unknown[]) => void;
+  };
+  w.gtag?.("event", name, params ?? {});
+}
+
 /** Human label for a voter status code. */
 export function voterStatusLabel(status: string | null | undefined): string {
   switch (status) {
