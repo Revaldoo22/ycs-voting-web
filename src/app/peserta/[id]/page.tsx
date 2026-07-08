@@ -162,6 +162,9 @@ export default function PublicParticipantPage({
                     fill
                     sizes="(max-width:768px) 100vw, 768px"
                     className="object-cover"
+                    // Foto di-serve via redirect 302 ke signed URL storage
+                    // (berbatas waktu) — optimizer Next gagal; pakai apa adanya.
+                    unoptimized
                   />
                 </div>
               )}

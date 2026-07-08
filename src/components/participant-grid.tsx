@@ -136,6 +136,7 @@ export function ParticipantGrid() {
                         fill
                         sizes="(max-width:768px) 50vw, (max-width:1280px) 25vw, 20vw"
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        unoptimized
                       />
                       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent" />
                     </>
