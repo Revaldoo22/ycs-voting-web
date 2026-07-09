@@ -103,21 +103,24 @@ export function AuthNav() {
               </Link>
             </DropdownMenuItem>
           )}
-        {/* Menu voter: peserta = voter, akses sama (kupon, pengaturan). */}
+        {/* Kupon: voter onboarded ATAU peserta. */}
+        {(profile.is_participant ||
+          (profile.role === "voter" && profile.onboarded)) && (
+          <DropdownMenuItem asChild>
+            <Link href="/kupon" className="gap-2">
+              <Ticket className="h-4 w-4" /> Kupon Saya
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {/* Pengaturan Akun: hanya voter biasa. Peserta atur akun di web kedua. */}
         {profile.role === "voter" &&
-          (profile.onboarded || profile.is_participant) && (
-            <>
-              <DropdownMenuItem asChild>
-                <Link href="/kupon" className="gap-2">
-                  <Ticket className="h-4 w-4" /> Kupon Saya
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/akun" className="gap-2">
-                  <Settings className="h-4 w-4" /> Pengaturan Akun
-                </Link>
-              </DropdownMenuItem>
-            </>
+          profile.onboarded &&
+          !profile.is_participant && (
+            <DropdownMenuItem asChild>
+              <Link href="/akun" className="gap-2">
+                <Settings className="h-4 w-4" /> Pengaturan Akun
+              </Link>
+            </DropdownMenuItem>
           )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
