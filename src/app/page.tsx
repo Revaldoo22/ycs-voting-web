@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ChevronDown, GraduationCap } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
+import { HeroVideo } from "@/components/hero-video";
 import { ParticipantGrid } from "@/components/participant-grid";
 import { PrizeButtons } from "@/components/prize-buttons";
 import { MaintenanceOverlay } from "@/components/maintenance-overlay";
@@ -16,25 +17,8 @@ export default function HomePage() {
       <EventClosedOverlay />
       <Navbar />
 
-      {/* Video pembuka. Mobile: 16:9 utuh (tanpa crop); desktop: cover full layar */}
-      <section className="relative overflow-hidden bg-black md:h-[calc(100svh-4rem)]">
-        <iframe
-          className="pointer-events-none aspect-video w-full md:absolute md:left-1/2 md:top-1/2 md:aspect-auto md:h-[56.25vw] md:min-h-full md:w-[177.78svh] md:min-w-full md:-translate-x-1/2 md:-translate-y-1/2"
-          src="https://www.youtube.com/embed/unCD3pcd0FA?autoplay=1&mute=1&loop=1&playlist=unCD3pcd0FA&controls=0&rel=0&playsinline=1&modestbranding=1"
-          title="Youth Character Summit"
-          allow="autoplay; encrypted-media; picture-in-picture"
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
-        {/* Vignette tipis + ajakan scroll */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/70 to-transparent" />
-        <a
-          href="#hero"
-          className="absolute inset-x-0 bottom-2 z-10 mx-auto flex w-fit cursor-pointer flex-col items-center gap-1 text-xs font-semibold text-white/90 transition-colors hover:text-white md:bottom-5"
-        >
-          Scroll untuk mulai mendukung
-          <ChevronDown className="h-5 w-5 animate-bounce" />
-        </a>
-      </section>
+      {/* Video pembuka (audio on, volume mengecil saat di-scroll). */}
+      <HeroVideo />
 
       {/* Hero */}
       <section id="hero" className="relative scroll-mt-16 overflow-hidden border-b">
