@@ -49,7 +49,7 @@ import { CheckCircle2, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { getFingerprint } from "@/lib/fingerprint";
 import { compressImage } from "@/lib/image-compress";
-import { formatNumber, trackEvent } from "@/lib/utils";
+import { cn, formatNumber, trackEvent } from "@/lib/utils";
 import { voterInfoSchema } from "@/lib/validations";
 import {
   VoterFormFields,
@@ -284,6 +284,49 @@ export default function PublicParticipantPage({
 
 type VoterCtx = ReturnType<typeof useVoterForm>;
 
+/**
+ * Tugas follow wajib sebelum vote pertama — masing-masing upload bukti.
+ * Key HARUS sinkron dengan REQUIRED_FOLLOW_TASKS di backend.
+ */
+const FOLLOW_TASKS: { key: string; title: string; url: string; linkLabel: string }[] = [
+  {
+    key: "stekom_tiktok",
+    title: "Follow TikTok Univ STEKOM",
+    url: "https://tiktok.com/@stekomuniversity",
+    linkLabel: "@stekomuniversity",
+  },
+  {
+    key: "stekom_ig",
+    title: "Follow Instagram Univ STEKOM",
+    url: "https://instagram.com/universitasstekom",
+    linkLabel: "@universitasstekom",
+  },
+  {
+    key: "toploker_tiktok",
+    title: "Follow TikTok TopLoker.com",
+    url: "https://tiktok.com/@toploker.com",
+    linkLabel: "@toploker.com",
+  },
+  {
+    key: "toploker_ig",
+    title: "Follow Instagram TopLoker.com",
+    url: "https://instagram.com/toplokercom",
+    linkLabel: "@toplokercom",
+  },
+  {
+    key: "wa_stekom",
+    title: "Ikuti Saluran WhatsApp UnivSTEKOM",
+    url: "https://whatsapp.com/channel/0029VaYIG217oQhhUoA3a915",
+    linkLabel: "Saluran UnivSTEKOM",
+  },
+  {
+    key: "wa_ycs",
+    title: "Ikuti Saluran WhatsApp YCS 2026",
+    url: "https://whatsapp.com/channel/0029Vb5vVIaId7nEqecJ1I1G",
+    linkLabel: "Saluran YCS 2026",
+  },
+];
+
 function validateVoter(data: VoterFormData): string | null {
   const r = voterInfoSchema.safeParse(data);
   return r.success ? null : r.error.issues[0]?.message ?? "Data tidak lengkap";
@@ -340,9 +383,9 @@ function VoteDialog({
 }) {
   const [open, setOpen] = React.useState(false);
   const [showFollow, setShowFollow] = React.useState(false);
-  // Bukti follow PER TUGAS — masing-masing wajib satu screenshot.
-  const [proofIg, setProofIg] = React.useState<File | null>(null);
-  const [proofTiktok, setProofTiktok] = React.useState<File | null>(null);
+  // Bukti follow PER TUGAS (key → file) — semua tugas wajib satu screenshot.
+  const [taskProofs, setTaskProofs] = React.useState<Record<string, File | null>>({});
+  const allProofsReady = FOLLOW_TASKS.every((t) => !!taskProofs[t.key]);
   const [busy, setBusy] = React.useState(false);
   const qc = useQueryClient();
   const confirm = useConfirm();
@@ -388,17 +431,18 @@ function VoteDialog({
   async function doSubmit(followConfirmed = false) {
     setBusy(true);
     try {
-      // Follow pertama: bukti PER TUGAS (IG & TikTok), keduanya wajib.
-      let followProofIg: string | undefined;
-      let followProofTiktok: string | undefined;
+      // Follow pertama: bukti PER TUGAS — semua tugas wajib ada bukti.
+      let followProofs: Record<string, string> | undefined;
       if (followConfirmed) {
-        if (!proofIg || !proofTiktok) {
-          toast.error("Upload screenshot bukti untuk kedua tugas follow dulu.");
+        if (!allProofsReady) {
+          toast.error("Upload screenshot bukti untuk semua tugas dulu.");
           return;
         }
         try {
-          followProofIg = await uploadProof(proofIg);
-          followProofTiktok = await uploadProof(proofTiktok);
+          followProofs = {};
+          for (const t of FOLLOW_TASKS) {
+            followProofs[t.key] = await uploadProof(taskProofs[t.key]!);
+          }
         } catch (err) {
           toast.error(
             "Gagal mengunggah bukti: " +
@@ -416,11 +460,7 @@ function VoteDialog({
           participant_id: participantId,
           fingerprint,
           ...(followConfirmed
-            ? {
-                follow_confirmed: true,
-                follow_proof_ig: followProofIg,
-                follow_proof_tiktok: followProofTiktok,
-              }
+            ? { follow_confirmed: true, follow_proofs: followProofs }
             : {}),
         }),
       });
@@ -481,72 +521,66 @@ function VoteDialog({
       <Dialog open={showFollow} onOpenChange={setShowFollow}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Follow dulu, dapat kupon undian</DialogTitle>
+            <DialogTitle>Kerjakan tugas follow, dapat kupon undian</DialogTitle>
             <DialogDescription>
-              Sekali saja untuk seluruh event. Kerjakan kedua tugas follow di
-              bawah, upload bukti per tugas, lalu kirim. Bukti direview admin —
-              vote &amp; kupon undianmu sah setelah di-approve.
+              Sekali saja untuk seluruh event. Kerjakan {FOLLOW_TASKS.length}{" "}
+              tugas di bawah, upload bukti per tugas, lalu kirim. Bukti
+              direview admin — vote &amp; kupon undianmu sah setelah
+              di-approve.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Tugas 1: Follow Instagram */}
-          <div className="space-y-2 rounded-xl border p-3">
-            <p className="text-sm font-semibold">
-              1. Follow Instagram Universitas STEKOM
-            </p>
-            <Button variant="outline" size="sm" className="w-full" asChild>
-              <a
-                href="https://www.instagram.com/universitasstekom"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Buka Instagram @universitasstekom
-              </a>
-            </Button>
-            <div className="space-y-1.5">
-              <Label>Screenshot Bukti Follow IG</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProofIg(e.target.files?.[0] ?? null)}
-              />
-            </div>
-          </div>
-
-          {/* Tugas 2: Follow TikTok */}
-          <div className="space-y-2 rounded-xl border p-3">
-            <p className="text-sm font-semibold">
-              2. Follow TikTok Universitas STEKOM
-            </p>
-            <Button variant="outline" size="sm" className="w-full" asChild>
-              <a
-                href="https://www.tiktok.com/@stekomuniversity"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Buka TikTok @stekomuniversity
-              </a>
-            </Button>
-            <div className="space-y-1.5">
-              <Label>Screenshot Bukti Follow TikTok</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProofTiktok(e.target.files?.[0] ?? null)}
-              />
-            </div>
+          <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+            {FOLLOW_TASKS.map((t, i) => {
+              const done = !!taskProofs[t.key];
+              return (
+                <div
+                  key={t.key}
+                  className={cn(
+                    "space-y-2 rounded-xl border p-3",
+                    done && "border-emerald-500/50 bg-emerald-500/5",
+                  )}
+                >
+                  <p className="flex items-center gap-1.5 text-sm font-semibold">
+                    {done && (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                    )}
+                    {i + 1}. {t.title}
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <a href={t.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      Buka {t.linkLabel}
+                    </a>
+                  </Button>
+                  <div className="space-y-1.5">
+                    <Label>Screenshot Bukti</Label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setTaskProofs((prev) => ({
+                          ...prev,
+                          [t.key]: e.target.files?.[0] ?? null,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Screenshot profil yang menunjukkan kamu sudah follow. Poin vote
-            masuk ke peserta setelah bukti di-approve admin.
+            Screenshot profil/saluran yang menunjukkan kamu sudah
+            follow/mengikuti. Poin vote masuk ke peserta setelah bukti
+            di-approve admin.
           </p>
-          <Button
-            onClick={() => doSubmit(true)}
-            disabled={busy || !proofIg || !proofTiktok}
-          >
+          <Button onClick={() => doSubmit(true)} disabled={busy || !allProofsReady}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Kirim bukti &amp; vote
+            Kirim bukti &amp; vote (
+            {FOLLOW_TASKS.filter((t) => taskProofs[t.key]).length}/
+            {FOLLOW_TASKS.length})
           </Button>
         </DialogContent>
       </Dialog>

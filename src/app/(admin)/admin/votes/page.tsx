@@ -31,6 +31,18 @@ const formatDateTime = (iso: string) =>
     minute: "2-digit",
   });
 
+/** Label bukti per key tugas (termasuk key lama ig/tiktok). */
+const PROOF_LABELS: Record<string, string> = {
+  stekom_tiktok: "TikTok Univ STEKOM",
+  stekom_ig: "IG Univ STEKOM",
+  toploker_tiktok: "TikTok TopLoker",
+  toploker_ig: "IG TopLoker",
+  wa_stekom: "Saluran WA UnivSTEKOM",
+  wa_ycs: "Saluran WA YCS 2026",
+  ig: "IG Univ STEKOM",
+  tiktok: "TikTok Univ STEKOM",
+};
+
 type VoteRow = {
   id: string;
   status: "pending" | "approved";
@@ -42,7 +54,7 @@ type VoteRow = {
   voter_status: string | null;
   voter_school: string | null;
   voter_class: string | null;
-  follow_proofs: { ig?: string; tiktok?: string } | null;
+  follow_proofs: Record<string, string> | null;
   participants: { id: string; name: string; schools: { name: string } | null };
 };
 
@@ -305,19 +317,12 @@ export default function AdminVotesPage() {
             {paged.map((v) => {
               const busy = processing.has(v.id) || bulkBusy;
               const isSelected = selected.has(v.id);
-              const proofs: { label: string; url: string }[] = [
-                ...(v.follow_proofs?.ig
-                  ? [{ label: "Bukti Follow IG", url: v.follow_proofs.ig }]
-                  : []),
-                ...(v.follow_proofs?.tiktok
-                  ? [
-                      {
-                        label: "Bukti Follow TikTok",
-                        url: v.follow_proofs.tiktok,
-                      },
-                    ]
-                  : []),
-              ];
+              const proofs: { label: string; url: string }[] = Object.entries(
+                v.follow_proofs ?? {},
+              ).map(([key, url]) => ({
+                label: PROOF_LABELS[key] ?? key,
+                url,
+              }));
               return (
                 <Card
                   key={v.id}
