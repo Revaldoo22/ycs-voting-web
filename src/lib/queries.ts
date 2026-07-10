@@ -576,6 +576,8 @@ export type RoundStanding = {
   status: "active" | "lolos" | "gugur";
   region_id: string | null;
   region_name: string;
+  province_id: string | null;
+  province_name: string;
   carry_points: number;
   round_points: number;
   points: number;
@@ -656,6 +658,8 @@ export type VoterToday = {
     vote_kind: "daily5";
     points: number;
     created_at: string;
+    /** pending = bukti follow masih direview admin (poin belum masuk). */
+    status: "pending" | "approved";
     participant_id: string;
     participant_name: string;
   }[];

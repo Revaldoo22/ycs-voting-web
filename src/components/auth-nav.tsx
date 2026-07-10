@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -27,8 +27,16 @@ import { useMyProfile } from "@/lib/queries";
 /** Login/account button for the public navbar (voter-aware). */
 export function AuthNav() {
   const router = useRouter();
+  const pathname = usePathname();
   const qc = useQueryClient();
   const { data: profile, isLoading } = useMyProfile();
+
+  // Bawa halaman saat ini sebagai ?next= agar setelah login (dan onboarding,
+  // bila perlu) user kembali ke halaman yang sedang dilihat.
+  const loginHref =
+    pathname && pathname !== "/"
+      ? `/login?next=${encodeURIComponent(pathname)}`
+      : "/login";
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -42,7 +50,7 @@ export function AuthNav() {
   if (!profile) {
     return (
       <Button size="sm" asChild>
-        <Link href="/login">
+        <Link href={loginHref}>
           <LogIn className="h-4 w-4" /> Masuk
         </Link>
       </Button>
@@ -98,7 +106,14 @@ export function AuthNav() {
           !profile.onboarded &&
           !profile.is_participant && (
             <DropdownMenuItem asChild>
-              <Link href="/onboarding" className="gap-2">
+              <Link
+                href={
+                  pathname && pathname !== "/"
+                    ? `/onboarding?next=${encodeURIComponent(pathname)}`
+                    : "/onboarding"
+                }
+                className="gap-2"
+              >
                 <UserRound className="h-4 w-4" /> Lengkapi Profil
               </Link>
             </DropdownMenuItem>

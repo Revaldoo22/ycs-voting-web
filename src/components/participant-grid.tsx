@@ -3,14 +3,20 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, Globe2, MapPin, School as SchoolIcon } from "lucide-react";
+import {
+  BadgeCheck,
+  ChevronRight,
+  Globe2,
+  MapPin,
+  School as SchoolIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
-import { useMyProfile, useParticipants } from "@/lib/queries";
+import { useMyProfile, useParticipants, useVoterToday } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
@@ -20,19 +26,72 @@ type Scope = "school" | "region" | "all";
 export function ParticipantGrid() {
   const { data, isLoading, isError, refetch } = useParticipants();
   const { data: me } = useMyProfile();
-  const [search, setSearch] = React.useState("");
-  const [page, setPage] = React.useState(1);
-  const [scope, setScope] = React.useState<Scope>("all");
+  // Peserta yang sudah di-vote akun ini → card gold + label "Sudah kamu vote".
+  // pending = bukti follow masih direview admin.
+  const { data: myVotes } = useVoterToday(!!me);
+  const voteStatus = React.useMemo(
+    () =>
+      new Map(
+        (myVotes?.votes ?? []).map((v) => [v.participant_id, v.status]),
+      ),
+    [myVotes],
+  );
+  // State grid (cari/halaman/lingkup) disimpan di URL agar tombol "Kembali"
+  // dari halaman peserta memulihkan posisi persis (browser back).
+  const [initial] = React.useState(() => {
+    if (typeof window === "undefined")
+      return { q: "", page: 1, scope: null as Scope | null };
+    const sp = new URLSearchParams(window.location.search);
+    const sc = sp.get("scope");
+    return {
+      q: sp.get("q") ?? "",
+      page: Math.max(1, Number(sp.get("page")) || 1),
+      scope:
+        sc === "school" || sc === "region" || sc === "all"
+          ? (sc as Scope)
+          : null,
+    };
+  });
+  const [search, setSearch] = React.useState(initial.q);
+  const [page, setPage] = React.useState(initial.page);
+  const [scope, setScope] = React.useState<Scope>(initial.scope ?? "all");
 
   // Filter lingkup muncul selama akun login punya identitas sekolah/daerah —
   // baik voter yang sudah onboarding maupun peserta (email cocok record
   // peserta → school_id/region_id terisi dari /me walau belum onboarding).
+  // Jangan timpa lingkup hasil restore dari URL.
   const voterReady = !!me && (!!me.school_id || !!me.region_id);
   React.useEffect(() => {
-    if (voterReady && me?.school_id) setScope("school");
-  }, [voterReady, me?.school_id]);
+    if (voterReady && me?.school_id && !initial.scope) setScope("school");
+  }, [voterReady, me?.school_id, initial.scope]);
 
-  React.useEffect(() => setPage(1), [search, scope]);
+  // Reset halaman saat cari/lingkup berubah — skip render pertama supaya
+  // page hasil restore tidak langsung ke-reset.
+  const firstRun = React.useRef(true);
+  React.useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    setPage(1);
+  }, [search, scope]);
+
+  // Tulis balik state ke URL (replaceState — tanpa nambah riwayat browser).
+  React.useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    sp.delete("q");
+    sp.delete("page");
+    sp.delete("scope");
+    if (search.trim()) sp.set("q", search);
+    if (page > 1) sp.set("page", String(page));
+    if (scope !== "all") sp.set("scope", scope);
+    const qs = sp.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      qs ? `?${qs}` : window.location.pathname,
+    );
+  }, [search, page, scope]);
 
   if (isLoading) return <CardSkeletonGrid />;
   if (isError) return <ErrorState onRetry={() => refetch()} />;
@@ -124,9 +183,20 @@ export function ParticipantGrid() {
         />
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {paged.map((p) => (
+          {paged.map((p) => {
+            const status = voteStatus.get(p.id);
+            const voted = status === "approved";
+            const pending = status === "pending";
+            return (
             <Link key={p.id} href={`/peserta/${p.id}`} className="group">
-              <Card className="card-lift h-full overflow-hidden rounded-2xl border-border/60">
+              <Card
+                className={cn(
+                  "card-lift h-full overflow-hidden rounded-2xl border-border/60",
+                  voted &&
+                    "border-amber-400/80 ring-2 ring-amber-400/70 shadow-[0_0_22px_-2px_rgba(251,191,36,0.55)]",
+                  pending && "border-amber-400/50 ring-1 ring-amber-400/40",
+                )}
+              >
                 <div className="relative aspect-square w-full overflow-hidden bg-muted">
                   {p.photo_url ? (
                     <>
@@ -152,6 +222,17 @@ export function ParticipantGrid() {
                   <span className="absolute right-2 top-2 rounded-full border border-white/30 bg-black/45 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
                     {formatNumber(p.total_points)} poin
                   </span>
+                  {voted && (
+                    <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-300 px-2.5 py-0.5 text-xs font-bold text-amber-950 shadow-[0_0_12px_rgba(251,191,36,0.7)]">
+                      <BadgeCheck className="h-3.5 w-3.5" />
+                      Sudah Kamu Vote
+                    </span>
+                  )}
+                  {pending && (
+                    <span className="absolute left-2 top-2 rounded-full border border-amber-300/50 bg-black/45 px-2.5 py-0.5 text-xs font-bold text-amber-300 backdrop-blur-sm">
+                      Vote Menunggu Review
+                    </span>
+                  )}
                 </div>
                 <CardContent className="p-3">
                   <p className="truncate text-sm font-semibold">{p.name}</p>
@@ -159,14 +240,31 @@ export function ParticipantGrid() {
                     <SchoolIcon className="h-3 w-3 shrink-0" />
                     <span className="truncate">{p.schools?.name ?? "-"}</span>
                   </p>
-                  <div className="mt-2 flex items-center justify-end text-xs font-semibold text-primary">
-                    Dukung
-                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  <div
+                    className={cn(
+                      "mt-2 flex items-center justify-end text-xs font-semibold",
+                      voted || pending ? "text-amber-500" : "text-primary",
+                    )}
+                  >
+                    {voted ? (
+                      <>
+                        <BadgeCheck className="mr-1 h-3.5 w-3.5" />
+                        Sudah kamu vote
+                      </>
+                    ) : pending ? (
+                      <>Menunggu review admin</>
+                    ) : (
+                      <>
+                        Dukung
+                        <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
 

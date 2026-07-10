@@ -78,6 +78,11 @@ const SOURCE_OPTIONS = [
 
 type ComboItem = { value: string; label: string; hint?: string };
 
+/** Penanda field wajib. */
+function Req() {
+  return <span className="text-destructive">*</span>;
+}
+
 /**
  * Dropdown searchable seragam: ketik untuk cari, klik untuk pilih. Dipakai
  * untuk provinsi, kabupaten, dan sekolah agar konsisten. `onQuery` opsional
@@ -94,7 +99,7 @@ function Combobox({
   emptyText = "Tidak ditemukan.",
 }: {
   value: ComboItem | null;
-  label: string;
+  label: React.ReactNode;
   placeholder: string;
   items: ComboItem[];
   disabled?: boolean;
@@ -197,6 +202,15 @@ export default function OnboardingPage() {
   const [step, setStep] = React.useState(0);
   const [busy, setBusy] = React.useState(false);
 
+  // Halaman asal (?next=) — voter yang klik vote sebelum login dikembalikan
+  // ke sana setelah onboarding selesai. Path internal saja (anti open redirect).
+  // Dibaca dari window agar tak perlu Suspense useSearchParams.
+  const [nextPath] = React.useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const n = new URLSearchParams(window.location.search).get("next");
+    return n && n.startsWith("/") && !n.startsWith("//") ? n : null;
+  });
+
   // Form state
   const [name, setName] = React.useState("");
   const [phone, setPhone] = React.useState("");
@@ -278,13 +292,15 @@ export default function OnboardingPage() {
       try {
         const { user } = await api<{ user: Me }>("/api/auth/me");
         if (user.onboarded) {
-          router.replace("/");
+          router.replace(nextPath ?? "/");
           return;
         }
         setMe(user);
         setName(user.name ?? "");
       } catch {
-        router.replace("/login");
+        router.replace(
+          nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login",
+        );
       }
       try {
         setProvinces(
@@ -294,7 +310,7 @@ export default function OnboardingPage() {
         /* dropdown kosong tidak fatal */
       }
     })();
-  }, [router]);
+  }, [router, nextPath]);
 
   // Provinsi berubah → muat kabupaten. Reset pilihan di bawahnya HANYA saat
   // user benar-benar ganti provinsi (bukan saat restore draft awal).
@@ -400,7 +416,7 @@ export default function OnboardingPage() {
       } catch {
         /* abaikan */
       }
-      router.replace("/");
+      router.replace(nextPath ?? "/");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal menyimpan profil.");
     } finally {
@@ -476,7 +492,9 @@ export default function OnboardingPage() {
           {step === 0 && (
             <>
               <div className="space-y-1.5">
-                <Label>Nama Lengkap</Label>
+                <Label>
+                  Nama Lengkap <Req />
+                </Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -484,7 +502,9 @@ export default function OnboardingPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Nomor WhatsApp</Label>
+                <Label>
+                  Nomor WhatsApp <Req />
+                </Label>
                 <Input
                   inputMode="tel"
                   value={phone}
@@ -501,7 +521,11 @@ export default function OnboardingPage() {
           {step === 1 && (
             <>
               <Combobox
-                label="Provinsi"
+                label={
+                  <>
+                    Provinsi <Req />
+                  </>
+                }
                 placeholder="Cari provinsi…"
                 value={
                   provinceCode
@@ -518,7 +542,11 @@ export default function OnboardingPage() {
                 emptyText="Provinsi tak ditemukan."
               />
               <Combobox
-                label="Kabupaten / Kota"
+                label={
+                  <>
+                    Kabupaten / Kota <Req />
+                  </>
+                }
                 placeholder={
                   provinceCode ? "Cari kabupaten/kota…" : "Pilih provinsi dulu"
                 }
@@ -538,7 +566,9 @@ export default function OnboardingPage() {
                 emptyText="Kabupaten tak ditemukan."
               />
               <div className="space-y-1.5">
-                <Label>Status Kamu</Label>
+                <Label>
+                  Status Kamu <Req />
+                </Label>
                 <SelectBox
                   value={status}
                   onChange={setStatus}
@@ -554,7 +584,11 @@ export default function OnboardingPage() {
               {fromMaster ? (
                 <>
                   <Combobox
-                    label="Asal Sekolah"
+                    label={
+                      <>
+                        Asal Sekolah <Req />
+                      </>
+                    }
                     placeholder={
                       regencyCode ? "Ketik nama sekolah…" : "Pilih kabupaten dulu"
                     }
@@ -582,7 +616,9 @@ export default function OnboardingPage() {
                     emptyText="Sekolah tak ditemukan. Coba kata kunci lain."
                   />
                   <div className="space-y-1.5">
-                    <Label>Kelas</Label>
+                    <Label>
+                      Kelas <Req />
+                    </Label>
                     <SelectBox
                       value={kelas}
                       onChange={setKelas}
@@ -601,34 +637,26 @@ export default function OnboardingPage() {
                 <>
                   <div className="space-y-1.5">
                     <Label>
-                      Asal Sekolah{" "}
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {manualOptional ? "(opsional)" : ""}
-                      </span>
+                      Asal Sekolah {manualOptional ? null : <Req />}
                     </Label>
                     <Input
                       value={schoolManual}
                       onChange={(e) => setSchoolManual(e.target.value)}
                       placeholder={
                         manualOptional
-                          ? "Ketik nama sekolah/instansi (boleh dikosongkan)"
+                          ? "Ketik nama sekolah/instansi"
                           : "Ketik nama sekolahmu"
                       }
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label>
-                      Kelas{" "}
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {manualOptional ? "(opsional)" : ""}
-                      </span>
+                      Kelas {manualOptional ? null : <Req />}
                     </Label>
                     <Input
                       value={classManual}
                       onChange={(e) => setClassManual(e.target.value)}
-                      placeholder={
-                        manualOptional ? "Boleh dikosongkan" : "Ketik kelasmu"
-                      }
+                      placeholder="Ketik kelasmu"
                     />
                   </div>
                 </>
@@ -639,7 +667,9 @@ export default function OnboardingPage() {
           {step === 2 && (
             <>
               <div className="space-y-1.5">
-                <Label>Apakah kamu berniat melanjutkan kuliah?</Label>
+                <Label>
+                  Apakah kamu berniat melanjutkan kuliah? <Req />
+                </Label>
                 <div className="grid gap-2">
                   {INTENT_OPTIONS.map((o) => (
                     <label
@@ -666,12 +696,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>
-                  Apakah kamu sudah mengenal Universitas STEKOM?{" "}
-                  <span className="text-xs font-normal text-muted-foreground">
-                    (opsional)
-                  </span>
-                </Label>
+                <Label>Apakah kamu sudah mengenal Universitas STEKOM?</Label>
                 <SelectBox
                   value={awareness}
                   onChange={setAwareness}
@@ -686,12 +711,7 @@ export default function OnboardingPage() {
               {(awareness === "pernah_dengar" ||
                 awareness === "sudah_minat") && (
                 <div className="space-y-1.5">
-                  <Label>
-                    Tahu Universitas STEKOM dari mana?{" "}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      (opsional)
-                    </span>
-                  </Label>
+                  <Label>Tahu Universitas STEKOM dari mana?</Label>
                   <SelectBox
                     value={stekomSource}
                     onChange={setStekomSource}

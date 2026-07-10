@@ -171,7 +171,9 @@ function downloadCoupon(c: CouponRow) {
 export default function CouponPage() {
   const router = useRouter();
   const { data: me, isLoading: loadingMe } = useMyProfile();
-  const enabled = !!me && me.role === "voter" && me.onboarded;
+  // Voter onboarded ATAU peserta (role "participant") — sama-sama punya kupon.
+  const enabled =
+    !!me && (me.is_participant || (me.role === "voter" && me.onboarded));
   const { data: coupons, isLoading } = useMyCoupons(enabled);
 
   React.useEffect(() => {

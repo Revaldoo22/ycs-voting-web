@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { GraduationCap, LogOut, Menu } from "lucide-react";
+import { GraduationCap, Home, LogOut, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ export type NavLink = {
 
 /** Menu publik standar — SATU sumber, dipakai semua halaman publik. */
 export const PUBLIC_LINKS: NavLink[] = [
+  { href: "/", label: "Home", icon: Home },
   { href: "/ranking", label: "Ranking" },
   { href: "/peringkat-sekolah", label: "Peringkat Sekolah" },
   { href: "/gelombang", label: "Gelombang" },

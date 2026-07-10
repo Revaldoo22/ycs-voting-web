@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import { use } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { MaintenanceOverlay } from "@/components/maintenance-overlay";
 import { EventClosedOverlay } from "@/components/event-closed-overlay";
 import {
   ArrowLeft,
+  BadgeCheck,
   Heart,
   Link as LinkIcon,
   Loader2,
@@ -43,6 +43,7 @@ import {
   useParticipantContents,
   useQuests,
   useSettings,
+  useVoterToday,
 } from "@/lib/queries";
 import { CheckCircle2, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -69,6 +70,12 @@ export default function PublicParticipantPage({
   const { data: quests } = useQuests(true);
   const { data: settings } = useSettings();
   const eventClosed = settings ? !settings.event_open : false;
+
+  // Vote milik akun ini — untuk label "sudah kamu vote" di peserta terkait.
+  const { data: myVotes } = useVoterToday(!!me);
+  const myVote = (myVotes?.votes ?? []).find((v) => v.participant_id === id);
+  const votedThis = !!myVote;
+  const votePending = myVote?.status === "pending";
 
   const router = useRouter();
 
@@ -129,10 +136,16 @@ export default function PublicParticipantPage({
       <EventClosedOverlay />
       <Navbar />
       <main className="container max-w-3xl space-y-6 py-8">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4" /> Kembali
-          </Link>
+        {/* Kembali ke halaman sebelumnya (scroll & state utuh via history);
+            fallback ke beranda kalau dibuka langsung dari link. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            window.history.length > 1 ? router.back() : router.push("/")
+          }
+        >
+          <ArrowLeft className="h-4 w-4" /> Kembali
         </Button>
 
         {eventClosed && (
@@ -204,16 +217,31 @@ export default function PublicParticipantPage({
 
                 <ShareButton name={participant.name} />
 
-                <VoteDialog
-                  participantId={id}
-                  participantName={participant.name}
-                  voter={voter}
-                  locked={locked}
-                  followed={followed || isParticipant}
-                  gate={gate}
-                  disabled={eventClosed}
-                  onVoted={() => refetch()}
-                />
+                {votedThis ? (
+                  votePending ? (
+                    <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/50 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Sudah vote — bukti follow menunggu review admin. Poin
+                      masuk setelah di-approve.
+                    </div>
+                  ) : (
+                    <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-sm font-bold text-amber-950 shadow-[0_0_18px_rgba(251,191,36,0.55)]">
+                      <BadgeCheck className="h-4 w-4" />
+                      Kamu sudah vote peserta ini. Terima kasih!
+                    </div>
+                  )
+                ) : (
+                  <VoteDialog
+                    participantId={id}
+                    participantName={participant.name}
+                    voter={voter}
+                    locked={locked}
+                    followed={followed || isParticipant}
+                    gate={gate}
+                    disabled={eventClosed}
+                    onVoted={() => refetch()}
+                  />
+                )}
                 <p className="text-center text-xs text-muted-foreground">
                   Setiap akun hanya bisa memberi 1 vote seumur event.
                 </p>
@@ -312,7 +340,9 @@ function VoteDialog({
 }) {
   const [open, setOpen] = React.useState(false);
   const [showFollow, setShowFollow] = React.useState(false);
-  const [followProof, setFollowProof] = React.useState<File | null>(null);
+  // Bukti follow PER TUGAS — masing-masing wajib satu screenshot.
+  const [proofIg, setProofIg] = React.useState<File | null>(null);
+  const [proofTiktok, setProofTiktok] = React.useState<File | null>(null);
   const [busy, setBusy] = React.useState(false);
   const qc = useQueryClient();
   const confirm = useConfirm();
@@ -343,28 +373,32 @@ function VoteDialog({
     });
   }
 
+  /** Upload satu screenshot bukti → URL absolut. */
+  async function uploadProof(file: File): Promise<string> {
+    const img = await compressImage(file, { maxSize: 900, quality: 0.7 });
+    const fd = new FormData();
+    fd.append("file", img);
+    const up = await api<{ url: string }>("/api/upload-proof", {
+      method: "POST",
+      body: fd,
+    });
+    return new URL(up.url, window.location.origin).toString();
+  }
+
   async function doSubmit(followConfirmed = false) {
     setBusy(true);
     try {
-      // Follow pertama wajib lampirkan screenshot bukti.
-      let followProofUrl: string | undefined;
+      // Follow pertama: bukti PER TUGAS (IG & TikTok), keduanya wajib.
+      let followProofIg: string | undefined;
+      let followProofTiktok: string | undefined;
       if (followConfirmed) {
-        if (!followProof) {
-          toast.error("Upload screenshot bukti follow dulu.");
+        if (!proofIg || !proofTiktok) {
+          toast.error("Upload screenshot bukti untuk kedua tugas follow dulu.");
           return;
         }
-        const img = await compressImage(followProof, {
-          maxSize: 900,
-          quality: 0.7,
-        });
-        const fd = new FormData();
-        fd.append("file", img);
         try {
-          const up = await api<{ url: string }>("/api/upload-proof", {
-            method: "POST",
-            body: fd,
-          });
-          followProofUrl = new URL(up.url, window.location.origin).toString();
+          followProofIg = await uploadProof(proofIg);
+          followProofTiktok = await uploadProof(proofTiktok);
         } catch (err) {
           toast.error(
             "Gagal mengunggah bukti: " +
@@ -382,7 +416,11 @@ function VoteDialog({
           participant_id: participantId,
           fingerprint,
           ...(followConfirmed
-            ? { follow_confirmed: true, follow_proof_url: followProofUrl }
+            ? {
+                follow_confirmed: true,
+                follow_proof_ig: followProofIg,
+                follow_proof_tiktok: followProofTiktok,
+              }
             : {}),
         }),
       });
@@ -396,7 +434,16 @@ function VoteDialog({
         participant_id: participantId,
         points: pts,
       });
-      if (followConfirmed) {
+      // Refresh label "sudah kamu vote" di card & halaman peserta.
+      qc.invalidateQueries({ queryKey: ["voter-today"] });
+      if (data.pending) {
+        // Bukti follow direview admin dulu — poin & kupon menyusul.
+        toast.success(
+          "Vote terkirim! Bukti follow kamu sedang direview admin — poin masuk setelah di-approve.",
+        );
+        trackEvent("follow_confirmed");
+        qc.invalidateQueries({ queryKey: ["profile", "me"] });
+      } else if (followConfirmed) {
         toast.success("Vote terkirim. Kupon undian handphone masuk ke akunmu!");
         trackEvent("follow_confirmed");
         qc.invalidateQueries({ queryKey: ["profile", "me"] });
@@ -436,45 +483,67 @@ function VoteDialog({
           <DialogHeader>
             <DialogTitle>Follow dulu, dapat kupon undian</DialogTitle>
             <DialogDescription>
-              Sekali saja untuk seluruh event. Follow akun Universitas STEKOM,
-              lalu kirim vote pertamamu dan dapatkan kupon undian berhadiah
-              handphone.
+              Sekali saja untuk seluruh event. Kerjakan kedua tugas follow di
+              bawah, upload bukti per tugas, lalu kirim. Bukti direview admin —
+              vote &amp; kupon undianmu sah setelah di-approve.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Button variant="outline" asChild>
+
+          {/* Tugas 1: Follow Instagram */}
+          <div className="space-y-2 rounded-xl border p-3">
+            <p className="text-sm font-semibold">
+              1. Follow Instagram Universitas STEKOM
+            </p>
+            <Button variant="outline" size="sm" className="w-full" asChild>
               <a
                 href="https://www.instagram.com/universitasstekom"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Instagram Universitas STEKOM
+                Buka Instagram @universitasstekom
               </a>
             </Button>
-            <Button variant="outline" asChild>
+            <div className="space-y-1.5">
+              <Label>Screenshot Bukti Follow IG</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProofIg(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          </div>
+
+          {/* Tugas 2: Follow TikTok */}
+          <div className="space-y-2 rounded-xl border p-3">
+            <p className="text-sm font-semibold">
+              2. Follow TikTok Universitas STEKOM
+            </p>
+            <Button variant="outline" size="sm" className="w-full" asChild>
               <a
                 href="https://www.tiktok.com/@stekomuniversity"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                TikTok Universitas STEKOM
+                Buka TikTok @stekomuniversity
               </a>
             </Button>
+            <div className="space-y-1.5">
+              <Label>Screenshot Bukti Follow TikTok</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProofTiktok(e.target.files?.[0] ?? null)}
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Screenshot Bukti Follow</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFollowProof(e.target.files?.[0] ?? null)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Screenshot profil Universitas STEKOM yang menunjukkan kamu sudah follow.
-            </p>
-          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Screenshot profil yang menunjukkan kamu sudah follow. Poin vote
+            masuk ke peserta setelah bukti di-approve admin.
+          </p>
           <Button
             onClick={() => doSubmit(true)}
-            disabled={busy || !followProof}
+            disabled={busy || !proofIg || !proofTiktok}
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             Kirim bukti &amp; vote

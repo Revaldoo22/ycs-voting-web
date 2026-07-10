@@ -22,6 +22,7 @@ import {
   Trophy,
   UserPlus,
   Users,
+  Vote,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/hasil", label: "Hasil Lolos", icon: Medal },
       { href: "/admin/quests", label: "Quest", icon: Trophy },
       { href: "/admin/submissions", label: "Submission", icon: ClipboardCheck },
+      { href: "/admin/votes", label: "Verifikasi Vote", icon: Vote },
     ],
   },
   {
