@@ -30,6 +30,7 @@ export const PUBLIC_LINKS: NavLink[] = [
   { href: "/peringkat-sekolah", label: "Peringkat Sekolah" },
   { href: "/gelombang", label: "Gelombang" },
   { href: "/top-voter", label: "Top Voter" },
+  { href: "/panduan", label: "Panduan" },
 ];
 
 export function Navbar({
