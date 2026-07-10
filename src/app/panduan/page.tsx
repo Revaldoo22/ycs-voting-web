@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  BadgeCheck,
   BookOpen,
-  CheckCircle2,
   GraduationCap,
   Heart,
   MessageCircle,
@@ -18,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export const metadata: Metadata = {
   title: "Panduan Penggunaan - Youth Character Summit",
   description:
-    "Cara vote di Youth Character Summit Universitas STEKOM: panduan untuk voter biasa dan voter yang juga peserta.",
+    "Cara mendukung peserta Youth Character Summit Universitas STEKOM, untuk pendukung umum maupun peserta.",
 };
 
 const ADMIN_WA_DISPLAY = "+62 888-8555-591";
@@ -43,24 +41,6 @@ function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
   );
 }
 
-function ContactAdminButton({ block = false }: { block?: boolean }) {
-  return (
-    <Button
-      asChild
-      className={
-        block
-          ? "w-full bg-emerald-600 text-white hover:bg-emerald-700"
-          : "bg-emerald-600 text-white hover:bg-emerald-700"
-      }
-    >
-      <a href={ADMIN_WA_LINK} target="_blank" rel="noopener noreferrer">
-        <MessageCircle className="h-4 w-4" />
-        Hubungi Admin ({ADMIN_WA_DISPLAY})
-      </a>
-    </Button>
-  );
-}
-
 export default function GuidePage() {
   return (
     <div className="min-h-screen">
@@ -73,23 +53,22 @@ export default function GuidePage() {
             Panduan Penggunaan
           </h1>
           <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-            Ada dua jalur pemakaian web ini: <b>voter biasa</b> (teman, guru,
-            keluarga, siapa pun yang mau mendukung) dan <b>voter yang juga
-            peserta YCS</b>. Cari posisimu di bawah, ikuti langkahnya.
+            Ikuti panduan yang sesuai dengan kamu: <b>pendukung umum</b> (teman,
+            guru, keluarga, atau siapa pun) atau <b>peserta YCS</b> yang ingin
+            ikut mendukung temannya.
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* ------------------- Panduan voter biasa ------------------- */}
+          {/* ------------------- Panduan pendukung umum ------------------- */}
           <Card className="border-primary/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserRound className="h-5 w-5 text-primary" />
-                Voter Biasa
+                Untuk Pendukung Umum
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Kamu bukan peserta lomba — hanya ingin mendukung peserta
-                favoritmu.
+                Kamu ingin mendukung peserta favoritmu di ajang ini.
               </p>
             </CardHeader>
             <CardContent>
@@ -97,96 +76,90 @@ export default function GuidePage() {
                 <Step
                   n={1}
                   title="Masuk dengan akun Google"
-                  desc="Klik tombol Masuk di pojok kanan atas (atau langsung klik Dukung di peserta — nanti otomatis diarahkan login)."
+                  desc="Klik tombol Masuk di kanan atas, lalu pilih akun Google kamu."
                 />
                 <Step
                   n={2}
-                  title="Lengkapi profil sekali"
-                  desc="Isi nama, nomor WhatsApp, asal wilayah, status, dan sekolah. Field bertanda * wajib. Setelah selesai kamu dikembalikan ke halaman terakhir."
+                  title="Isi data diri sekali saja"
+                  desc="Lengkapi nama, nomor WhatsApp, dan asal daerah atau sekolahmu. Cukup sekali di awal."
                 />
                 <Step
                   n={3}
-                  title="Pilih peserta & klik Dukung"
-                  desc="Cari lewat nama/sekolah atau pakai filter Sekolahku/Kabupatenku di halaman utama."
+                  title="Pilih peserta lalu klik Dukung"
+                  desc="Cari nama peserta atau sekolahnya di halaman utama, buka profilnya, lalu klik tombol Dukung."
                 />
                 <Step
                   n={4}
-                  title="Kerjakan 6 tugas follow + upload bukti"
-                  desc="Follow TikTok & Instagram Univ STEKOM dan TopLoker.com, serta ikuti 2 saluran WhatsApp. Upload screenshot bukti untuk SETIAP tugas."
+                  title="Selesaikan tugas follow dan kirim buktinya"
+                  desc="Follow akun media sosial yang tercantum, lalu upload screenshot bukti untuk setiap tugas."
                 />
                 <Step
                   n={5}
-                  title="Tunggu review admin"
-                  desc="Vote-mu berstatus 'menunggu review'. Setelah admin approve, poin masuk ke peserta dan kamu dapat kupon undian berhadiah handphone."
-                />
-                <Step
-                  n={6}
-                  title="Tambah poin lewat quest (opsional)"
-                  desc="Di halaman peserta ada quest (like/komen/repost, buat konten, dll.) — kerjakan untuk memberi poin tambahan ke peserta."
+                  title="Selesai! Tunggu konfirmasi"
+                  desc="Vote kamu diperiksa admin lebih dulu. Setelah disetujui, dukunganmu sah dan kamu mendapat kupon undian berhadiah handphone."
                 />
               </ol>
               <div className="mt-4 space-y-1.5 rounded-xl border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <p>
-                  <b>1 akun = 1 vote</b> untuk seluruh event — pilih
-                  peserta dukunganmu dengan mantap.
+                  <b>Satu akun hanya bisa vote satu kali</b> selama event, jadi
+                  pilih dukunganmu dengan mantap.
                 </p>
                 <p>
-                  Kupon undianmu bisa dilihat di menu akun →{" "}
+                  Kupon undianmu bisa dilihat di menu akun bagian{" "}
                   <Ticket className="inline h-3.5 w-3.5" /> <b>Kupon Saya</b>.
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* --------------- Panduan voter yang juga peserta --------------- */}
+          {/* --------------------- Panduan peserta --------------------- */}
           <Card className="border-accent/40">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5 text-accent" />
-                Voter yang Juga Peserta{" "}
-                <Badge variant="accent">Peserta YCS</Badge>
+                Untuk Peserta YCS <Badge variant="accent">Peserta</Badge>
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Kamu terdaftar sebagai peserta lomba dan ingin ikut memberi
-                dukungan ke peserta lain.
+                Kamu terdaftar sebagai peserta dan ingin ikut mendukung peserta
+                lain.
               </p>
             </CardHeader>
             <CardContent>
               <ol className="space-y-4">
                 <Step
                   n={1}
-                  title="Masuk Google dengan email pendaftaranmu"
-                  desc="Pakai email yang SAMA dengan yang kamu daftarkan sebagai peserta. Sistem otomatis mengenalimu — muncul badge 'Peserta' di menu akun."
+                  title="Masuk dengan email pendaftaranmu"
+                  desc="Gunakan akun Google dengan email yang sama seperti saat kamu mendaftar jadi peserta. Sistem akan langsung mengenalimu."
                 />
                 <Step
                   n={2}
-                  title="Tanpa isi profil, tanpa tugas follow"
-                  desc="Identitasmu (nama, WA, sekolah) diambil otomatis dari data pendaftaran. Kamu tidak perlu wizard profil ataupun upload bukti follow."
+                  title="Tidak perlu isi data lagi"
+                  desc="Data dirimu sudah ada dari pendaftaran, jadi kamu bisa langsung pakai semua fitur."
                 />
                 <Step
                   n={3}
-                  title="Vote peserta lain — langsung sah"
-                  desc="Pilih peserta lain lalu klik Dukung; poin langsung masuk tanpa menunggu review. Kamu tidak bisa mendukung dirimu sendiri."
+                  title="Langsung dukung peserta lain"
+                  desc="Pilih peserta lain lalu klik Dukung. Tanpa tugas follow dan dukunganmu langsung sah. Kamu tidak bisa mendukung dirimu sendiri."
                 />
                 <Step
                   n={4}
-                  title="Kupon undian otomatis"
-                  desc="Begitu vote terkirim kamu langsung menerima kupon undian — cek di menu Kupon Saya."
+                  title="Kupon undian langsung didapat"
+                  desc="Setelah vote terkirim, kupon undianmu otomatis masuk. Cek di menu Kupon Saya."
                 />
                 <Step
                   n={5}
-                  title="Kumpulkan dukungan untukmu"
-                  desc="Buka halaman profilmu, klik Bagikan Profil, dan sebarkan link-nya. Pantau posisimu di menu Ranking dan posisi sekolahmu di Gelombang."
+                  title="Ajak teman mendukungmu"
+                  desc="Buka profilmu, klik Bagikan Profil, dan sebarkan ke teman-temanmu. Pantau posisimu di menu Ranking dan Gelombang."
                 />
               </ol>
               <div className="mt-4 space-y-1.5 rounded-xl border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <p>
-                  <BadgeCheck className="inline h-3.5 w-3.5 text-emerald-500" />{" "}
-                  Aturan <b>1 akun = 1 vote</b> tetap berlaku untuk peserta.
+                  Aturan <b>satu akun satu vote</b> juga berlaku untuk peserta.
                 </p>
                 <p>
-                  Login gagal dikenali sebagai peserta? Kemungkinan emailmu
-                  beda dengan data pendaftaran — hubungi admin di bawah.
+                  Tidak dikenali sebagai peserta saat masuk? Kemungkinan email
+                  yang dipakai berbeda dengan data pendaftaran. Hubungi admin di
+                  bawah ya.
                 </p>
               </div>
             </CardContent>
@@ -200,12 +173,19 @@ export default function GuidePage() {
             <div>
               <p className="font-semibold">Masih bingung atau menemui kendala?</p>
               <p className="text-sm text-muted-foreground">
-                Vote tidak masuk, akun tidak dikenali sebagai peserta, bukti
-                ditolak, atau pertanyaan lain — admin siap membantu via
-                WhatsApp.
+                Vote belum masuk, akun tidak dikenali, atau ada pertanyaan lain?
+                Admin siap membantu lewat WhatsApp.
               </p>
             </div>
-            <ContactAdminButton />
+            <Button
+              asChild
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              <a href={ADMIN_WA_LINK} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-4 w-4" />
+                Hubungi Admin ({ADMIN_WA_DISPLAY})
+              </a>
+            </Button>
           </CardContent>
         </Card>
 
@@ -214,8 +194,7 @@ export default function GuidePage() {
           <Link href="/" className="text-primary hover:underline">
             Kembali ke halaman utama
           </Link>{" "}
-          dan pilih pesertamu.{" "}
-          <CheckCircle2 className="inline h-3.5 w-3.5 text-emerald-500" />
+          dan pilih pesertamu.
         </p>
       </main>
     </div>
