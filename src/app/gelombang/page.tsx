@@ -322,7 +322,7 @@ export default function PublicRoundsPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <Flag className="h-6 w-6 text-primary" />
-            Hasil Gelombang
+            Klasemen
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Adu voting dari tingkat nasional sampai siswa: provinsi → kabupaten
@@ -334,7 +334,7 @@ export default function PublicRoundsPage() {
           <LoadingState />
         ) : !rounds || rounds.length === 0 ? (
           <EmptyState
-            title="Belum ada gelombang"
+            title="Klasemen belum tersedia"
             description="Nantikan pengumuman dari panitia."
           />
         ) : (
@@ -362,8 +362,8 @@ export default function PublicRoundsPage() {
 
             {round?.status === "active" && (
               <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 text-center text-sm font-medium text-primary">
-                Gelombang ini masih berlangsung - klasemen live, hasil bisa
-                berubah. Terus dukung sekolahmu!
+                Voting masih berlangsung - klasemen live, hasil bisa berubah.
+                Terus dukung sekolahmu!
               </div>
             )}
 
@@ -421,7 +421,7 @@ export default function PublicRoundsPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : (results ?? []).length === 0 ? (
-                  <EmptyState title="Belum ada sekolah di gelombang ini" />
+                  <EmptyState title="Belum ada sekolah di klasemen ini" />
                 ) : school ? (
                   /* Level 4: siswa */
                   <StudentBoard schoolId={school.key} />
@@ -514,7 +514,7 @@ export default function PublicRoundsPage() {
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Trophy className="h-3.5 w-3.5 text-accent" />
                 Poin wilayah = jumlah poin seluruh sekolah peserta di wilayah
-                itu (termasuk carry dari gelombang sebelumnya).
+                itu (termasuk poin bawaan dari babak sebelumnya).
               </p>
             )}
           </>

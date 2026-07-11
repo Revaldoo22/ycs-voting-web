@@ -149,7 +149,7 @@ export default function GuidePage() {
                 <Step
                   n={5}
                   title="Ajak teman mendukungmu"
-                  desc="Buka profilmu, klik Bagikan Profil, dan sebarkan ke teman-temanmu. Pantau posisimu di menu Ranking dan Gelombang."
+                  desc="Buka profilmu, klik Bagikan Profil, dan sebarkan ke teman-temanmu. Pantau posisimu di menu Ranking dan Klasemen."
                 />
               </ol>
               <div className="mt-4 space-y-1.5 rounded-xl border bg-muted/40 p-3 text-xs text-muted-foreground">
