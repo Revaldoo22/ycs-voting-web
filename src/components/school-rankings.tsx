@@ -12,8 +12,87 @@ import {
   useSchoolRankings,
   type SchoolRankingRow,
 } from "@/lib/queries";
-import { SelectBox } from "@/components/ui/select-box";
+import { Input } from "@/components/ui/input";
 import { cn, formatNumber } from "@/lib/utils";
+
+/**
+ * Dropdown kabupaten yang bisa dicari: ketik nama, muncul rekomendasi,
+ * klik untuk pilih. Sudah terpilih → chip dengan tombol Ganti.
+ */
+function RegionCombobox({
+  regions,
+  value,
+  onChange,
+}: {
+  regions: { id: string; name: string }[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [q, setQ] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+
+  const selected = regions.find((r) => r.id === value) ?? null;
+  const filtered = regions.filter((r) =>
+    r.name.toLowerCase().includes(q.trim().toLowerCase()),
+  );
+
+  if (selected) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-primary bg-primary/5 p-2.5 text-sm">
+        <span className="min-w-0 truncate font-medium">{selected.name}</span>
+        <button
+          type="button"
+          className="shrink-0 cursor-pointer text-xs text-primary hover:underline"
+          onClick={() => {
+            onChange("");
+            setQ("");
+            setOpen(true);
+          }}
+        >
+          Ganti
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <Input
+        value={q}
+        placeholder="Ketik nama kabupaten/kota…"
+        autoComplete="off"
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && filtered.length > 0 && (
+        <div className="max-h-44 overflow-y-auto rounded-lg border">
+          {filtered.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => {
+                onChange(r.id);
+                setOpen(false);
+                setQ("");
+              }}
+              className="block w-full cursor-pointer px-3 py-2 text-left text-sm hover:bg-muted"
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {open && q.trim() && filtered.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Kabupaten tak ditemukan. Coba kata kunci lain.
+        </p>
+      )}
+    </div>
+  );
+}
 
 /** Intensitas panas relatif → aksen baris. */
 function heatBar(ratio: number): string {
@@ -175,14 +254,10 @@ export function SchoolRankings() {
           <span className="text-xs font-medium text-muted-foreground">
             Kabupaten{regionName ? `: ${regionName}` : ""}
           </span>
-          <SelectBox
+          <RegionCombobox
+            regions={regions ?? []}
             value={regionId}
             onChange={setRegionId}
-            placeholder="Semua kabupaten"
-            options={[
-              { value: "", label: "Semua kabupaten" },
-              ...(regions ?? []).map((r) => ({ value: r.id, label: r.name })),
-            ]}
           />
         </div>
       )}
