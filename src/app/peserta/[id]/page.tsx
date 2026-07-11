@@ -333,23 +333,22 @@ function validateVoter(data: VoterFormData): string | null {
 }
 
 function ShareButton({ name }: { name: string }) {
-  async function share() {
+  // Langsung buka WhatsApp dengan pesan siap kirim (saluran di baris atas),
+  // lalu user tinggal memilih mau dikirim ke siapa.
+  function share() {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `Dukung ${name} di Youth Character Summit Universitas STEKOM! 🔥`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: name, text, url });
-        return;
-      } catch {
-        return; // user batal - jangan tampilkan error
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
-      toast.success("Link disalin! Bagikan ke teman-temanmu.");
-    } catch {
-      toast.error("Gagal menyalin link.");
-    }
+    const msg = [
+      "https://whatsapp.com/channel/0029VaYIG217oQhhUoA3a915",
+      "",
+      `Dukung ${name} di Youth Character Summit Universitas STEKOM! 🔥`,
+      url,
+    ].join("\n");
+    trackEvent("share_profile", { participant: name });
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(msg)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   }
 
   return (
