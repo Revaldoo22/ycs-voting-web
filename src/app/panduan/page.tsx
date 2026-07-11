@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  Award,
   BookOpen,
+  CalendarDays,
   GraduationCap,
   Heart,
+  Info,
   MessageCircle,
   Ticket,
   UserRound,
+  Zap,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
@@ -165,6 +169,96 @@ export default function GuidePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ---------------- Timeline & info kegiatan YCS 2026 ---------------- */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-primary" />
+              Timeline YCS 2026
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Jadwal lengkap kegiatan, main dan menangkan!
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <ol className="space-y-4">
+              <Step
+                n={1}
+                title="Pendaftaran dibuka 10 Juli 2026"
+                desc="Tiap bulan ada pemilihan Golden Buzzer dan semi finalis: 10 sampai 31 Juli (5 Golden Buzzer Juli), 1 sampai 30 Agustus (10 Golden Buzzer plus 200 Semi Finalis Grup A), 1 sampai 29 September (15 Golden Buzzer plus Grup B), dan 1 sampai 30 Oktober (20 Golden Buzzer plus Grup C)."
+              />
+              <Step
+                n={2}
+                title="Pengumuman 200 Semi Finalis"
+                desc="Grup A diumumkan 31 Agustus 2026, Grup B 30 September 2026, dan Grup C 31 Oktober 2026. Seluruh semi finalis mendapat beasiswa Rp3.000.000."
+              />
+              <Step
+                n={3}
+                title="Periode penilaian dan penjurian panitia"
+                desc="Berlangsung 1 sampai 14 November 2026."
+              />
+              <Step
+                n={4}
+                title="Pengumuman 100 Finalis Peserta YCS 2026"
+                desc="Diumumkan 16 November 2026. Seluruh finalis mendapat beasiswa Rp5.000.000. Sampai jumpa di Bali!"
+              />
+            </ol>
+
+            {/* Jalur kelulusan */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {[
+                { n: "50", label: "Lolos via Golden Buzzer" },
+                { n: "100", label: "Lolos Seleksi Umum" },
+                { n: "150", label: "Total Peserta Lolos" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl border bg-muted/40 p-3">
+                  <p className="text-2xl font-extrabold text-primary">{s.n}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3 rounded-xl border bg-muted/40 p-4 text-sm">
+              <p className="flex items-start gap-2">
+                <Zap className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <span>
+                  <b>Golden Buzzer</b> adalah peserta yang terpilih langsung
+                  oleh panitia atau juri karena punya keunggulan yang unik,
+                  inspiratif, spesial, dan bisa jadi role model yang baik bagi
+                  banyak orang.
+                </span>
+              </p>
+              <p className="flex items-start gap-2">
+                <Award className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  <b>Seleksi lanjutan semi finalis:</b> membuat Twibbon dan
+                  video kampanye contoh #AksiBaik di sekolah, lalu tes
+                  kuesioner yang dipandu lewat online meeting Zoom.
+                </span>
+              </p>
+              <p className="flex items-start gap-2">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  <b>Ketentuan beasiswa:</b> kalau kamu mendapat 2 beasiswa
+                  atau lebih dari program ini, yang berlaku adalah beasiswa
+                  yang terakhir dikeluarkan (nominal terbesar).
+                </span>
+              </p>
+              <p className="flex items-start gap-2">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  <b>Soal Grup A, B, dan C:</b> itu hanya nama fase
+                  pengumuman. Peserta yang lolos tiap fase dipilih dari
+                  pendaftar bulan berjalan dan pendaftar sebelumnya yang belum
+                  lolos, jadi semua pendaftar punya kesempatan yang sama.
+                  Belum terpilih bulan ini? Datamu otomatis ikut pemilihan
+                  bulan berikutnya.
+                </span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* ------------------------- Bantuan ------------------------- */}
         <Card className="border-emerald-500/30 bg-emerald-500/5">

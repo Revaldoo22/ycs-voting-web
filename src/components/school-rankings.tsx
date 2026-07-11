@@ -14,6 +14,7 @@ import {
 } from "@/lib/queries";
 import { Input } from "@/components/ui/input";
 import { cn, formatNumber } from "@/lib/utils";
+import { RankMedal, podiumRowClass } from "@/components/rank-medal";
 
 /**
  * Dropdown kabupaten yang bisa dicari: ketik nama, muncul rekomendasi,
@@ -124,6 +125,7 @@ function RankingList({
               mine
                 ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                 : "bg-card",
+              !mine && podiumRowClass(r.rank),
             )}
           >
             {/* Heat bar */}
@@ -134,14 +136,7 @@ function RankingList({
               )}
             />
             <div className="flex items-center gap-3 pl-2">
-              <span
-                className={cn(
-                  "w-9 shrink-0 text-center text-sm font-extrabold tabular-nums",
-                  r.rank <= 3 ? "text-accent" : "text-muted-foreground",
-                )}
-              >
-                #{r.rank}
-              </span>
+              <RankMedal rank={r.rank} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">
                   {r.school_name}

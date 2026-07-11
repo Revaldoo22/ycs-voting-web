@@ -1,26 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Crown, Medal, Trophy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useLeaderboard } from "@/lib/queries";
 import { formatNumber, cn } from "@/lib/utils";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { PhotoLightbox } from "@/components/photo-lightbox";
-
-const rankStyles = [
-  "bg-gradient-to-r from-amber-400/20 to-amber-100/10 border-amber-400",
-  "bg-gradient-to-r from-slate-300/20 to-slate-100/10 border-slate-400",
-  "bg-gradient-to-r from-orange-400/20 to-orange-100/10 border-orange-400",
-];
-
-function RankIcon({ rank }: { rank: number }) {
-  if (rank === 1) return <Crown className="h-5 w-5 text-amber-500" />;
-  if (rank === 2) return <Medal className="h-5 w-5 text-slate-400" />;
-  if (rank === 3) return <Trophy className="h-5 w-5 text-orange-500" />;
-  return <span className="w-5 text-center text-sm font-semibold">{rank}</span>;
-}
+import { RankMedal, podiumRowClass } from "@/components/rank-medal";
 
 export function Leaderboard({ limit = 50 }: { limit?: number }) {
   const { data, isLoading, isError, refetch } = useLeaderboard(limit);
@@ -49,11 +36,11 @@ export function Leaderboard({ limit = 50 }: { limit?: number }) {
               key={p.id}
               className={cn(
                 "flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm transition-colors",
-                rank <= 3 && rankStyles[rank - 1]
+                podiumRowClass(rank)
               )}
             >
               <div className="flex w-8 shrink-0 items-center justify-center">
-                <RankIcon rank={rank} />
+                <RankMedal rank={rank} />
               </div>
               <button
                 type="button"

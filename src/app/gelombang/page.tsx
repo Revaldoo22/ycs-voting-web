@@ -29,6 +29,7 @@ import {
   type RoundStanding,
 } from "@/lib/queries";
 import { cn, formatNumber } from "@/lib/utils";
+import { RankMedal, podiumRowClass } from "@/components/rank-medal";
 
 /** Node drill-down (provinsi/kabupaten) — key stabil walau id null. */
 type DrillGroup = {
@@ -39,13 +40,6 @@ type DrillGroup = {
   /** Jumlah sub-wilayah (kabupaten di level provinsi). */
   children: number;
 };
-
-function rankTone(i: number) {
-  if (i === 0) return "text-amber-500";
-  if (i === 1) return "text-slate-400";
-  if (i === 2) return "text-orange-400";
-  return "text-muted-foreground";
-}
 
 /** Chip penanda wilayah/sekolah milik voter login. */
 function MineBadge({ label }: { label: string }) {
@@ -76,18 +70,12 @@ function GroupRow({
       onClick={onClick}
       className={cn(
         "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary/5",
+        podiumRowClass(rank),
         mineLabel && "border-primary/50 bg-primary/5 ring-1 ring-inset ring-primary/30",
       )}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span
-          className={cn(
-            "w-7 shrink-0 text-center text-sm font-bold tabular-nums",
-            rankTone(rank - 1),
-          )}
-        >
-          {rank}
-        </span>
+        <RankMedal rank={rank} />
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 truncate font-semibold">
             <span className="truncate">{group.name}</span>
@@ -169,17 +157,13 @@ function StudentBoard({ schoolId }: { schoolId: string }) {
         <Link
           key={p.id}
           href={`/peserta/${p.id}`}
-          className="flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
+          className={cn(
+            "flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5",
+            podiumRowClass(i + 1),
+          )}
         >
           <div className="flex min-w-0 items-center gap-3">
-            <span
-              className={cn(
-                "w-7 shrink-0 text-center text-sm font-bold tabular-nums",
-                rankTone(i),
-              )}
-            >
-              {i + 1}
-            </span>
+            <RankMedal rank={i + 1} />
             {p.photo_url ? (
               <Image
                 src={p.photo_url}
@@ -454,19 +438,13 @@ export default function PublicRoundsPage() {
                           row.status === "lolos" &&
                             "border-emerald-500/40 bg-emerald-500/5",
                           row.status === "gugur" && "opacity-60",
+                          podiumRowClass(i + 1),
                           row.school_id === mine.schoolId &&
                             "border-primary/50 bg-primary/5 ring-1 ring-inset ring-primary/30",
                         )}
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            className={cn(
-                              "w-7 shrink-0 text-center text-sm font-bold tabular-nums",
-                              rankTone(i),
-                            )}
-                          >
-                            {i + 1}
-                          </span>
+                          <RankMedal rank={i + 1} />
                           <span className="truncate font-semibold">
                             {row.school_name}
                           </span>
