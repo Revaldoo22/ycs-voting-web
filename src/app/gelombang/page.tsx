@@ -134,6 +134,19 @@ function groupBy(
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
 }
 
+/**
+ * Header kolom di atas daftar leaderboard — menjelaskan angka di kanan
+ * adalah total poin.
+ */
+function ListHeader({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="pl-8">{label}</span>
+      <span className="pr-6">Total Poin</span>
+    </div>
+  );
+}
+
 /** Leaderboard siswa satu sekolah (level terdalam drill-down). */
 function StudentBoard({ schoolId }: { schoolId: string }) {
   const { data: participants, isLoading } = useParticipants(schoolId);
@@ -151,6 +164,7 @@ function StudentBoard({ schoolId }: { schoolId: string }) {
   }
   return (
     <div className="space-y-2">
+      <ListHeader label="Siswa" />
       {list.map((p, i) => (
         <Link
           key={p.id}
@@ -428,6 +442,7 @@ export default function PublicRoundsPage() {
                 ) : region ? (
                   /* Level 3: sekolah */
                   <div className="space-y-2">
+                    <ListHeader label="Sekolah" />
                     {schools.map((row, i) => (
                       <button
                         key={row.school_id}
@@ -477,6 +492,7 @@ export default function PublicRoundsPage() {
                 ) : province ? (
                   /* Level 2: kabupaten */
                   <div className="space-y-2">
+                    <ListHeader label="Kabupaten/Kota" />
                     {regencies.map((g, i) => (
                       <GroupRow
                         key={g.key}
@@ -493,6 +509,7 @@ export default function PublicRoundsPage() {
                 ) : (
                   /* Level 1: provinsi (nasional) */
                   <div className="space-y-2">
+                    <ListHeader label="Provinsi" />
                     {provinces.map((g, i) => (
                       <GroupRow
                         key={g.key}
