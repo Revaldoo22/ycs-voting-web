@@ -10,6 +10,8 @@ import {
   GraduationCap,
   Loader2,
   MapPin,
+  PencilLine,
+  Search,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -228,16 +230,16 @@ export default function OnboardingPage() {
   const [schoolQ, setSchoolQ] = React.useState("");
   const [schoolHits, setSchoolHits] = React.useState<SchoolHit[]>([]);
   const [school, setSchool] = React.useState<SchoolHit | null>(null);
-  // Guru/keluarga isi sekolah & kelas manual (opsional).
+  // Guru (wajib) & keluarga (opsional) isi sekolah & kelas manual.
   const [schoolManual, setSchoolManual] = React.useState("");
   const [classManual, setClassManual] = React.useState("");
 
   // teman_sekolah = siswa SMA/SMK/MA → pilih sekolah master + kelas dropdown.
-  // teman_luar bisa SMP dll → sekolah & kelas MANUAL (wajib).
-  // guru/keluarga → sekolah & kelas manual (opsional).
+  // teman_luar (bisa SMP dll) & guru → sekolah & kelas MANUAL (wajib).
+  // keluarga → sekolah & kelas manual (opsional).
   const fromMaster = status === "teman_sekolah";
-  const manualRequired = status === "teman_luar";
-  const manualOptional = status === "guru" || status === "keluarga";
+  const manualRequired = status === "teman_luar" || status === "guru";
+  const manualOptional = status === "keluarga";
   const showManual = manualRequired || manualOptional;
   // Siswa yang sekolahnya tak ada di dropdown master → boleh ketik manual.
   const [schoolNotFound, setSchoolNotFound] = React.useState(false);
@@ -370,7 +372,7 @@ export default function OnboardingPage() {
         if (!schoolManual.trim()) return "Isi asal sekolahmu.";
         if (!classManual.trim()) return "Isi kelasmu.";
       }
-      // Guru/keluarga: sekolah & kelas opsional — tak divalidasi.
+      // Keluarga: sekolah & kelas opsional, tak divalidasi.
     }
     if (s === 2) {
       if (!intent) return "Pilih niat kuliahmu.";
@@ -396,7 +398,7 @@ export default function OnboardingPage() {
           phone_number: phone.trim(),
           // Siswa: sekolah dari master (id) + kelas dropdown. Sekolah tak
           // ada di daftar → kirim nama manual (backend find-or-create).
-          // Guru/keluarga: sekolah & kelas manual (opsional).
+          // Guru & teman luar: manual wajib. Keluarga: manual opsional.
           ...(fromMaster
             ? schoolNotFound
               ? { school_name: schoolManual.trim(), class: kelas }
@@ -645,11 +647,19 @@ export default function OnboardingPage() {
                       setSchool(null);
                       setSchoolQ("");
                     }}
-                    className="cursor-pointer text-left text-xs text-primary hover:underline"
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 px-3 py-2.5 text-sm font-semibold text-primary transition-colors hover:border-primary hover:bg-primary/10"
                   >
-                    {schoolNotFound
-                      ? "Kembali cari sekolah dari daftar"
-                      : "Sekolahku tidak ada di daftar, isi manual"}
+                    {schoolNotFound ? (
+                      <>
+                        <Search className="h-4 w-4" />
+                        Kembali cari sekolah dari daftar
+                      </>
+                    ) : (
+                      <>
+                        <PencilLine className="h-4 w-4" />
+                        Sekolahku tidak ada di daftar? Isi manual di sini
+                      </>
+                    )}
                   </button>
                   <div className="space-y-1.5">
                     <Label>
@@ -669,7 +679,7 @@ export default function OnboardingPage() {
                   </div>
                 </>
               ) : showManual ? (
-                /* teman_luar (bisa SMP): manual & wajib. Guru/keluarga: opsional. */
+                /* teman_luar & guru: manual wajib. Keluarga: opsional. */
                 <>
                   <div className="space-y-1.5">
                     <Label>
