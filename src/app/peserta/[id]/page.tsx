@@ -49,7 +49,7 @@ import { CheckCircle2, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { getFingerprint } from "@/lib/fingerprint";
 import { compressImage } from "@/lib/image-compress";
-import { cn, formatNumber, trackEvent } from "@/lib/utils";
+import { formatNumber, trackEvent } from "@/lib/utils";
 import { voterInfoSchema } from "@/lib/validations";
 import {
   VoterFormFields,
@@ -383,9 +383,9 @@ function VoteDialog({
 }) {
   const [open, setOpen] = React.useState(false);
   const [showFollow, setShowFollow] = React.useState(false);
-  // Bukti follow PER TUGAS (key → file) — semua tugas wajib satu screenshot.
-  const [taskProofs, setTaskProofs] = React.useState<Record<string, File | null>>({});
-  const allProofsReady = FOLLOW_TASKS.every((t) => !!taskProofs[t.key]);
+  // Screenshot bukti follow — satu tombol upload, boleh banyak sekaligus.
+  const MAX_PROOFS = 12;
+  const [proofFiles, setProofFiles] = React.useState<File[]>([]);
   const [busy, setBusy] = React.useState(false);
   const qc = useQueryClient();
   const confirm = useConfirm();
@@ -431,17 +431,17 @@ function VoteDialog({
   async function doSubmit(followConfirmed = false) {
     setBusy(true);
     try {
-      // Follow pertama: bukti PER TUGAS — semua tugas wajib ada bukti.
-      let followProofs: Record<string, string> | undefined;
+      // Follow pertama: upload semua screenshot bukti (satu tombol, multi).
+      let followProofs: string[] | undefined;
       if (followConfirmed) {
-        if (!allProofsReady) {
-          toast.error("Upload screenshot bukti untuk semua tugas dulu.");
+        if (proofFiles.length === 0) {
+          toast.error("Upload screenshot bukti tugas follow dulu.");
           return;
         }
         try {
-          followProofs = {};
-          for (const t of FOLLOW_TASKS) {
-            followProofs[t.key] = await uploadProof(taskProofs[t.key]!);
+          followProofs = [];
+          for (const f of proofFiles) {
+            followProofs.push(await uploadProof(f));
           }
         } catch (err) {
           toast.error(
@@ -530,57 +530,85 @@ function VoteDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
-            {FOLLOW_TASKS.map((t, i) => {
-              const done = !!taskProofs[t.key];
-              return (
-                <div
-                  key={t.key}
-                  className={cn(
-                    "space-y-2 rounded-xl border p-3",
-                    done && "border-emerald-500/50 bg-emerald-500/5",
-                  )}
-                >
-                  <p className="flex items-center gap-1.5 text-sm font-semibold">
-                    {done && (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                    )}
-                    {i + 1}. {t.title}
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full" asChild>
-                    <a href={t.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                      Buka {t.linkLabel}
-                    </a>
-                  </Button>
-                  <div className="space-y-1.5">
-                    <Label>Screenshot Bukti</Label>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        setTaskProofs((prev) => ({
-                          ...prev,
-                          [t.key]: e.target.files?.[0] ?? null,
-                        }))
+          {/* Daftar tugas: klik untuk membuka akun/saluran yang harus di-follow. */}
+          <div className="max-h-[35vh] space-y-1.5 overflow-y-auto pr-1">
+            {FOLLOW_TASKS.map((t, i) => (
+              <a
+                key={t.key}
+                href={t.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
+              >
+                <span className="min-w-0 truncate font-medium">
+                  {i + 1}. {t.title}
+                </span>
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+
+          {/* Satu tombol upload untuk semua bukti — boleh pilih banyak sekaligus. */}
+          <div className="space-y-1.5">
+            <Label>Screenshot Bukti (boleh pilih banyak sekaligus)</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              disabled={proofFiles.length >= MAX_PROOFS}
+              onChange={(e) => {
+                const picked = Array.from(e.target.files ?? []);
+                setProofFiles((prev) => {
+                  const merged = [...prev];
+                  for (const f of picked) {
+                    if (
+                      merged.length < MAX_PROOFS &&
+                      !merged.some((x) => x.name === f.name && x.size === f.size)
+                    )
+                      merged.push(f);
+                  }
+                  return merged;
+                });
+                e.target.value = ""; // reset agar bisa pilih lagi
+              }}
+            />
+            {proofFiles.length > 0 && (
+              <ul className="space-y-1">
+                {proofFiles.map((f, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-xs"
+                  >
+                    <span className="min-w-0 truncate">{f.name}</span>
+                    <button
+                      type="button"
+                      className="shrink-0 text-destructive"
+                      onClick={() =>
+                        setProofFiles((prev) => prev.filter((_, j) => j !== i))
                       }
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+                <li className="text-xs text-muted-foreground">
+                  {proofFiles.length}/{MAX_PROOFS} file
+                </li>
+              </ul>
+            )}
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Screenshot profil/saluran yang menunjukkan kamu sudah
-            follow/mengikuti. Poin vote masuk ke peserta setelah bukti
+            Upload screenshot yang menunjukkan kamu sudah follow/mengikuti
+            semua akun di atas. Poin vote masuk ke peserta setelah bukti
             di-approve admin.
           </p>
-          <Button onClick={() => doSubmit(true)} disabled={busy || !allProofsReady}>
+          <Button
+            onClick={() => doSubmit(true)}
+            disabled={busy || proofFiles.length === 0}
+          >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Kirim bukti &amp; vote (
-            {FOLLOW_TASKS.filter((t) => taskProofs[t.key]).length}/
-            {FOLLOW_TASKS.length})
+            Kirim bukti &amp; vote ({proofFiles.length} file)
           </Button>
         </DialogContent>
       </Dialog>

@@ -54,7 +54,7 @@ type VoteRow = {
   voter_status: string | null;
   voter_school: string | null;
   voter_class: string | null;
-  follow_proofs: Record<string, string> | null;
+  follow_proofs: string[] | Record<string, string> | null;
   participants: { id: string; name: string; schools: { name: string } | null };
 };
 
@@ -317,12 +317,18 @@ export default function AdminVotesPage() {
             {paged.map((v) => {
               const busy = processing.has(v.id) || bulkBusy;
               const isSelected = selected.has(v.id);
-              const proofs: { label: string; url: string }[] = Object.entries(
-                v.follow_proofs ?? {},
-              ).map(([key, url]) => ({
-                label: PROOF_LABELS[key] ?? key,
-                url,
-              }));
+              // Format baru: array URL. Data lama: object key tugas → URL.
+              const proofs: { label: string; url: string }[] = Array.isArray(
+                v.follow_proofs,
+              )
+                ? v.follow_proofs.map((url, i) => ({
+                    label: `Bukti ${i + 1}`,
+                    url,
+                  }))
+                : Object.entries(v.follow_proofs ?? {}).map(([key, url]) => ({
+                    label: PROOF_LABELS[key] ?? key,
+                    url,
+                  }));
               return (
                 <Card
                   key={v.id}
