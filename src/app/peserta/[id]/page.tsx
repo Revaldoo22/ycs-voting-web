@@ -57,6 +57,7 @@ import {
   type VoterFormData,
 } from "@/components/voter-form-fields";
 import { useConfirm } from "@/components/confirm-dialog";
+import { PhotoLightbox } from "@/components/photo-lightbox";
 import type { ParticipantWithSchool, Quest } from "@/types/database";
 
 export default function PublicParticipantPage({
@@ -65,6 +66,8 @@ export default function PublicParticipantPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  // Pop-up zoom foto peserta (latar halaman diblur).
+  const [photoOpen, setPhotoOpen] = React.useState(false);
   const anonVoter = useVoterForm();
   const { data: me } = useMyProfile();
   const { data: quests } = useQuests(true);
@@ -167,7 +170,12 @@ export default function PublicParticipantPage({
           <>
             <Card className="overflow-hidden">
               {participant.photo_url && (
-                <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                <button
+                  type="button"
+                  onClick={() => setPhotoOpen(true)}
+                  aria-label={`Perbesar foto ${participant.name}`}
+                  className="relative block aspect-video w-full cursor-zoom-in overflow-hidden bg-muted"
+                >
                   <Image
                     src={participant.photo_url}
                     alt={participant.name}
@@ -178,18 +186,31 @@ export default function PublicParticipantPage({
                     // (berbatas waktu) — optimizer Next gagal; pakai apa adanya.
                     unoptimized
                   />
-                </div>
+                </button>
               )}
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16 border-2">
-                    {participant.photo_url && (
-                      <AvatarImage src={participant.photo_url} alt={participant.name} />
-                    )}
-                    <AvatarFallback className="text-lg">
-                      {participant.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      participant.photo_url && setPhotoOpen(true)
+                    }
+                    className={participant.photo_url ? "cursor-zoom-in" : undefined}
+                    aria-label={
+                      participant.photo_url
+                        ? `Perbesar foto ${participant.name}`
+                        : undefined
+                    }
+                  >
+                    <Avatar className="h-16 w-16 border-2">
+                      {participant.photo_url && (
+                        <AvatarImage src={participant.photo_url} alt={participant.name} />
+                      )}
+                      <AvatarFallback className="text-lg">
+                        {participant.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-xl font-bold">{participant.name}</h2>
                     <p className="text-sm text-muted-foreground">
@@ -247,6 +268,15 @@ export default function PublicParticipantPage({
                 </p>
               </CardContent>
             </Card>
+
+            {participant.photo_url && (
+              <PhotoLightbox
+                src={participant.photo_url}
+                alt={participant.name}
+                open={photoOpen}
+                onClose={() => setPhotoOpen(false)}
+              />
+            )}
 
             {quests && quests.length > 0 && (
             <section>
