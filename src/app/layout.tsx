@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
+import { HelpFab } from "@/components/help-fab";
 
 // Google Analytics 4 — bisa di-override / dimatikan lewat env.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-FZZC7WVGJX";
@@ -56,6 +57,8 @@ export default function RootLayout({
           shadow="0 0 10px hsl(24 95% 53% / 0.6)"
         />
         <Providers>{children}</Providers>
+        {/* Tombol bantuan WhatsApp melayang, tampil di semua halaman voter. */}
+        <HelpFab />
         {GA_ID && (
           <>
             <Script
