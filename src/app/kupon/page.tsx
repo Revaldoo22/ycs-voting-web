@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Download, Smartphone, Ticket } from "lucide-react";
+import { Download, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, LoadingState } from "@/components/states";
 import { useMyCoupons, useMyProfile, type CouponRow } from "@/lib/queries";
 
+/** Muat gambar hadiah handphone (public/hp.jpg); null bila gagal. */
+function loadPrizeImage(): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = "/hp.jpg";
+  });
+}
+
 /** Render kartu kupon jadi PNG (canvas, 2x retina) lalu unduh. */
-function downloadCoupon(c: CouponRow) {
+async function downloadCoupon(c: CouponRow) {
   const W = 1000;
   const H = 460;
   const SCALE = 2;
@@ -140,18 +150,38 @@ function downloadCoupon(c: CouponRow) {
     bx += wBar + 3;
   }
 
-  // Stub kanan
+  // Stub kanan — gambar hadiah handphone (fallback teks bila gagal dimuat)
   const SX = STUB_X + 34;
   ctx.fillStyle = "#f97316";
   ctx.font = "800 14px Arial";
-  ctx.fillText("HADIAH UTAMA", SX, TY + 66);
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "800 40px Arial";
-  ctx.fillText("HAND", SX, TY + 116);
-  ctx.fillText("PHONE", SX, TY + 160);
-  ctx.fillStyle = "#64748b";
-  ctx.font = "14px Arial";
-  ctx.fillText("Diundi oleh panitia", SX, TY + 196);
+  ctx.fillText("HADIAH UTAMA", SX, TY + 60);
+  const prize = await loadPrizeImage();
+  if (prize) {
+    const IW = 200;
+    const IH = Math.round((IW * prize.height) / prize.width);
+    const IX = STUB_X + 24;
+    const IY = TY + 78;
+    ctx.save();
+    r(IX, IY, IW, IH, 12);
+    ctx.clip();
+    ctx.drawImage(prize, IX, IY, IW, IH);
+    ctx.restore();
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 1.5;
+    r(IX, IY, IW, IH, 12);
+    ctx.stroke();
+    ctx.fillStyle = "#64748b";
+    ctx.font = "14px Arial";
+    ctx.fillText("Diundi oleh panitia", SX, IY + IH + 30);
+  } else {
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "800 40px Arial";
+    ctx.fillText("HAND", SX, TY + 116);
+    ctx.fillText("PHONE", SX, TY + 160);
+    ctx.fillStyle = "#64748b";
+    ctx.font = "14px Arial";
+    ctx.fillText("Diundi oleh panitia", SX, TY + 196);
+  }
 
   // Kode kecil vertikal di stub
   ctx.save();
@@ -229,7 +259,12 @@ export default function CouponPage() {
                   </CardContent>
                   {/* Kanan: aksi, dipisah garis putus ala tiket */}
                   <div className="flex w-28 flex-col items-center justify-center gap-2 border-l border-dashed bg-muted/30 p-3">
-                    <Smartphone className="h-6 w-6 text-primary" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/hp.jpg"
+                      alt="Hadiah handphone"
+                      className="h-14 w-20 rounded-md border object-cover"
+                    />
                     <Button size="sm" onClick={() => downloadCoupon(c)}>
                       <Download className="h-4 w-4" />
                     </Button>
