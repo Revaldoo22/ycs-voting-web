@@ -16,7 +16,7 @@ function loadPrizeImage(): Promise<HTMLImageElement | null> {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = "/hp.jpg";
+    img.src = "/hp.png";
   });
 }
 
@@ -157,22 +157,16 @@ async function downloadCoupon(c: CouponRow) {
   ctx.fillText("HADIAH UTAMA", SX, TY + 60);
   const prize = await loadPrizeImage();
   if (prize) {
-    const IW = 200;
+    // PNG transparan — gambar langsung di atas tiket putih tanpa kotak,
+    // biar menyatu dengan latar kupon.
+    const IW = 210;
     const IH = Math.round((IW * prize.height) / prize.width);
-    const IX = STUB_X + 24;
+    const IX = STUB_X + 20;
     const IY = TY + 78;
-    ctx.save();
-    r(IX, IY, IW, IH, 12);
-    ctx.clip();
     ctx.drawImage(prize, IX, IY, IW, IH);
-    ctx.restore();
-    ctx.strokeStyle = "#e2e8f0";
-    ctx.lineWidth = 1.5;
-    r(IX, IY, IW, IH, 12);
-    ctx.stroke();
     ctx.fillStyle = "#64748b";
     ctx.font = "14px Arial";
-    ctx.fillText("Diundi oleh panitia", SX, IY + IH + 30);
+    ctx.fillText("Diundi oleh panitia", SX, IY + IH + 28);
   } else {
     ctx.fillStyle = "#0f172a";
     ctx.font = "800 40px Arial";
@@ -261,9 +255,9 @@ export default function CouponPage() {
                   <div className="flex w-28 flex-col items-center justify-center gap-2 border-l border-dashed bg-muted/30 p-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="/hp.jpg"
+                      src="/hp.png"
                       alt="Hadiah handphone"
-                      className="h-14 w-20 rounded-md border object-cover"
+                      className="h-14 w-20 object-contain"
                     />
                     <Button size="sm" onClick={() => downloadCoupon(c)}>
                       <Download className="h-4 w-4" />
