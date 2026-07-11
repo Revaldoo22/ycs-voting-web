@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { GraduationCap, Home, LogOut, Menu } from "lucide-react";
+import { GraduationCap, HelpCircle, Home, LogOut, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,6 @@ export const PUBLIC_LINKS: NavLink[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/ranking", label: "Ranking" },
   { href: "/gelombang", label: "Klasemen" },
-  { href: "/panduan", label: "Panduan" },
 ];
 
 export function Navbar({
@@ -133,6 +132,25 @@ export function Navbar({
             </Button>
           )}
         </nav>
+
+        {/* Panduan: selalu tampak di luar menu — icon tanda tanya di mobile,
+            icon + teks di desktop. */}
+        {!showLogout && (
+          <Link
+            href="/panduan"
+            aria-label="Panduan penggunaan"
+            title="Panduan penggunaan"
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium transition-colors md:px-3",
+              pathname === "/panduan"
+                ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span className="hidden md:inline">Panduan</span>
+          </Link>
+        )}
 
         {/* Login / akun (halaman publik) */}
         {!showLogout && <AuthNav />}
