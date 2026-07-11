@@ -27,9 +27,7 @@ export type NavLink = {
 export const PUBLIC_LINKS: NavLink[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/ranking", label: "Ranking" },
-  { href: "/peringkat-sekolah", label: "Peringkat Sekolah" },
   { href: "/gelombang", label: "Klasemen" },
-  { href: "/top-voter", label: "Top Voter" },
   { href: "/panduan", label: "Panduan" },
 ];
 
