@@ -239,6 +239,8 @@ export default function OnboardingPage() {
   const manualRequired = status === "teman_luar";
   const manualOptional = status === "guru" || status === "keluarga";
   const showManual = manualRequired || manualOptional;
+  // Siswa yang sekolahnya tak ada di dropdown master → boleh ketik manual.
+  const [schoolNotFound, setSchoolNotFound] = React.useState(false);
 
   const DRAFT_KEY = "onboarding_draft";
   const restored = React.useRef(false);
@@ -357,7 +359,11 @@ export default function OnboardingPage() {
       if (!regencyCode) return "Pilih kabupaten/kota.";
       if (!status) return "Pilih statusmu.";
       if (fromMaster) {
-        if (!school) return "Pilih sekolahmu dari daftar.";
+        if (schoolNotFound) {
+          if (schoolManual.trim().length < 3) return "Ketik nama sekolahmu.";
+        } else if (!school) {
+          return "Pilih sekolahmu dari daftar.";
+        }
         if (!kelas) return "Pilih kelas.";
       }
       if (manualRequired) {
@@ -388,10 +394,13 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           name: name.trim(),
           phone_number: phone.trim(),
-          // Siswa: sekolah dari master (id) + kelas dropdown.
+          // Siswa: sekolah dari master (id) + kelas dropdown. Sekolah tak
+          // ada di daftar → kirim nama manual (backend find-or-create).
           // Guru/keluarga: sekolah & kelas manual (opsional).
           ...(fromMaster
-            ? { school_id: school?.id, class: kelas }
+            ? schoolNotFound
+              ? { school_name: schoolManual.trim(), class: kelas }
+              : { school_id: school?.id, class: kelas }
             : {
                 school_name: schoolManual.trim() || undefined,
                 class: classManual.trim() || undefined,
@@ -580,9 +589,22 @@ export default function OnboardingPage() {
                 />
               </div>
 
-              {/* teman_sekolah: sekolah dari master (SMA/SMK/MA) + kelas dropdown. */}
+              {/* teman_sekolah: sekolah dari master (SMA/SMK/MA) + kelas
+                  dropdown. Tak ada di daftar → boleh ketik manual. */}
               {fromMaster ? (
                 <>
+                  {schoolNotFound ? (
+                    <div className="space-y-1.5">
+                      <Label>
+                        Asal Sekolah <Req />
+                      </Label>
+                      <Input
+                        value={schoolManual}
+                        onChange={(e) => setSchoolManual(e.target.value)}
+                        placeholder="Ketik nama lengkap sekolahmu"
+                      />
+                    </div>
+                  ) : (
                   <Combobox
                     label={
                       <>
@@ -615,6 +637,20 @@ export default function OnboardingPage() {
                     }}
                     emptyText="Sekolah tak ditemukan. Coba kata kunci lain."
                   />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSchoolNotFound((v) => !v);
+                      setSchool(null);
+                      setSchoolQ("");
+                    }}
+                    className="cursor-pointer text-left text-xs text-primary hover:underline"
+                  >
+                    {schoolNotFound
+                      ? "Kembali cari sekolah dari daftar"
+                      : "Sekolahku tidak ada di daftar, isi manual"}
+                  </button>
                   <div className="space-y-1.5">
                     <Label>
                       Kelas <Req />
