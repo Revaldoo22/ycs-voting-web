@@ -293,7 +293,8 @@ export default function AdminSchoolsPage() {
         </>
       )}
 
-      {/* Dialog ganti kabupaten — satu untuk semua baris, searchable. */}
+      {/* Dialog ganti kabupaten — satu untuk semua baris, searchable +
+          bisa ketik manual (buat kabupaten baru lalu langsung pasang). */}
       <RegionPicker
         school={regionTarget}
         regions={regions ?? []}
@@ -301,6 +302,17 @@ export default function AdminSchoolsPage() {
         onPick={async (regionId) => {
           if (regionTarget) await setRegion(regionTarget.id, regionId);
           setRegionTarget(null);
+        }}
+        onCreate={async (name) => {
+          // Buat kabupaten baru, refresh daftar, lalu pasang ke sekolah ini.
+          const created = await api<{ id: string }>("/api/admin/regions", {
+            method: "POST",
+            body: JSON.stringify({ name: name.trim() }),
+          });
+          await qc.invalidateQueries({ queryKey: ["regions"] });
+          if (regionTarget) await setRegion(regionTarget.id, created.id);
+          setRegionTarget(null);
+          toast.success(`Kabupaten "${name.trim()}" dibuat & dipasang.`);
         }}
       />
 
@@ -348,26 +360,49 @@ export default function AdminSchoolsPage() {
   );
 }
 
-/** Dialog pilih kabupaten dengan pencarian (pengganti dropdown per baris). */
+/**
+ * Dialog pilih kabupaten: searchable dari data yang ada, ATAU ketik manual
+ * untuk membuat kabupaten baru lalu langsung dipasang ke sekolah.
+ */
 function RegionPicker({
   school,
   regions,
   onClose,
   onPick,
+  onCreate,
 }: {
   school: SchoolRow | null;
   regions: Region[];
   onClose: () => void;
   onPick: (regionId: string | null) => void;
+  onCreate: (name: string) => Promise<void>;
 }) {
   const [q, setQ] = React.useState("");
+  const [creating, setCreating] = React.useState(false);
   React.useEffect(() => {
     if (school) setQ("");
   }, [school]);
 
+  const query = q.trim();
   const filtered = regions.filter((r) =>
-    r.name.toLowerCase().includes(q.trim().toLowerCase()),
+    r.name.toLowerCase().includes(query.toLowerCase()),
   );
+  // Boleh buat manual bila ketikan cukup panjang & belum ada yang sama persis.
+  const exactExists = regions.some(
+    (r) => r.name.toLowerCase() === query.toLowerCase(),
+  );
+  const canCreate = query.length >= 2 && !exactExists;
+
+  async function create() {
+    setCreating(true);
+    try {
+      await onCreate(query);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal membuat kabupaten.");
+    } finally {
+      setCreating(false);
+    }
+  }
 
   return (
     <Dialog open={!!school} onOpenChange={(o) => !o && onClose()}>
@@ -377,7 +412,7 @@ function RegionPicker({
         </DialogHeader>
         <div className="space-y-3">
           <Input
-            placeholder="Ketik nama kabupaten/kota…"
+            placeholder="Cari, atau ketik nama kabupaten baru…"
             value={q}
             autoFocus
             onChange={(e) => setQ(e.target.value)}
@@ -405,12 +440,29 @@ function RegionPicker({
                 {r.name}
               </button>
             ))}
-            {filtered.length === 0 && (
+            {filtered.length === 0 && !canCreate && (
               <p className="px-3 py-2 text-sm text-muted-foreground">
-                Kabupaten tak ditemukan.
+                {query
+                  ? "Kabupaten tak ditemukan."
+                  : "Ketik untuk mencari kabupaten."}
               </p>
             )}
           </div>
+
+          {canCreate && (
+            <Button
+              className="w-full"
+              disabled={creating}
+              onClick={create}
+            >
+              {creating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Buat &amp; pilih &ldquo;{query}&rdquo;
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
