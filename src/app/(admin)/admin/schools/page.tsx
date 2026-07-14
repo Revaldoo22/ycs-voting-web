@@ -27,12 +27,13 @@ import {
 import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { useRegions, type Region } from "@/lib/queries";
-import { SelectBox } from "@/components/ui/select-box";
 import { api } from "@/lib/api-client";
 import { schoolSchema, type SchoolInput } from "@/lib/validations";
 import type { School } from "@/types/database";
 
 type SchoolRow = School & { region?: { id: string; name: string } | null };
+
+const PAGE_SIZE = 20;
 
 export default function AdminSchoolsPage() {
   const qc = useQueryClient();
@@ -45,6 +46,14 @@ export default function AdminSchoolsPage() {
   const [open, setOpen] = React.useState(false);
   const [manageRegions, setManageRegions] = React.useState(false);
   const [editing, setEditing] = React.useState<School | null>(null);
+  // Sekolah yang sedang diganti kabupatennya (dialog pencarian).
+  const [regionTarget, setRegionTarget] = React.useState<SchoolRow | null>(
+    null,
+  );
+  const [search, setSearch] = React.useState("");
+  const [page, setPage] = React.useState(1);
+
+  React.useEffect(() => setPage(1), [search]);
 
   async function setRegion(schoolId: string, regionId: string | null) {
     try {
@@ -139,12 +148,31 @@ export default function AdminSchoolsPage() {
     });
   }
 
+  // Filter nama/kabupaten lalu potong per halaman — DOM tetap ringan.
+  const filtered = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return data ?? [];
+    return (data ?? []).filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.region?.name?.toLowerCase().includes(q),
+    );
+  }, [data, search]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const paged = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Kelola Sekolah</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">Daftar sekolah asal peserta.</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Daftar sekolah asal peserta.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setManageRegions(true)}>
@@ -156,79 +184,125 @@ export default function AdminSchoolsPage() {
         </div>
       </div>
 
+      <Input
+        placeholder="Cari sekolah / kabupaten..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full sm:max-w-sm"
+      />
+
       {isLoading ? (
         <LoadingState />
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
       ) : !data || data.length === 0 ? (
         <EmptyState title="Belum ada sekolah" />
+      ) : filtered.length === 0 ? (
+        <EmptyState title="Tidak ada sekolah cocok pencarian" />
       ) : (
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nama Sekolah</TableHead>
-                  <TableHead>Kabupaten</TableHead>
-                  <TableHead className="text-right">Peserta</TableHead>
-                  <TableHead>Ditambahkan</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell>
-                      <div className="w-44">
-                        <SelectBox
-                          value={(s as SchoolRow).region?.id ?? ""}
-                          onChange={(v) => setRegion(s.id, v || null)}
-                          placeholder="Tanpa kabupaten"
-                          options={[
-                            { value: "", label: "Tanpa kabupaten" },
-                            ...(regions ?? []).map((r) => ({
-                              value: r.id,
-                              label: r.name,
-                            })),
-                          ]}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {counts?.[s.id] ?? 0}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(s.created_at).toLocaleDateString("id-ID")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Edit"
-                          onClick={() => openEdit(s)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive"
-                          title="Hapus"
-                          onClick={() => remove(s)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+        <>
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama Sekolah</TableHead>
+                    <TableHead>Kabupaten</TableHead>
+                    <TableHead className="text-right">Peserta</TableHead>
+                    <TableHead>Ditambahkan</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {paged.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">{s.name}</TableCell>
+                      <TableCell>
+                        {/* Nama kabupaten langsung dari data sekolah (join
+                            region_id di backend) — bukan hasil pencocokan
+                            dropdown, jadi selalu sesuai data. */}
+                        <button
+                          type="button"
+                          onClick={() => setRegionTarget(s)}
+                          title="Ganti kabupaten"
+                          className={
+                            "cursor-pointer rounded-md px-2 py-1 text-left text-sm transition-colors hover:bg-muted " +
+                            (s.region ? "" : "text-muted-foreground italic")
+                          }
+                        >
+                          {s.region?.name ?? "Tanpa kabupaten"}
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {counts?.[s.id] ?? 0}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(s.created_at).toLocaleDateString("id-ID")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="Edit"
+                            onClick={() => openEdit(s)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive"
+                            title="Hapus"
+                            onClick={() => remove(s)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage <= 1}
+                onClick={() => setPage(safePage - 1)}
+              >
+                Sebelumnya
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Hal {safePage} / {pageCount} · {filtered.length} sekolah
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage >= pageCount}
+                onClick={() => setPage(safePage + 1)}
+              >
+                Berikutnya
+              </Button>
+            </div>
+          )}
+        </>
       )}
+
+      {/* Dialog ganti kabupaten — satu untuk semua baris, searchable. */}
+      <RegionPicker
+        school={regionTarget}
+        regions={regions ?? []}
+        onClose={() => setRegionTarget(null)}
+        onPick={async (regionId) => {
+          if (regionTarget) await setRegion(regionTarget.id, regionId);
+          setRegionTarget(null);
+        }}
+      />
 
       <Dialog
         open={open}
@@ -271,6 +345,75 @@ export default function AdminSchoolsPage() {
         regions={regions ?? []}
       />
     </div>
+  );
+}
+
+/** Dialog pilih kabupaten dengan pencarian (pengganti dropdown per baris). */
+function RegionPicker({
+  school,
+  regions,
+  onClose,
+  onPick,
+}: {
+  school: SchoolRow | null;
+  regions: Region[];
+  onClose: () => void;
+  onPick: (regionId: string | null) => void;
+}) {
+  const [q, setQ] = React.useState("");
+  React.useEffect(() => {
+    if (school) setQ("");
+  }, [school]);
+
+  const filtered = regions.filter((r) =>
+    r.name.toLowerCase().includes(q.trim().toLowerCase()),
+  );
+
+  return (
+    <Dialog open={!!school} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Kabupaten untuk {school?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Input
+            placeholder="Ketik nama kabupaten/kota…"
+            value={q}
+            autoFocus
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <div className="max-h-72 space-y-1 overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => onPick(null)}
+              className="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm italic text-muted-foreground hover:bg-muted"
+            >
+              Tanpa kabupaten
+            </button>
+            {filtered.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => onPick(r.id)}
+                className={
+                  "block w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm hover:bg-muted " +
+                  (school?.region?.id === r.id
+                    ? "bg-primary/10 font-semibold text-primary"
+                    : "")
+                }
+              >
+                {r.name}
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-3 py-2 text-sm text-muted-foreground">
+                Kabupaten tak ditemukan.
+              </p>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
