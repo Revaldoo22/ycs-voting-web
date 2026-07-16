@@ -43,14 +43,6 @@ export default function HomePage() {
             >
               <Link href="/ranking">Peringkat Sementara</Link>
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-12 rounded-full bg-background/60 px-7 text-base backdrop-blur"
-              asChild
-            >
-              <Link href="/top-voter">Top Voter</Link>
-            </Button>
           </div>
           <PrizeButtons />
         </div>
