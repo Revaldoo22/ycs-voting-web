@@ -43,6 +43,21 @@ export default function HomePage() {
             >
               <Link href="/ranking">Peringkat Sementara</Link>
             </Button>
+            <Button
+              size="lg"
+              variant="accent"
+              className="h-12 rounded-full px-7 text-base shadow-lg shadow-accent/25"
+              asChild
+            >
+              <a
+                href="https://events.stekom.ac.id/ycs2026"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <GraduationCap className="h-5 w-5" />
+                Jadi Peserta YCS
+              </a>
+            </Button>
           </div>
           <PrizeButtons />
         </div>
