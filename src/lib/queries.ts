@@ -742,3 +742,43 @@ export function useMyCoupons(enabled: boolean) {
     queryFn: () => api<CouponRow[]>("/api/voter/coupons"),
   });
 }
+
+// --------------------------- Notifications ---------------------------
+export type NotificationRow = {
+  id: string;
+  type: "vote_rejected" | string;
+  title: string;
+  body: string;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type NotificationsResult = {
+  items: NotificationRow[];
+  unread: number;
+};
+
+export function useMyNotifications(enabled: boolean) {
+  return useQuery({
+    queryKey: ["my-notifications"],
+    enabled,
+    queryFn: () => api<NotificationsResult>("/api/voter/notifications"),
+    // Terasa hidup: cek notifikasi baru berkala.
+    refetchInterval: 30_000,
+  });
+}
+
+/** Tandai notifikasi dibaca. ids kosong = tandai semua. */
+export function useMarkNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids?: string[]) =>
+      api("/api/voter/notifications/read", {
+        method: "PATCH",
+        body: JSON.stringify({ ids: ids ?? [] }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-notifications"] });
+    },
+  });
+}

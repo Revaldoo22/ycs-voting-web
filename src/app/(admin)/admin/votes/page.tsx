@@ -11,10 +11,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
@@ -22,6 +24,14 @@ import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
+
+/** Alasan penolakan cepat — admin bisa klik atau ketik sendiri. */
+const REJECT_TEMPLATES = [
+  "Bukti follow tidak jelas / buram.",
+  "Screenshot bukan bukti follow.",
+  "Belum follow semua akun yang diminta.",
+  "Bukti tidak sesuai dengan tugas.",
+];
 
 const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString("id-ID", {
@@ -69,6 +79,11 @@ export default function AdminVotesPage() {
   const [page, setPage] = React.useState(1);
   const [preview, setPreview] = React.useState<string | null>(null);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  // Dialog tolak: { mode: "one", id } untuk satu vote, { mode: "bulk" } untuk terpilih.
+  const [rejectTarget, setRejectTarget] = React.useState<
+    { mode: "one"; id: string } | { mode: "bulk" } | null
+  >(null);
+  const [rejectReason, setRejectReason] = React.useState("");
   const qc = useQueryClient();
   const confirm = useConfirm();
 
@@ -88,15 +103,23 @@ export default function AdminVotesPage() {
   }
 
   const review = useMutation({
-    mutationFn: (v: { id: string; status: "approved" | "rejected" }) =>
+    mutationFn: (v: {
+      id: string;
+      status: "approved" | "rejected";
+      reason?: string;
+    }) =>
       api(`/api/admin/votes/${v.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ status: v.status }),
+        body: JSON.stringify({ status: v.status, reason: v.reason }),
       }),
     onSuccess: invalidate,
   });
   const bulkReview = useMutation({
-    mutationFn: (v: { ids: string[]; status: "approved" | "rejected" }) =>
+    mutationFn: (v: {
+      ids: string[];
+      status: "approved" | "rejected";
+      reason?: string;
+    }) =>
       api<{ processed: number }>("/api/admin/votes/bulk", {
         method: "POST",
         body: JSON.stringify(v),
@@ -111,14 +134,18 @@ export default function AdminVotesPage() {
   }, [tab, search]);
 
   const [processing, setProcessing] = React.useState<Set<string>>(new Set());
-  async function act(id: string, status: "approved" | "rejected") {
+  async function act(
+    id: string,
+    status: "approved" | "rejected",
+    reason?: string,
+  ) {
     setProcessing((prev) => new Set(prev).add(id));
     try {
-      await review.mutateAsync({ id, status });
+      await review.mutateAsync({ id, status, reason });
       toast.success(
         status === "approved"
           ? "Vote disetujui — poin masuk & kupon terbit."
-          : "Vote ditolak & dihapus — voter bisa vote ulang.",
+          : "Vote ditolak — voter dapat pemberitahuan & bisa vote ulang.",
       );
       setSelected((prev) => {
         const next = new Set(prev);
@@ -136,25 +163,41 @@ export default function AdminVotesPage() {
     }
   }
 
-  function bulkAct(status: "approved" | "rejected") {
+  // Konfirmasi tolak (satu / massal) dengan alasan yang diketik admin.
+  async function confirmReject() {
+    const reason = rejectReason.trim() || undefined;
+    const target = rejectTarget;
+    setRejectTarget(null);
+    setRejectReason("");
+    if (!target) return;
+
+    if (target.mode === "one") {
+      await act(target.id, "rejected", reason);
+      return;
+    }
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    try {
+      const res = await bulkReview.mutateAsync({ ids, status: "rejected", reason });
+      toast.success(`${res.processed} vote ditolak — voter diberi tahu.`);
+      setSelected(new Set());
+    } catch (e) {
+      toast.error("Gagal memproses: " + (e as Error).message);
+    }
+  }
+
+  function bulkApprove() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     confirm({
-      title:
-        status === "approved"
-          ? `Approve ${ids.length} vote sekaligus?`
-          : `Tolak ${ids.length} vote sekaligus?`,
+      title: `Approve ${ids.length} vote sekaligus?`,
       description:
-        status === "approved"
-          ? "Poin langsung masuk ke peserta terkait dan setiap voter mendapat kupon undian."
-          : "Vote terpilih DIHAPUS — para voter itu bisa vote ulang dengan bukti yang benar.",
-      confirmText: status === "approved" ? "Approve Semua" : "Tolak Semua",
+        "Poin langsung masuk ke peserta terkait dan setiap voter mendapat kupon undian.",
+      confirmText: "Approve Semua",
       onConfirm: async () => {
         try {
-          const res = await bulkReview.mutateAsync({ ids, status });
-          toast.success(
-            `${res.processed} vote ${status === "approved" ? "disetujui" : "ditolak"}.`,
-          );
+          const res = await bulkReview.mutateAsync({ ids, status: "approved" });
+          toast.success(`${res.processed} vote disetujui.`);
           setSelected(new Set());
         } catch (e) {
           toast.error("Gagal memproses: " + (e as Error).message);
@@ -265,11 +308,7 @@ export default function AdminVotesPage() {
             {selected.size} vote dipilih
           </p>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              disabled={bulkBusy}
-              onClick={() => bulkAct("approved")}
-            >
+            <Button size="sm" disabled={bulkBusy} onClick={bulkApprove}>
               {bulkBusy ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -282,7 +321,10 @@ export default function AdminVotesPage() {
               variant="outline"
               className="text-destructive"
               disabled={bulkBusy}
-              onClick={() => bulkAct("rejected")}
+              onClick={() => {
+                setRejectReason("");
+                setRejectTarget({ mode: "bulk" });
+              }}
             >
               <X className="h-4 w-4" />
               Tolak Terpilih
@@ -430,7 +472,10 @@ export default function AdminVotesPage() {
                           variant="outline"
                           className="flex-1 text-destructive"
                           disabled={busy}
-                          onClick={() => act(v.id, "rejected")}
+                          onClick={() => {
+                            setRejectReason("");
+                            setRejectTarget({ mode: "one", id: v.id });
+                          }}
                         >
                           <X className="h-4 w-4" />
                           Tolak
@@ -469,6 +514,76 @@ export default function AdminVotesPage() {
           )}
         </>
       )}
+
+      {/* Dialog tolak: alasan penolakan (masuk ke notifikasi voter) */}
+      <Dialog
+        open={!!rejectTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setRejectTarget(null);
+            setRejectReason("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {rejectTarget?.mode === "bulk"
+                ? `Tolak ${selected.size} vote`
+                : "Tolak vote"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Alasan ini dikirim ke voter sebagai pemberitahuan. Vote dihapus,
+              voter bisa vote ulang dengan bukti yang benar.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {REJECT_TEMPLATES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setRejectReason(t)}
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-xs transition-colors hover:bg-muted",
+                    rejectReason === t &&
+                      "border-primary/50 bg-primary/10 text-primary",
+                  )}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <Textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Tulis alasan penolakan (opsional)..."
+              rows={3}
+              maxLength={300}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setRejectTarget(null);
+                setRejectReason("");
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="outline"
+              className="text-destructive"
+              disabled={bulkBusy}
+              onClick={confirmReject}
+            >
+              <X className="h-4 w-4" />
+              Tolak &amp; Beri Tahu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Preview bukti ukuran penuh */}
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>

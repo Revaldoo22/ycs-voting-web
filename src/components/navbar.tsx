@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { AuthNav } from "@/components/auth-nav";
+import { NotificationBell } from "@/components/notification-bell";
 
 export type NavLink = {
   href: string;
@@ -151,6 +152,9 @@ export function Navbar({
             <span className="hidden md:inline">Panduan</span>
           </Link>
         )}
+
+        {/* Lonceng pemberitahuan (voter login, halaman publik) */}
+        {!showLogout && <NotificationBell />}
 
         {/* Login / akun (halaman publik) */}
         {!showLogout && <AuthNav />}
