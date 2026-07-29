@@ -1,0 +1,29 @@
+# File yang tidak perlu diunggah saat `vercel --prod`.
+# Vercel CLI tidak selalu menghormati .gitignore, jadi daftar ini dibuat
+# eksplisit. Tanpa file ini, node_modules (~466 MB) ikut terunggah.
+
+# Dependency: Vercel menjalankan install sendiri di server.
+node_modules
+
+# Hasil build lokal: Vercel build ulang dari sumber.
+.next
+.next-*
+dist
+*.tsbuildinfo
+
+# Env lokal. Nilai produksi diatur di dashboard Vercel atau .env.production.
+.env
+.env.local
+.env*.local
+
+# Riwayat git tidak dipakai saat build.
+.git
+.gitignore
+
+# Log & berkas kerja.
+*.log
+npm-debug.log*
+.DS_Store
+
+# Aset yang tidak dipakai kode (lihat catatan di README/CLAUDE.md).
+public/geo
