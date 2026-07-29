@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Award,
+  BadgeCheck,
   BookOpen,
   CalendarDays,
   GraduationCap,
   Heart,
   Info,
   MessageCircle,
+  ShieldCheck,
   Ticket,
   UserRound,
+  Wallet,
   Zap,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
@@ -17,10 +20,88 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const pageTitle =
+  "Panduan & Pendaftaran GRATIS - Youth Character Summit Universitas STEKOM";
+const pageDescription =
+  "Pendaftaran Youth Character Summit 2026 100% GRATIS tanpa biaya apa pun. Tidak ada biaya pendaftaran, biaya administrasi, atau uang partisipasi. Ikuti panduan cara daftar dan cara mendukung peserta di sini.";
+
 export const metadata: Metadata = {
-  title: "Panduan Penggunaan - Youth Character Summit",
-  description:
-    "Cara mendukung peserta Youth Character Summit Universitas STEKOM, untuk pendukung umum maupun peserta.",
+  title: pageTitle,
+  description: pageDescription,
+  keywords: [
+    "pendaftaran gratis",
+    "Youth Character Summit gratis",
+    "daftar YCS 2026 tanpa biaya",
+    "lomba pelajar gratis",
+    "beasiswa gratis SMA SMK",
+    "panduan pendaftaran Youth Character Summit",
+    "Universitas STEKOM",
+    "biaya pendaftaran YCS",
+  ],
+  alternates: { canonical: "/panduan" },
+  openGraph: {
+    title: pageTitle,
+    description: pageDescription,
+    type: "article",
+    locale: "id_ID",
+    url: "/panduan",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: pageTitle,
+    description: pageDescription,
+  },
+};
+
+/**
+ * Structured data: FAQPage untuk pertanyaan biaya (berpeluang muncul sebagai
+ * rich result di Google) + HowTo ringkas untuk alur pendaftaran gratis.
+ */
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Apakah pendaftaran Youth Character Summit gratis?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Ya, pendaftaran Youth Character Summit 2026 Universitas STEKOM sepenuhnya gratis. Tidak ada biaya pendaftaran, biaya administrasi, biaya seleksi, maupun biaya penjurian sepeser pun.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Berapa biaya pendaftaran Youth Character Summit 2026?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Biayanya Rp0. Seluruh tahapan mulai dari pendaftaran, seleksi Golden Buzzer, penilaian semi finalis, sampai pengumuman finalis tidak memungut biaya apa pun dari peserta maupun sekolah.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Apakah mendukung atau vote peserta dikenakan biaya?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Tidak. Memberi dukungan atau vote untuk peserta juga gratis. Kamu hanya perlu masuk dengan akun Google, dan setiap akun mendapat satu vote selama event.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Bagaimana jika ada orang yang meminta uang untuk pendaftaran?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Abaikan dan segera laporkan ke admin resmi Youth Character Summit lewat WhatsApp +62 888-8555-591. Panitia tidak pernah meminta pembayaran dalam bentuk apa pun.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Apakah beasiswa yang didapat peserta juga gratis tanpa potongan?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Ya. Beasiswa Rp3.000.000 untuk semi finalis dan Rp5.000.000 untuk finalis diberikan tanpa potongan biaya administrasi apa pun.",
+      },
+    },
+  ],
 };
 
 const ADMIN_WA_DISPLAY = "+62 888-8555-591";
@@ -48,6 +129,11 @@ function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
 export default function GuidePage() {
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        // Rich result FAQ untuk pertanyaan biaya pendaftaran.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }}
+      />
       <Navbar />
 
       <main className="container max-w-5xl space-y-8 py-8">
@@ -62,6 +148,58 @@ export default function GuidePage() {
             ikut mendukung temannya.
           </p>
         </div>
+
+        {/* ------------- Penegasan pendaftaran gratis (SEO utama) ------------- */}
+        <section
+          aria-labelledby="pendaftaran-gratis"
+          className="rounded-2xl border border-emerald-500/40 bg-emerald-500/5 p-5 sm:p-6"
+        >
+          <div className="flex flex-col items-center gap-3 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15">
+              <Wallet className="h-6 w-6 text-emerald-600" />
+            </span>
+            <h2
+              id="pendaftaran-gratis"
+              className="text-xl font-extrabold tracking-tight sm:text-2xl"
+            >
+              Semua Pendaftaran GRATIS, Tanpa Biaya Apa Pun
+            </h2>
+            <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
+              <b>Pendaftaran Youth Character Summit 2026 Universitas STEKOM
+              sepenuhnya gratis alias Rp0.</b>{" "}
+              Kamu tidak dipungut biaya pendaftaran, biaya administrasi, biaya
+              seleksi, biaya penjurian, maupun uang partisipasi. Ikut mendukung
+              atau vote peserta juga gratis. Semua yang ada di panduan ini bisa
+              kamu lakukan tanpa mengeluarkan uang sama sekali.
+            </p>
+          </div>
+
+          <ul className="mt-5 grid gap-2 sm:grid-cols-3">
+            {[
+              "Rp0 biaya pendaftaran peserta",
+              "Rp0 biaya administrasi & seleksi",
+              "Rp0 biaya untuk vote dan kupon undian",
+            ].map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-2 rounded-xl border bg-background/60 p-3 text-sm font-medium"
+              >
+                <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <span>
+              <b>Hati-hati penipuan.</b> Panitia tidak pernah meminta pembayaran
+              dengan alasan apa pun. Kalau ada yang meminta uang agar kamu lolos
+              atau agar bisa mendaftar, itu bukan panitia resmi. Laporkan ke
+              admin lewat WhatsApp {ADMIN_WA_DISPLAY}.
+            </span>
+          </p>
+        </section>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* ------------------- Panduan pendukung umum ------------------- */}
@@ -185,7 +323,7 @@ export default function GuidePage() {
             <ol className="space-y-4">
               <Step
                 n={1}
-                title="Pendaftaran dibuka 10 Juli 2026"
+                title="Pendaftaran dibuka 10 Juli 2026, gratis tanpa biaya"
                 desc="Tiap bulan ada pemilihan Golden Buzzer dan semi finalis: 10 sampai 31 Juli (5 Golden Buzzer Juli), 1 sampai 30 Agustus (10 Golden Buzzer plus 200 Semi Finalis Grup A), 1 sampai 29 September (15 Golden Buzzer plus Grup B), dan 1 sampai 30 Oktober (20 Golden Buzzer plus Grup C)."
               />
               <Step
@@ -257,6 +395,31 @@ export default function GuidePage() {
                 </span>
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* -------- FAQ biaya: teks jawaban sinkron dengan FAQ_JSON_LD -------- */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-emerald-600" />
+              Pertanyaan Seputar Biaya Pendaftaran
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Jawaban singkat soal biaya Youth Character Summit 2026.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-4">
+              {FAQ_JSON_LD.mainEntity.map((qa) => (
+                <div key={qa.name} className="space-y-1">
+                  <dt className="font-semibold">{qa.name}</dt>
+                  <dd className="text-sm text-muted-foreground">
+                    {qa.acceptedAnswer.text}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </CardContent>
         </Card>
 
