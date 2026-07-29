@@ -14,7 +14,8 @@ const ROUTES: Array<{
   { path: "/", priority: 1, changeFrequency: "daily" },
   { path: "/panduan", priority: 0.9, changeFrequency: "weekly" },
   { path: "/ranking", priority: 0.8, changeFrequency: "daily" },
-  { path: "/peringkat-sekolah", priority: 0.7, changeFrequency: "daily" },
+  // /peringkat-sekolah sengaja tidak dimasukkan: rute itu redirect (307) ke
+  // /ranking?tab=sekolah, dan URL redirect di sitemap dianggap error oleh Google.
   { path: "/gelombang", priority: 0.6, changeFrequency: "weekly" },
   { path: "/top-voter", priority: 0.5, changeFrequency: "daily" },
 ];
