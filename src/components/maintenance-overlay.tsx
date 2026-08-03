@@ -1,7 +1,11 @@
+"use client";
+
 import { Wrench } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 /** Full-screen overlay shown when NEXT_PUBLIC_MAINTENANCE=true. */
 export function MaintenanceOverlay() {
+  const t = useTranslation("maintenanceOverlay");
   if (process.env.NEXT_PUBLIC_MAINTENANCE !== "true") return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-primary via-blue-600 to-blue-700 p-6">
@@ -9,13 +13,8 @@ export function MaintenanceOverlay() {
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Wrench className="h-8 w-8 text-primary" />
         </div>
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          Sedang Dalam Perbaikan
-        </h1>
-        <p className="text-muted-foreground">
-          Website Youth Character Summit sedang dalam pemeliharaan sebentar.
-          Silakan kembali lagi nanti. Terima kasih atas pengertiannya 🙏
-        </p>
+        <h1 className="text-2xl font-extrabold tracking-tight">{t.title}</h1>
+        <p className="text-muted-foreground">{t.description}</p>
       </div>
     </div>
   );

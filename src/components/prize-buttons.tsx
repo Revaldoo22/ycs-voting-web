@@ -11,23 +11,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useTranslation } from "@/lib/i18n";
 
 export function PrizeButtons() {
+  const t = useTranslation("prizeButtons");
   return (
     <div className="flex justify-center">
       <Dialog>
         <DialogTrigger asChild>
           <Button size="sm" variant="accent" className="rounded-full">
             <Gift className="h-4 w-4" />
-            Reward
+            {t.trigger}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Reward YCS</DialogTitle>
-            <DialogDescription>
-              Pilih perjalananmu di Youth Character Summit.
-            </DialogDescription>
+            <DialogTitle>{t.dialogTitle}</DialogTitle>
+            <DialogDescription>{t.dialogDescription}</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -41,14 +41,13 @@ export function PrizeButtons() {
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <GraduationCap className="h-6 w-6" />
               </span>
-              <p className="font-bold">Jadi Peserta</p>
+              <p className="font-bold">{t.participantTitle}</p>
               <p className="text-sm text-muted-foreground">
-                Berkesempatan mengikuti acara <b>Youth Character Summit</b> dan
-                tampil sebagai peserta unggulan.
+                {t.participantDesc}
               </p>
               <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
-                Daftar sekarang
+                {t.participantCta}
               </div>
             </a>
 
@@ -57,14 +56,11 @@ export function PrizeButtons() {
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/15 text-accent">
                 <Users className="h-6 w-6" />
               </span>
-              <p className="font-bold">Jadi Voter</p>
-              <p className="text-sm text-muted-foreground">
-                Beri dukungan sesuai syarat yang berlaku, dapatkan kupon undian,
-                dan berkesempatan memenangkan <b>Handphone</b>.
-              </p>
+              <p className="font-bold">{t.voterTitle}</p>
+              <p className="text-sm text-muted-foreground">{t.voterDesc}</p>
               <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-accent">
                 <Smartphone className="h-3.5 w-3.5" />
-                Undian Handphone
+                {t.voterCta}
               </div>
             </div>
           </div>

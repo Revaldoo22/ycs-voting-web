@@ -8,11 +8,13 @@ import { EventClosedOverlay } from "@/components/event-closed-overlay";
 import { Leaderboard } from "@/components/leaderboard";
 import { SchoolRankings } from "@/components/school-rankings";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 type Tab = "peserta" | "sekolah";
 
 /** Ranking peserta & sekolah dalam satu halaman (tab). */
 export default function RankingPage() {
+  const t = useTranslation("ranking");
   // Tab awal dari ?tab= (link lama /peringkat-sekolah diarahkan ke sini).
   const [tab, setTab] = React.useState<Tab>(() => {
     if (typeof window === "undefined") return "peserta";
@@ -35,8 +37,8 @@ export default function RankingPage() {
   }, [tab]);
 
   const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
-    { key: "peserta", label: "Peserta", icon: GraduationCap },
-    { key: "sekolah", label: "Sekolah", icon: SchoolIcon },
+    { key: "peserta", label: t.tabParticipant, icon: GraduationCap },
+    { key: "sekolah", label: t.tabSchool, icon: SchoolIcon },
   ];
 
   return (
@@ -49,12 +51,9 @@ export default function RankingPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <Trophy className="h-6 w-6 text-primary" />
-            Ranking
+            {t.title}
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Peringkat peserta dan sekolah, diperbarui realtime mengikuti
-            dukungan yang masuk.
-          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
 
         {/* Pilih peserta / sekolah */}

@@ -52,7 +52,10 @@ export type MyProfile = {
   region: string | null;
   college_intent: "ya" | "tidak" | "ragu" | null;
   onboarded: boolean;
+  /** Follow IG/TikTok terverifikasi (gerbang klaim kupon undian HP). */
   followed: boolean;
+  /** Follow 2 saluran WhatsApp terverifikasi (gerbang vote pertama). */
+  wa_followed: boolean;
   /** Voter ini juga terdaftar sebagai peserta (email cocok). */
   is_participant: boolean;
   /** ID peserta miliknya sendiri (tak boleh vote ini). */
@@ -740,6 +743,30 @@ export function useMyCoupons(enabled: boolean) {
     queryKey: ["my-coupons"],
     enabled,
     queryFn: () => api<CouponRow[]>("/api/voter/coupons"),
+  });
+}
+
+/** Klaim kupon undian (follow + bukti), terpisah dari vote. */
+export type CouponClaim = {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  proofs: string[];
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export function useCouponClaim(enabled: boolean) {
+  return useQuery({
+    queryKey: ["coupon-claim"],
+    enabled,
+    queryFn: () => api<CouponClaim | null>("/api/voter/coupon-claim"),
+  });
+}
+
+export function submitCouponClaim(proofs: string[]) {
+  return api<CouponClaim>("/api/voter/coupon-claim", {
+    method: "POST",
+    body: JSON.stringify({ proofs }),
   });
 }
 

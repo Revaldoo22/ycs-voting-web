@@ -30,6 +30,7 @@ import {
 } from "@/lib/queries";
 import { cn, formatNumber } from "@/lib/utils";
 import { RankMedal, podiumRowClass } from "@/components/rank-medal";
+import { useTranslation } from "@/lib/i18n";
 
 /** Node drill-down (provinsi/kabupaten) — key stabil walau id null. */
 type DrillGroup = {
@@ -65,6 +66,7 @@ function GroupRow({
   mineLabel?: string;
   onClick: () => void;
 }) {
+  const t = useTranslation("gelombang");
   return (
     <button
       onClick={onClick}
@@ -83,7 +85,7 @@ function GroupRow({
           </p>
           <p className="text-xs text-muted-foreground">
             {group.children > 0 && <>{group.children} {childLabel} · </>}
-            {group.schools} sekolah
+            {group.schools} {t.schools}
           </p>
         </div>
       </div>
@@ -127,16 +129,18 @@ function groupBy(
  * adalah total poin.
  */
 function ListHeader({ label }: { label: string }) {
+  const t = useTranslation("gelombang");
   return (
     <div className="flex items-center justify-between gap-3 px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
       <span className="pl-8">{label}</span>
-      <span className="pr-6">Total Poin</span>
+      <span className="pr-6">{t.totalPoints}</span>
     </div>
   );
 }
 
 /** Leaderboard siswa satu sekolah (level terdalam drill-down). */
 function StudentBoard({ schoolId }: { schoolId: string }) {
+  const t = useTranslation("gelombang");
   const { data: participants, isLoading } = useParticipants(schoolId);
   const list = (participants ?? []).filter((p) => p.status === "active");
 
@@ -148,11 +152,11 @@ function StudentBoard({ schoolId }: { schoolId: string }) {
     );
   }
   if (list.length === 0) {
-    return <EmptyState title="Belum ada peserta aktif di sekolah ini" />;
+    return <EmptyState title={t.emptyActiveParticipants} />;
   }
   return (
     <div className="space-y-2">
-      <ListHeader label="Siswa" />
+      <ListHeader label={t.student} />
       {list.map((p, i) => (
         <Link
           key={p.id}
@@ -197,6 +201,7 @@ function StudentBoard({ schoolId }: { schoolId: string }) {
 type Crumb = { key: string; name: string };
 
 export default function PublicRoundsPage() {
+  const t = useTranslation("gelombang");
   const { data: rounds, isLoading } = usePublicRounds();
   const [selected, setSelected] = React.useState<string>("");
 
@@ -280,7 +285,7 @@ export default function PublicRoundsPage() {
 
   const crumbs: { label: string; onClick?: () => void }[] = [
     {
-      label: "Nasional",
+      label: t.national,
       onClick: () => {
         setProvince(null);
         setRegion(null);
@@ -303,12 +308,12 @@ export default function PublicRoundsPage() {
   ];
 
   const levelHint = school
-    ? "Leaderboard siswa sekolah ini. Klik siswa untuk mendukung."
+    ? t.levelHintStudent
     : region
-      ? "Leaderboard sekolah di kabupaten/kota ini. Klik sekolah untuk lihat siswanya."
+      ? t.levelHintSchool
       : province
-        ? "Leaderboard kabupaten/kota di provinsi ini. Klik untuk lihat sekolahnya."
-        : "Leaderboard provinsi se-nasional. Klik provinsi untuk menjelajah ke bawah.";
+        ? t.levelHintRegency
+        : t.levelHintProvince;
 
   return (
     <div className="min-h-screen">
@@ -320,21 +325,15 @@ export default function PublicRoundsPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <Flag className="h-6 w-6 text-primary" />
-            Klasemen
+            {t.title}
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Adu voting dari tingkat nasional sampai siswa: provinsi → kabupaten
-            → sekolah → siswa.
-          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
 
         {isLoading ? (
           <LoadingState />
         ) : !rounds || rounds.length === 0 ? (
-          <EmptyState
-            title="Klasemen belum tersedia"
-            description="Nantikan pengumuman dari panitia."
-          />
+          <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
         ) : (
           <>
             {/* Pemilih gelombang */}
@@ -360,8 +359,7 @@ export default function PublicRoundsPage() {
 
             {round?.status === "active" && (
               <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 text-center text-sm font-medium text-primary">
-                Voting masih berlangsung - klasemen live, hasil bisa berubah.
-                Terus dukung sekolahmu!
+                {t.votingLive}
               </div>
             )}
 
@@ -377,7 +375,7 @@ export default function PublicRoundsPage() {
                       onClick={back}
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Kembali
+                      {t.back}
                     </Button>
                   )}
                   <nav className="flex flex-wrap items-center gap-1 text-sm">
@@ -419,14 +417,14 @@ export default function PublicRoundsPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : (results ?? []).length === 0 ? (
-                  <EmptyState title="Belum ada sekolah di klasemen ini" />
+                  <EmptyState title={t.emptySchoolsInBoard} />
                 ) : school ? (
                   /* Level 4: siswa */
                   <StudentBoard schoolId={school.key} />
                 ) : region ? (
                   /* Level 3: sekolah */
                   <div className="space-y-2">
-                    <ListHeader label="Sekolah" />
+                    <ListHeader label={t.school} />
                     {schools.map((row, i) => (
                       <button
                         key={row.school_id}
@@ -449,13 +447,13 @@ export default function PublicRoundsPage() {
                             {row.school_name}
                           </span>
                           {row.school_id === mine.schoolId && (
-                            <MineBadge label="Sekolahmu" />
+                            <MineBadge label={t.yourSchool} />
                           )}
                           {row.status === "lolos" && (
-                            <Badge variant="success">Lolos</Badge>
+                            <Badge variant="success">{t.passed}</Badge>
                           )}
                           {row.status === "gugur" && (
-                            <Badge variant="secondary">Gugur</Badge>
+                            <Badge variant="secondary">{t.eliminated}</Badge>
                           )}
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
@@ -470,15 +468,15 @@ export default function PublicRoundsPage() {
                 ) : province ? (
                   /* Level 2: kabupaten */
                   <div className="space-y-2">
-                    <ListHeader label="Kabupaten/Kota" />
+                    <ListHeader label={t.regency} />
                     {regencies.map((g, i) => (
                       <GroupRow
                         key={g.key}
                         rank={i + 1}
                         group={g}
-                        childLabel="kabupaten"
+                        childLabel={t.regencyChildLabel}
                         mineLabel={
-                          g.key === mine.regionKey ? "Kabupatenmu" : undefined
+                          g.key === mine.regionKey ? t.yourRegency : undefined
                         }
                         onClick={() => setRegion({ key: g.key, name: g.name })}
                       />
@@ -487,15 +485,15 @@ export default function PublicRoundsPage() {
                 ) : (
                   /* Level 1: provinsi (nasional) */
                   <div className="space-y-2">
-                    <ListHeader label="Provinsi" />
+                    <ListHeader label={t.province} />
                     {provinces.map((g, i) => (
                       <GroupRow
                         key={g.key}
                         rank={i + 1}
                         group={g}
-                        childLabel="kabupaten"
+                        childLabel={t.regencyChildLabel}
                         mineLabel={
-                          g.key === mine.provinceKey ? "Provinsimu" : undefined
+                          g.key === mine.provinceKey ? t.yourProvince : undefined
                         }
                         onClick={() => setProvince({ key: g.key, name: g.name })}
                       />
@@ -508,8 +506,7 @@ export default function PublicRoundsPage() {
             {!school && !region && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Trophy className="h-3.5 w-3.5 text-accent" />
-                Poin wilayah = jumlah poin seluruh sekolah peserta di wilayah
-                itu (termasuk poin bawaan dari babak sebelumnya).
+                {t.regionPointsNote}
               </p>
             )}
           </>

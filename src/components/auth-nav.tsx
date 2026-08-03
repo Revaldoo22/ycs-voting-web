@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMyProfile } from "@/lib/queries";
+import { useTranslation } from "@/lib/i18n";
 
 /** Login/account button for the public navbar (voter-aware). */
 export function AuthNav() {
@@ -30,6 +31,7 @@ export function AuthNav() {
   const pathname = usePathname();
   const qc = useQueryClient();
   const { data: profile, isLoading } = useMyProfile();
+  const t = useTranslation("authNav");
 
   // Bawa halaman saat ini sebagai ?next= agar setelah login (dan onboarding,
   // bila perlu) user kembali ke halaman yang sedang dilihat.
@@ -41,7 +43,7 @@ export function AuthNav() {
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     qc.invalidateQueries({ queryKey: ["profile", "me"] });
-    toast.success("Berhasil keluar.");
+    toast.success(t.logoutSuccess);
     router.refresh();
   }
 
@@ -51,7 +53,7 @@ export function AuthNav() {
     return (
       <Button size="sm" asChild>
         <Link href={loginHref}>
-          <LogIn className="h-4 w-4" /> Masuk
+          <LogIn className="h-4 w-4" /> {t.login}
         </Link>
       </Button>
     );
@@ -77,26 +79,26 @@ export function AuthNav() {
             </span>
           )}
           <span className="hidden max-w-28 truncate sm:inline">
-            {profile.name || "Pendukung"}
+            {profile.name || t.supporterFallback}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <p className="truncate px-2 pt-1.5 text-sm font-semibold">
-          {profile.name || "Pendukung"}
+          {profile.name || t.supporterFallback}
         </p>
         {profile.is_participant && (
           <p className="px-2 pb-1.5">
             <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              Peserta
+              {t.participantBadge}
             </span>
           </p>
         )}
         {profile.role === "admin" && (
           <DropdownMenuItem asChild>
             <Link href="/admin" className="gap-2">
-              <LayoutDashboard className="h-4 w-4" /> Dashboard Admin
+              <LayoutDashboard className="h-4 w-4" /> {t.adminDashboard}
             </Link>
           </DropdownMenuItem>
         )}
@@ -114,7 +116,7 @@ export function AuthNav() {
                 }
                 className="gap-2"
               >
-                <UserRound className="h-4 w-4" /> Lengkapi Profil
+                <UserRound className="h-4 w-4" /> {t.completeProfile}
               </Link>
             </DropdownMenuItem>
           )}
@@ -123,7 +125,7 @@ export function AuthNav() {
           (profile.role === "voter" && profile.onboarded)) && (
           <DropdownMenuItem asChild>
             <Link href="/kupon" className="gap-2">
-              <Ticket className="h-4 w-4" /> Kupon Saya
+              <Ticket className="h-4 w-4" /> {t.myCoupons}
             </Link>
           </DropdownMenuItem>
         )}
@@ -133,7 +135,7 @@ export function AuthNav() {
           !profile.is_participant && (
             <DropdownMenuItem asChild>
               <Link href="/akun" className="gap-2">
-                <Settings className="h-4 w-4" /> Pengaturan Akun
+                <Settings className="h-4 w-4" /> {t.accountSettings}
               </Link>
             </DropdownMenuItem>
           )}
@@ -142,7 +144,7 @@ export function AuthNav() {
           onSelect={logout}
           className="gap-2 text-destructive focus:bg-destructive/10"
         >
-          <LogOut className="h-4 w-4" /> Keluar
+          <LogOut className="h-4 w-4" /> {t.logout}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

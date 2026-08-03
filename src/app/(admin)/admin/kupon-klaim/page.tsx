@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Check, CheckCheck, Loader2, Vote as VoteIcon, X } from "lucide-react";
+import { Check, CheckCheck, Loader2, Ticket, X } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ const PAGE_SIZE = 12;
 const REJECT_TEMPLATES = [
   "Bukti follow tidak jelas / buram.",
   "Screenshot bukan bukti follow.",
-  "Belum follow saluran WhatsApp yang diminta.",
+  "Belum follow semua akun yang diminta.",
   "Bukti tidak sesuai dengan tugas.",
 ];
 
@@ -41,41 +41,32 @@ const formatDateTime = (iso: string) =>
     minute: "2-digit",
   });
 
-/** Label bukti per key tugas WA (termasuk key lama). */
-const PROOF_LABELS: Record<string, string> = {
-  wa_stekom: "Saluran WA UnivSTEKOM",
-  wa_ycs: "Saluran WA YCS 2026",
-};
-
-type VoteRow = {
+type ClaimRow = {
   id: string;
   status: "pending" | "approved";
-  points: number;
+  proofs: string[];
   created_at: string;
+  reviewed_at: string | null;
+  profile_id: string;
   voter_name: string | null;
-  voter_phone: string | null;
   voter_email: string | null;
-  voter_status: string | null;
-  voter_school: string | null;
-  voter_class: string | null;
-  follow_proofs: string[] | Record<string, string> | null;
-  participants: { id: string; name: string; schools: { name: string } | null };
+  voter_phone: string | null;
 };
 
 /**
- * Verifikasi vote pertama voter: bukti follow 2 saluran WhatsApp (UnivSTEKOM
- * & YCS 2026). Approve = poin masuk ke peserta (TIDAK menerbitkan kupon —
- * kupon undian HP adalah klaim terpisah lewat follow IG/TikTok, lihat
- * halaman "Verifikasi Klaim Kupon"). Reject = vote dihapus (hak vote voter
- * kembali). Mendukung pilih banyak + approve/tolak massal.
+ * Verifikasi klaim kupon undian (follow IG/TikTok Univ STEKOM/TopLoker),
+ * TERPISAH dari vote (vote sudah punya gerbang follow-WA sendiri di halaman
+ * "Verifikasi Vote"). Approve = voter dapat kupon undian. Reject = klaim
+ * dihapus (voter bisa klaim ulang dengan bukti yang benar). Mendukung pilih
+ * banyak + approve/tolak massal.
  */
-export default function AdminVotesPage() {
+export default function AdminCouponClaimsPage() {
   const [tab, setTab] = React.useState<string>("pending");
   const [search, setSearch] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [preview, setPreview] = React.useState<string | null>(null);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
-  // Dialog tolak: { mode: "one", id } untuk satu vote, { mode: "bulk" } untuk terpilih.
+  // Dialog tolak: { mode: "one", id } untuk satu klaim, { mode: "bulk" } untuk terpilih.
   const [rejectTarget, setRejectTarget] = React.useState<
     { mode: "one"; id: string } | { mode: "bulk" } | null
   >(null);
@@ -84,18 +75,20 @@ export default function AdminVotesPage() {
   const confirm = useConfirm();
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["admin-votes", tab],
-    queryFn: () => api<VoteRow[]>(`/api/admin/votes?status=${tab}`),
+    queryKey: ["admin-coupon-claims", tab],
+    queryFn: () => api<ClaimRow[]>(`/api/admin/coupon-claims?status=${tab}`),
   });
   const { data: counts } = useQuery({
-    queryKey: ["admin-votes-counts"],
+    queryKey: ["admin-coupon-claims-counts"],
     queryFn: () =>
-      api<{ pending: number; approved: number }>("/api/admin/votes/counts"),
+      api<{ pending: number; approved: number }>(
+        "/api/admin/coupon-claims/counts",
+      ),
   });
 
   function invalidate() {
-    qc.invalidateQueries({ queryKey: ["admin-votes"] });
-    qc.invalidateQueries({ queryKey: ["admin-votes-counts"] });
+    qc.invalidateQueries({ queryKey: ["admin-coupon-claims"] });
+    qc.invalidateQueries({ queryKey: ["admin-coupon-claims-counts"] });
   }
 
   const review = useMutation({
@@ -104,7 +97,7 @@ export default function AdminVotesPage() {
       status: "approved" | "rejected";
       reason?: string;
     }) =>
-      api(`/api/admin/votes/${v.id}`, {
+      api(`/api/admin/coupon-claims/${v.id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: v.status, reason: v.reason }),
       }),
@@ -116,7 +109,7 @@ export default function AdminVotesPage() {
       status: "approved" | "rejected";
       reason?: string;
     }) =>
-      api<{ processed: number }>("/api/admin/votes/bulk", {
+      api<{ processed: number }>("/api/admin/coupon-claims/bulk", {
         method: "POST",
         body: JSON.stringify(v),
       }),
@@ -140,8 +133,8 @@ export default function AdminVotesPage() {
       await review.mutateAsync({ id, status, reason });
       toast.success(
         status === "approved"
-          ? "Vote disetujui — poin masuk."
-          : "Vote ditolak — voter dapat pemberitahuan & bisa vote ulang.",
+          ? "Klaim disetujui — kupon undian terbit."
+          : "Klaim ditolak — voter dapat pemberitahuan & bisa klaim ulang.",
       );
       setSelected((prev) => {
         const next = new Set(prev);
@@ -175,7 +168,7 @@ export default function AdminVotesPage() {
     if (ids.length === 0) return;
     try {
       const res = await bulkReview.mutateAsync({ ids, status: "rejected", reason });
-      toast.success(`${res.processed} vote ditolak — voter diberi tahu.`);
+      toast.success(`${res.processed} klaim ditolak — voter diberi tahu.`);
       setSelected(new Set());
     } catch (e) {
       toast.error("Gagal memproses: " + (e as Error).message);
@@ -186,13 +179,13 @@ export default function AdminVotesPage() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     confirm({
-      title: `Approve ${ids.length} vote sekaligus?`,
-      description: "Poin langsung masuk ke peserta terkait.",
+      title: `Approve ${ids.length} klaim sekaligus?`,
+      description: "Setiap voter langsung mendapat kupon undian.",
       confirmText: "Approve Semua",
       onConfirm: async () => {
         try {
           const res = await bulkReview.mutateAsync({ ids, status: "approved" });
-          toast.success(`${res.processed} vote disetujui.`);
+          toast.success(`${res.processed} klaim disetujui.`);
           setSelected(new Set());
         } catch (e) {
           toast.error("Gagal memproses: " + (e as Error).message);
@@ -208,8 +201,7 @@ export default function AdminVotesPage() {
       (v) =>
         v.voter_name?.toLowerCase().includes(q) ||
         v.voter_email?.toLowerCase().includes(q) ||
-        v.voter_phone?.toLowerCase().includes(q) ||
-        v.participants?.name.toLowerCase().includes(q),
+        v.voter_phone?.toLowerCase().includes(q),
     );
   }, [data, search]);
 
@@ -252,12 +244,12 @@ export default function AdminVotesPage() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <VoteIcon className="h-6 w-6 text-primary" />
-            Verifikasi Vote
+            <Ticket className="h-6 w-6 text-primary" />
+            Verifikasi Klaim Kupon
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Review bukti follow saluran WhatsApp (UnivSTEKOM &amp; YCS 2026)
-            vote pertama voter. Approve = poin masuk ke peserta.
+            Review bukti follow (IG &amp; TikTok) klaim kupon undian voter.
+            Approve = kupon undian terbit.
           </p>
         </div>
       </div>
@@ -278,7 +270,7 @@ export default function AdminVotesPage() {
           </TabsList>
         </Tabs>
         <Input
-          placeholder="Cari voter / peserta..."
+          placeholder="Cari voter..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full sm:max-w-xs"
@@ -300,7 +292,7 @@ export default function AdminVotesPage() {
       {selected.size > 0 && (
         <div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 backdrop-blur">
           <p className="text-sm font-semibold">
-            {selected.size} vote dipilih
+            {selected.size} klaim dipilih
           </p>
           <div className="flex gap-2">
             <Button size="sm" disabled={bulkBusy} onClick={bulkApprove}>
@@ -344,8 +336,8 @@ export default function AdminVotesPage() {
         <EmptyState
           title={
             tab === "pending"
-              ? "Tidak ada vote menunggu review"
-              : "Belum ada vote disetujui"
+              ? "Tidak ada klaim menunggu review"
+              : "Belum ada klaim disetujui"
           }
         />
       ) : (
@@ -354,18 +346,6 @@ export default function AdminVotesPage() {
             {paged.map((v) => {
               const busy = processing.has(v.id) || bulkBusy;
               const isSelected = selected.has(v.id);
-              // Format baru: array URL. Data lama: object key tugas → URL.
-              const proofs: { label: string; url: string }[] = Array.isArray(
-                v.follow_proofs,
-              )
-                ? v.follow_proofs.map((url, i) => ({
-                    label: `Bukti ${i + 1}`,
-                    url,
-                  }))
-                : Object.entries(v.follow_proofs ?? {}).map(([key, url]) => ({
-                    label: PROOF_LABELS[key] ?? key,
-                    url,
-                  }));
               return (
                 <Card
                   key={v.id}
@@ -391,13 +371,6 @@ export default function AdminVotesPage() {
                           <p className="truncate text-xs text-muted-foreground">
                             {v.voter_email} · {v.voter_phone}
                           </p>
-                          {(v.voter_school || v.voter_class) && (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {[v.voter_school, v.voter_class]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          )}
                         </div>
                       </div>
                       {v.status === "pending" ? (
@@ -407,33 +380,20 @@ export default function AdminVotesPage() {
                       )}
                     </div>
 
-                    <div className="rounded-lg border bg-muted/40 p-2 text-sm">
-                      Vote untuk{" "}
-                      <span className="font-semibold">
-                        {v.participants.name}
-                      </span>
-                      {v.participants.schools?.name && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          · {v.participants.schools.name}
-                        </span>
-                      )}
-                    </div>
-
                     <div className="grid grid-cols-2 gap-2">
-                      {proofs.map((pf) => (
+                      {v.proofs.map((url, i) => (
                         <button
-                          key={pf.label}
+                          key={url}
                           type="button"
-                          onClick={() => setPreview(pf.url)}
+                          onClick={() => setPreview(url)}
                           className="space-y-1 text-left"
                         >
                           <p className="text-xs font-medium text-muted-foreground">
-                            {pf.label}
+                            Bukti {i + 1}
                           </p>
                           <Image
-                            src={pf.url}
-                            alt={pf.label}
+                            src={url}
+                            alt={`Bukti ${i + 1}`}
                             width={220}
                             height={140}
                             className="h-28 w-full cursor-zoom-in rounded-md border object-cover"
@@ -495,7 +455,7 @@ export default function AdminVotesPage() {
                 Sebelumnya
               </Button>
               <span className="text-sm text-muted-foreground">
-                Hal {safePage} / {pageCount} · {filtered.length} vote
+                Hal {safePage} / {pageCount} · {filtered.length} klaim
               </span>
               <Button
                 variant="outline"
@@ -524,14 +484,14 @@ export default function AdminVotesPage() {
           <DialogHeader>
             <DialogTitle>
               {rejectTarget?.mode === "bulk"
-                ? `Tolak ${selected.size} vote`
-                : "Tolak vote"}
+                ? `Tolak ${selected.size} klaim`
+                : "Tolak klaim"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Alasan ini dikirim ke voter sebagai pemberitahuan. Vote dihapus,
-              voter bisa vote ulang dengan bukti yang benar.
+              Alasan ini dikirim ke voter sebagai pemberitahuan. Klaim
+              dihapus, voter bisa klaim ulang dengan bukti yang benar.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {REJECT_TEMPLATES.map((t) => (

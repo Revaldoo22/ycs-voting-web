@@ -15,6 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 import { AuthNav } from "@/components/auth-nav";
 import { NotificationBell } from "@/components/notification-bell";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslation } from "@/lib/i18n";
 
 export type NavLink = {
   href: string;
@@ -23,13 +25,6 @@ export type NavLink = {
   /** Render as a highlighted blue call-to-action button. */
   cta?: boolean;
 };
-
-/** Menu publik standar — SATU sumber, dipakai semua halaman publik. */
-export const PUBLIC_LINKS: NavLink[] = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/ranking", label: "Ranking" },
-  { href: "/gelombang", label: "Klasemen" },
-];
 
 export function Navbar({
   title,
@@ -40,14 +35,21 @@ export function Navbar({
   links?: NavLink[];
   showLogout?: boolean;
 }) {
+  const t = useTranslation("navbar");
+  // Menu publik standar — SATU sumber, dipakai semua halaman publik.
+  const publicLinks: NavLink[] = [
+    { href: "/", label: t.home, icon: Home },
+    { href: "/ranking", label: t.ranking },
+    { href: "/gelombang", label: t.gelombang },
+  ];
   // Tanpa prop links: halaman publik memakai menu standar (konsisten).
-  const navLinks = links ?? (showLogout ? [] : PUBLIC_LINKS);
+  const navLinks = links ?? (showLogout ? [] : publicLinks);
   const router = useRouter();
   const pathname = usePathname();
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    toast.success("Berhasil keluar.");
+    toast.success(t.logoutSuccess);
     router.push("/login");
     router.refresh();
   }
@@ -129,7 +131,7 @@ export function Navbar({
               onClick={logout}
             >
               <LogOut className="h-4 w-4" />
-              Keluar
+              {t.logout}
             </Button>
           )}
         </nav>
@@ -139,8 +141,8 @@ export function Navbar({
         {!showLogout && (
           <Link
             href="/panduan"
-            aria-label="Panduan penggunaan"
-            title="Panduan penggunaan"
+            aria-label={t.panduanTitle}
+            title={t.panduanTitle}
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium transition-colors md:px-3",
               pathname === "/panduan"
@@ -149,9 +151,12 @@ export function Navbar({
             )}
           >
             <HelpCircle className="h-5 w-5" />
-            <span className="hidden md:inline">Panduan</span>
+            <span className="hidden md:inline">{t.panduan}</span>
           </Link>
         )}
+
+        {/* Pilih bahasa (halaman publik) */}
+        {!showLogout && <LanguageSwitcher />}
 
         {/* Lonceng pemberitahuan (voter login, halaman publik) */}
         {!showLogout && <NotificationBell />}
@@ -199,7 +204,7 @@ export function Navbar({
                       className="text-destructive focus:bg-destructive/10"
                     >
                       <LogOut className="h-4 w-4" />
-                      Keluar
+                      {t.logout}
                     </DropdownMenuItem>
                   </>
                 )}

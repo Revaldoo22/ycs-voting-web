@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Flag, Timer } from "lucide-react";
 import { useActiveRound } from "@/lib/queries";
+import { useTranslation } from "@/lib/i18n";
 
 function pad(n: number) {
   return String(Math.max(0, n)).padStart(2, "0");
@@ -11,6 +12,7 @@ function pad(n: number) {
 
 /** Banner gelombang aktif + hitung mundur ke ends_at (bila dijadwalkan). */
 export function RoundCountdown() {
+  const t = useTranslation("roundCountdown");
   const { data: round } = useActiveRound();
   const [now, setNow] = React.useState(() => Date.now());
 
@@ -37,12 +39,12 @@ export function RoundCountdown() {
     >
       <Flag className="h-4 w-4 shrink-0 text-primary" />
       <span className="min-w-0 truncate">
-        <strong>{round.name}</strong> sedang berlangsung
+        <strong>{round.name}</strong> {t.ongoing}
       </span>
       {left !== null &&
         (over ? (
           <span className="shrink-0 rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-bold text-destructive">
-            Berakhir
+            {t.ended}
           </span>
         ) : (
           <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold tabular-nums text-primary-foreground">

@@ -18,12 +18,14 @@ import { Input } from "@/components/ui/input";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { useMyProfile, useParticipants, useVoterToday } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = 20;
 
 type Scope = "school" | "region" | "all";
 
 export function ParticipantGrid() {
+  const t = useTranslation("participantGrid");
   const { data, isLoading, isError, refetch } = useParticipants();
   const { data: me } = useMyProfile();
   // Peserta yang sudah di-vote akun ini → card gold + label "Sudah kamu vote".
@@ -121,10 +123,7 @@ export function ParticipantGrid() {
 
   if (active.length === 0)
     return (
-      <EmptyState
-        title="Belum ada peserta"
-        description="Peserta akan tampil setelah ditambahkan panitia."
-      />
+      <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
     );
 
   const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
@@ -132,16 +131,16 @@ export function ParticipantGrid() {
   const paged = list.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
   const SCOPES: { key: Scope; label: string; icon: React.ElementType }[] = [
-    { key: "school", label: "Sekolahku", icon: SchoolIcon },
-    { key: "region", label: "Kabupatenku", icon: MapPin },
-    { key: "all", label: "Semua", icon: Globe2 },
+    { key: "school", label: t.scopeSchool, icon: SchoolIcon },
+    { key: "region", label: t.scopeRegion, icon: MapPin },
+    { key: "all", label: t.scopeAll, icon: Globe2 },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Input
-          placeholder="Cari peserta atau sekolah..."
+          placeholder={t.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full sm:max-w-sm"
@@ -173,12 +172,12 @@ export function ParticipantGrid() {
         <EmptyState
           title={
             q
-              ? "Tidak ada peserta cocok pencarian"
+              ? t.noMatch
               : scope === "school"
-                ? "Belum ada peserta dari sekolahmu"
+                ? t.emptySchoolScope
                 : scope === "region"
-                  ? "Belum ada peserta dari kabupatenmu"
-                  : "Belum ada peserta"
+                  ? t.emptyRegionScope
+                  : t.emptyTitle
           }
         />
       ) : (
@@ -220,17 +219,17 @@ export function ParticipantGrid() {
                     </div>
                   )}
                   <span className="absolute right-2 top-2 rounded-full border border-white/30 bg-black/45 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
-                    {formatNumber(p.total_points)} poin
+                    {formatNumber(p.total_points)} {t.points}
                   </span>
                   {voted && (
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-300 px-2.5 py-0.5 text-xs font-bold text-amber-950 shadow-[0_0_12px_rgba(251,191,36,0.7)]">
                       <BadgeCheck className="h-3.5 w-3.5" />
-                      Sudah Kamu Vote
+                      {t.votedBadge}
                     </span>
                   )}
                   {pending && (
                     <span className="absolute left-2 top-2 rounded-full border border-amber-300/50 bg-black/45 px-2.5 py-0.5 text-xs font-bold text-amber-300 backdrop-blur-sm">
-                      Vote Menunggu Review
+                      {t.pendingBadge}
                     </span>
                   )}
                 </div>
@@ -249,13 +248,13 @@ export function ParticipantGrid() {
                     {voted ? (
                       <>
                         <BadgeCheck className="mr-1 h-3.5 w-3.5" />
-                        Sudah kamu vote
+                        {t.votedLabel}
                       </>
                     ) : pending ? (
-                      <>Menunggu review admin</>
+                      <>{t.pendingLabel}</>
                     ) : (
                       <>
-                        Dukung
+                        {t.supportCta}
                         <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                       </>
                     )}
@@ -276,10 +275,10 @@ export function ParticipantGrid() {
             disabled={current <= 1}
             onClick={() => setPage(current - 1)}
           >
-            Sebelumnya
+            {t.prev}
           </Button>
           <span className="text-sm text-muted-foreground">
-            Hal {current} / {pageCount}
+            {t.pageOf(current, pageCount)}
           </span>
           <Button
             variant="outline"
@@ -287,7 +286,7 @@ export function ParticipantGrid() {
             disabled={current >= pageCount}
             onClick={() => setPage(current + 1)}
           >
-            Berikutnya
+            {t.next}
           </Button>
         </div>
       )}

@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { VoterStatus } from "@/lib/validations";
+import { useTranslation } from "@/lib/i18n";
 
 export type VoterFormData = {
   name: string;
@@ -29,13 +30,6 @@ export const emptyVoter: VoterFormData = {
   school: "",
   class: "",
 };
-
-const STATUS_OPTIONS: { value: VoterStatus; label: string }[] = [
-  { value: "teman_sekolah", label: "Teman satu sekolah" },
-  { value: "guru", label: "Guru" },
-  { value: "keluarga", label: "Keluarga" },
-  { value: "teman_luar", label: "Teman di luar sekolah" },
-];
 
 const CLASS_OPTIONS = ["10", "11", "12", "alumni"];
 const STORAGE_KEY = "fkp_voter_info";
@@ -71,6 +65,13 @@ export function VoterFormFields({
   data: VoterFormData;
   onChange: (d: VoterFormData) => void;
 }) {
+  const t = useTranslation("voterFormFields");
+  const STATUS_OPTIONS: { value: VoterStatus; label: string }[] = [
+    { value: "teman_sekolah", label: t.statusSchoolmate },
+    { value: "guru", label: t.statusTeacher },
+    { value: "keluarga", label: t.statusFamily },
+    { value: "teman_luar", label: t.statusOutsideFriend },
+  ];
   const set = (patch: Partial<VoterFormData>) =>
     onChange({ ...data, ...patch });
 
@@ -81,16 +82,16 @@ export function VoterFormFields({
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <Label>Nama Lengkap</Label>
+        <Label>{t.fullName}</Label>
         <Input
           value={data.name}
           onChange={(e) => set({ name: e.target.value })}
-          placeholder="Nama kamu"
+          placeholder={t.namePlaceholder}
         />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>Nomor WhatsApp</Label>
+          <Label>{t.whatsappNumber}</Label>
           <Input
             inputMode="tel"
             value={data.phone_number}
@@ -99,17 +100,17 @@ export function VoterFormFields({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Email</Label>
+          <Label>{t.email}</Label>
           <Input
             type="email"
             value={data.email}
             onChange={(e) => set({ email: e.target.value })}
-            placeholder="email@contoh.com"
+            placeholder={t.emailPlaceholder}
           />
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label>Status</Label>
+        <Label>{t.status}</Label>
         <Select
           value={data.status || undefined}
           onValueChange={(v) =>
@@ -123,7 +124,7 @@ export function VoterFormFields({
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Pilih status" />
+            <SelectValue placeholder={t.statusPlaceholder} />
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((s) => (
@@ -138,9 +139,9 @@ export function VoterFormFields({
       {data.status && (
         <div className="space-y-1.5">
           <Label>
-            Asal Sekolah{" "}
+            {t.schoolOrigin}{" "}
             <span className="text-muted-foreground">
-              {schoolRequired ? "" : "(opsional)"}
+              {schoolRequired ? "" : t.optional}
             </span>
           </Label>
           <Input
@@ -148,25 +149,25 @@ export function VoterFormFields({
             onChange={(e) =>
               set({ school: e.target.value, ...(!e.target.value ? { class: "" } : {}) })
             }
-            placeholder="Nama sekolah"
+            placeholder={t.schoolPlaceholder}
           />
         </div>
       )}
 
       {showClass && (
         <div className="space-y-1.5">
-          <Label>Kelas</Label>
+          <Label>{t.class}</Label>
           <Select
             value={data.class || undefined}
             onValueChange={(v) => set({ class: v })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Pilih kelas" />
+              <SelectValue placeholder={t.classPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {CLASS_OPTIONS.map((c) => (
                 <SelectItem key={c} value={c}>
-                  {c === "alumni" ? "Alumni" : `Kelas ${c}`}
+                  {c === "alumni" ? t.alumni : t.classN(c)}
                 </SelectItem>
               ))}
             </SelectContent>

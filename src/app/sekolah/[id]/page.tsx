@@ -22,6 +22,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { api } from "@/lib/api-client";
 import { useParticipants } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 type SchoolDetail = {
   school_id: string;
@@ -41,6 +42,7 @@ export default function SchoolPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const t = useTranslation("sekolah");
   const {
     data: school,
     isLoading,
@@ -65,7 +67,7 @@ export default function SchoolPage({
       <main className="container max-w-3xl space-y-6 py-8">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/peringkat-sekolah">
-            <ArrowLeft className="h-4 w-4" /> Kembali ke Peringkat
+            <ArrowLeft className="h-4 w-4" /> {t.backToRanking}
           </Link>
         </Button>
 
@@ -74,7 +76,7 @@ export default function SchoolPage({
         ) : isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : !school ? (
-          <EmptyState title="Sekolah tidak ditemukan" />
+          <EmptyState title={t.notFound} />
         ) : (
           <>
             {/* Header sekolah */}
@@ -96,7 +98,7 @@ export default function SchoolPage({
                     <span className="block text-2xl font-extrabold tabular-nums text-primary">
                       {formatNumber(school.points)}
                     </span>
-                    <span className="text-xs text-muted-foreground">poin</span>
+                    <span className="text-xs text-muted-foreground">{t.points}</span>
                   </span>
                 </div>
 
@@ -114,7 +116,7 @@ export default function SchoolPage({
                   </div>
                   <div className="rounded-lg border bg-muted/30 p-3 text-center">
                     <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                      <Trophy className="h-3.5 w-3.5" /> Nasional
+                      <Trophy className="h-3.5 w-3.5" /> {t.national}
                     </p>
                     <p className="text-xl font-extrabold tabular-nums">
                       #{school.global_rank}
@@ -130,12 +132,12 @@ export default function SchoolPage({
             {/* Peserta */}
             <section>
               <h2 className="mb-3 text-lg font-semibold">
-                Peserta ({active.length})
+                {t.participants(active.length)}
               </h2>
               {loadingP ? (
                 <LoadingState />
               ) : active.length === 0 ? (
-                <EmptyState title="Belum ada peserta aktif" />
+                <EmptyState title={t.emptyActive} />
               ) : (
                 <div className="space-y-1.5">
                   {active.map((p, i) => (
@@ -167,11 +169,11 @@ export default function SchoolPage({
                           {p.name}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {formatNumber(p.total_points)} poin
+                          {formatNumber(p.total_points)} {t.points}
                         </p>
                       </div>
                       <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-primary">
-                        Dukung
+                        {t.support}
                         <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                       </span>
                     </Link>

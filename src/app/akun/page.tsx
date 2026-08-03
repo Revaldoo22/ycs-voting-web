@@ -15,20 +15,21 @@ import { Label } from "@/components/ui/label";
 import { SelectBox } from "@/components/ui/select-box";
 import { api } from "@/lib/api-client";
 import { useMyProfile, useRegions, useSchools } from "@/lib/queries";
-
-const STATUS_OPTIONS = [
-  { value: "teman_sekolah", label: "Teman sekolah peserta" },
-  { value: "guru", label: "Guru" },
-  { value: "keluarga", label: "Keluarga peserta" },
-  { value: "teman_luar", label: "Teman di luar sekolah" },
-];
+import { useTranslation } from "@/lib/i18n";
 
 export default function AccountPage() {
   const router = useRouter();
   const qc = useQueryClient();
+  const t = useTranslation("akun");
   const { data: me, isLoading } = useMyProfile();
   const { data: schools } = useSchools();
   const { data: regions } = useRegions();
+  const STATUS_OPTIONS = [
+    { value: "teman_sekolah", label: t.statusSchoolmate },
+    { value: "guru", label: t.statusTeacher },
+    { value: "keluarga", label: t.statusFamily },
+    { value: "teman_luar", label: t.statusOutsideFriend },
+  ];
 
   const [name, setName] = React.useState("");
   const [schoolText, setSchoolText] = React.useState("");
@@ -72,8 +73,8 @@ export default function AccountPage() {
   }, [schoolText, schools, ready]);
 
   async function save() {
-    if (name.trim().length < 2) return void toast.error("Nama minimal 2 karakter.");
-    if (schoolText.trim().length < 2) return void toast.error("Isi nama sekolah.");
+    if (name.trim().length < 2) return void toast.error(t.nameMinLength);
+    if (schoolText.trim().length < 2) return void toast.error(t.schoolRequired);
 
     setBusy(true);
     try {
@@ -93,11 +94,11 @@ export default function AccountPage() {
           college_intent: intent || undefined,
         }),
       });
-      toast.success("Akun diperbarui.");
+      toast.success(t.updated);
       qc.invalidateQueries({ queryKey: ["profile", "me"] });
       qc.invalidateQueries({ queryKey: ["my-school-rank"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menyimpan.");
+      toast.error(e instanceof Error ? e.message : t.saveFailed);
     } finally {
       setBusy(false);
     }
@@ -117,13 +118,13 @@ export default function AccountPage() {
       <main className="container max-w-xl space-y-6 py-8">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/">
-            <ArrowLeft className="h-4 w-4" /> Kembali
+            <ArrowLeft className="h-4 w-4" /> {t.back}
           </Link>
         </Button>
 
         <Card>
           <CardHeader>
-            <CardTitle>Pengaturan Akun</CardTitle>
+            <CardTitle>{t.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Identitas terkunci: foto (Google) + email + WA */}
@@ -131,7 +132,7 @@ export default function AccountPage() {
               {me?.avatar_url ? (
                 <Image
                   src={me.avatar_url}
-                  alt="Foto profil"
+                  alt={t.photoLabel}
                   width={48}
                   height={48}
                   className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-primary/20"
@@ -144,22 +145,19 @@ export default function AccountPage() {
               <div className="min-w-0 text-sm">
                 <p className="truncate font-medium">{me?.email}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  WA: {me?.phone_number ?? "-"} · Foto mengikuti akun Google
-                  (login ulang untuk refresh)
+                  WA: {me?.phone_number ?? "-"} · {t.waPhotoNote}
                 </p>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label>Nama Lengkap</Label>
+              <Label>{t.fullName}</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} />
-              <p className="text-xs text-muted-foreground">
-                Ganti nama ikut memperbarui nama di riwayat dukunganmu.
-              </p>
+              <p className="text-xs text-muted-foreground">{t.nameNote}</p>
             </div>
 
             <div className="space-y-1.5">
-              <Label>Asal Sekolah</Label>
+              <Label>{t.schoolOrigin}</Label>
               <Input
                 list="account-schools"
                 value={schoolText}
@@ -175,25 +173,25 @@ export default function AccountPage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Kelas</Label>
+                <Label>{t.class}</Label>
                 <SelectBox
                   value={kelas}
                   onChange={setKelas}
-                  placeholder="Pilih"
+                  placeholder={t.choose}
                   options={[
-                    { value: "10", label: "Kelas 10" },
-                    { value: "11", label: "Kelas 11" },
-                    { value: "12", label: "Kelas 12" },
-                    { value: "alumni", label: "Alumni" },
+                    { value: "10", label: t.classN("10") },
+                    { value: "11", label: t.classN("11") },
+                    { value: "12", label: t.classN("12") },
+                    { value: "alumni", label: t.alumni },
                   ]}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>{t.status}</Label>
                 <SelectBox
                   value={status}
                   onChange={setStatus}
-                  placeholder="Pilih"
+                  placeholder={t.choose}
                   options={STATUS_OPTIONS.map((o) => ({
                     value: o.value,
                     label: o.label,
@@ -204,11 +202,11 @@ export default function AccountPage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Kabupaten / Kota</Label>
+                <Label>{t.region}</Label>
                 <SelectBox
                   value={region}
                   onChange={setRegion}
-                  placeholder="Pilih"
+                  placeholder={t.choose}
                   options={(regions ?? []).map((r) => ({
                     value: r.id,
                     label: r.name,
@@ -216,15 +214,15 @@ export default function AccountPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Niat Kuliah</Label>
+                <Label>{t.collegeIntent}</Label>
                 <SelectBox
                   value={intent}
                   onChange={setIntent}
-                  placeholder="Pilih"
+                  placeholder={t.choose}
                   options={[
-                    { value: "ya", label: "Ya" },
-                    { value: "ragu", label: "Masih ragu" },
-                    { value: "tidak", label: "Tidak" },
+                    { value: "ya", label: t.intentYes },
+                    { value: "ragu", label: t.intentUnsure },
+                    { value: "tidak", label: t.intentNo },
                   ]}
                 />
               </div>
@@ -236,7 +234,7 @@ export default function AccountPage() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              Simpan Perubahan
+              {t.saveChanges}
             </Button>
           </CardContent>
         </Card>

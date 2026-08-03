@@ -3,12 +3,14 @@
 import { AlertTriangle, Inbox, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/lib/i18n";
 
-export function LoadingState({ label = "Memuat..." }: { label?: string }) {
+export function LoadingState({ label }: { label?: string }) {
+  const t = useTranslation("states");
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
       <Loader2 className="h-8 w-8 animate-spin" />
-      <p className="text-sm">{label}</p>
+      <p className="text-sm">{label ?? t.loading}</p>
     </div>
   );
 }
@@ -29,16 +31,17 @@ export function CardSkeletonGrid({ count = 6 }: { count?: number }) {
 }
 
 export function EmptyState({
-  title = "Belum ada data",
+  title,
   description,
 }: {
   title?: string;
   description?: string;
 }) {
+  const t = useTranslation("states");
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-16 text-center">
       <Inbox className="h-10 w-10 text-muted-foreground" />
-      <p className="font-medium">{title}</p>
+      <p className="font-medium">{title ?? t.empty}</p>
       {description && (
         <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
       )}
@@ -47,19 +50,20 @@ export function EmptyState({
 }
 
 export function ErrorState({
-  message = "Terjadi kesalahan saat memuat data.",
+  message,
   onRetry,
 }: {
   message?: string;
   onRetry?: () => void;
 }) {
+  const t = useTranslation("states");
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 py-16 text-center">
       <AlertTriangle className="h-10 w-10 text-destructive" />
-      <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
+      <p className="max-w-sm text-sm text-muted-foreground">{message ?? t.error}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          Coba lagi
+          {t.retry}
         </Button>
       )}
     </div>

@@ -13,18 +13,20 @@ import {
   type NotificationRow,
 } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n/types";
 
 /** Waktu relatif ringkas dalam bahasa umum (contoh: "3 jam lalu"). */
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: Dictionary["notificationBell"]): string {
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const menit = Math.floor(diff / 60000);
-  if (menit < 1) return "baru saja";
-  if (menit < 60) return `${menit} menit lalu`;
+  if (menit < 1) return t.justNow;
+  if (menit < 60) return t.minutesAgo(menit);
   const jam = Math.floor(menit / 60);
-  if (jam < 24) return `${jam} jam lalu`;
+  if (jam < 24) return t.hoursAgo(jam);
   const hari = Math.floor(jam / 24);
-  return `${hari} hari lalu`;
+  return t.daysAgo(hari);
 }
 
 /** Lonceng pemberitahuan voter — hanya tampil untuk voter yang sudah login. */
@@ -33,6 +35,7 @@ export function NotificationBell() {
   const enabled = !!me && me.role === "voter";
   const { data } = useMyNotifications(enabled);
   const markRead = useMarkNotificationsRead();
+  const t = useTranslation("notificationBell");
 
   if (!enabled) return null;
 
@@ -48,7 +51,7 @@ export function NotificationBell() {
     <DropdownMenu onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
-          aria-label="Pemberitahuan"
+          aria-label={t.ariaLabel}
           className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Bell className="h-5 w-5" />
@@ -61,14 +64,14 @@ export function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-3 py-2">
-          <p className="text-sm font-semibold">Pemberitahuan</p>
+          <p className="text-sm font-semibold">{t.title}</p>
         </div>
 
         {items.length === 0 ? (
           <div className="px-3 py-8 text-center">
             <Bell className="mx-auto mb-2 h-6 w-6 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
-              Belum ada pemberitahuan.
+              {t.empty}
             </p>
           </div>
         ) : (
@@ -91,7 +94,7 @@ export function NotificationBell() {
                       {n.body}
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground/70">
-                      {timeAgo(n.created_at)}
+                      {timeAgo(n.created_at, t)}
                     </p>
                   </div>
                 </div>

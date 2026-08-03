@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n";
 
 /** Official Google "G" mark (SVG, per brand guidelines — not an emoji). */
 function GoogleIcon() {
@@ -29,14 +30,15 @@ function GoogleIcon() {
 }
 
 export function GoogleButton() {
+  const t = useTranslation("login");
   const params = useSearchParams();
   const next = params.get("next");
 
   useEffect(() => {
     if (params.get("sso") === "failed") {
-      toast.error("Login Google gagal. Coba lagi.");
+      toast.error(t.googleLoginFailed);
     }
-  }, [params]);
+  }, [params, t.googleLoginFailed]);
 
   return (
     <a
@@ -44,7 +46,7 @@ export function GoogleButton() {
       className="flex h-10 w-full cursor-pointer items-center justify-center gap-2.5 rounded-lg border border-input bg-background text-sm font-semibold shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <GoogleIcon />
-      Masuk sebagai Voter
+      {t.signInAsVoter}
     </a>
   );
 }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTopVoters } from "@/lib/queries";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { formatNumber, cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 function RankIcon({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="h-5 w-5 text-amber-500" />;
@@ -17,36 +18,30 @@ function RankIcon({ rank }: { rank: number }) {
 
 export default function TopVoterPage() {
   const { data, isLoading, isError, refetch } = useTopVoters(200);
+  const t = useTranslation("topVoter");
 
   return (
     <div className="min-h-screen">
-      <Navbar title="Top Voter Teraktif" />
+      <Navbar title={t.title} />
       <main className="container max-w-2xl py-8">
         <Card className="mb-6 border-accent/40 bg-accent/5">
           <CardContent className="flex items-center gap-3 p-4">
             <Gift className="h-8 w-8 text-accent" />
             <div className="text-sm">
-              <p className="font-semibold">Hadiah Top 5 Voter</p>
-              <p className="text-muted-foreground">
-                Tumbler eksklusif + sertifikat penghargaan.
-              </p>
+              <p className="font-semibold">{t.prizeTitle}</p>
+              <p className="text-muted-foreground">{t.prizeDescription}</p>
             </div>
           </CardContent>
         </Card>
 
-        <p className="mb-4 text-sm text-muted-foreground">
-          Peringkat berdasarkan jumlah vote, quest selesai, dan aktivitas valid.
-        </p>
+        <p className="mb-4 text-sm text-muted-foreground">{t.rankingNote}</p>
 
         {isLoading ? (
           <CardSkeletonGrid count={3} />
         ) : isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : !data || data.length === 0 ? (
-          <EmptyState
-            title="Belum ada voter aktif"
-            description="Top voter akan muncul setelah ada aktivitas dukungan."
-          />
+          <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
         ) : (
           <ol className="space-y-2">
             {data.map((v, i) => {
@@ -65,11 +60,11 @@ export default function TopVoterPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{v.voter_name}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {v.school_name ?? "-"} · {formatNumber(v.votes)} vote ·{" "}
-                      {formatNumber(v.quests)} quest
+                      {v.school_name ?? "-"} · {formatNumber(v.votes)} {t.vote} ·{" "}
+                      {formatNumber(v.quests)} {t.quest}
                     </p>
                   </div>
-                  <Badge variant="accent">{formatNumber(v.score)} poin</Badge>
+                  <Badge variant="accent">{formatNumber(v.score)} {t.points}</Badge>
                 </li>
               );
             })}

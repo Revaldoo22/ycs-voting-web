@@ -8,9 +8,11 @@ import { formatNumber, cn } from "@/lib/utils";
 import { CardSkeletonGrid, EmptyState, ErrorState } from "@/components/states";
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { RankMedal, podiumRowClass } from "@/components/rank-medal";
+import { useTranslation } from "@/lib/i18n";
 
 export function Leaderboard({ limit = 50 }: { limit?: number }) {
   const { data, isLoading, isError, refetch } = useLeaderboard(limit);
+  const t = useTranslation("leaderboard");
   // Foto yang sedang di-zoom (pop-up, latar blur).
   const [zoom, setZoom] = React.useState<{ src: string; alt: string } | null>(
     null,
@@ -20,10 +22,7 @@ export function Leaderboard({ limit = 50 }: { limit?: number }) {
   if (isError) return <ErrorState onRetry={() => refetch()} />;
   if (!data || data.length === 0)
     return (
-      <EmptyState
-        title="Belum ada peserta"
-        description="Leaderboard akan tampil saat peserta sudah ditambahkan."
-      />
+      <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
     );
 
   return (
@@ -48,9 +47,7 @@ export function Leaderboard({ limit = 50 }: { limit?: number }) {
                   p.photo_url && setZoom({ src: p.photo_url, alt: p.name })
                 }
                 className={cn("shrink-0", p.photo_url && "cursor-zoom-in")}
-                aria-label={
-                  p.photo_url ? `Perbesar foto ${p.name}` : undefined
-                }
+                aria-label={p.photo_url ? t.zoomPhoto(p.name) : undefined}
               >
                 <Avatar className="h-11 w-11 border">
                   {p.photo_url && <AvatarImage src={p.photo_url} alt={p.name} />}
@@ -64,7 +61,7 @@ export function Leaderboard({ limit = 50 }: { limit?: number }) {
                 </p>
               </div>
               <Badge variant={rank <= 3 ? "accent" : "secondary"} className="shrink-0">
-                {formatNumber(p.total_points)} poin
+                {formatNumber(p.total_points)} {t.points}
               </Badge>
             </li>
           );

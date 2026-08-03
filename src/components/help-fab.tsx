@@ -2,12 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/utils";
-
-const ADMIN_WA_LINK =
-  "https://wa.me/628888555591?text=" +
-  encodeURIComponent(
-    "Halo Admin YCS, saya butuh bantuan terkait web voting Youth Character Summit.",
-  );
+import { useTranslation } from "@/lib/i18n";
 
 /** Logo WhatsApp (glyph resmi, SVG) agar langsung dikenali. */
 function WhatsAppIcon() {
@@ -24,19 +19,23 @@ function WhatsAppIcon() {
  */
 export function HelpFab() {
   const pathname = usePathname();
+  const t = useTranslation("helpFab");
   if (pathname?.startsWith("/admin")) return null;
+
+  const waLink =
+    "https://wa.me/628888555591?text=" + encodeURIComponent(t.waMessage);
 
   return (
     <a
-      href={ADMIN_WA_LINK}
+      href={waLink}
       target="_blank"
       rel="noopener noreferrer"
       onClick={() => trackEvent("help_wa_click", { path: pathname ?? "" })}
-      aria-label="Butuh bantuan? Chat admin via WhatsApp"
+      aria-label={t.ariaLabel}
       className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-[#25D366] py-2.5 pl-3 pr-4 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 sm:bottom-6 sm:right-6"
     >
       <WhatsAppIcon />
-      Butuh bantuan?
+      {t.label}
     </a>
   );
 }

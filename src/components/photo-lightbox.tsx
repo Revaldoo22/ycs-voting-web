@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 /**
  * Pop-up foto ukuran penuh dengan latar belakang halaman diblur.
@@ -18,6 +19,7 @@ export function PhotoLightbox({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslation("photoLightbox");
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -43,7 +45,7 @@ export function PhotoLightbox({
     >
       <button
         type="button"
-        aria-label="Tutup"
+        aria-label={t.close}
         onClick={onClose}
         className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
       >

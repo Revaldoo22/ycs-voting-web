@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslation } from "@/lib/i18n";
 
 const VIDEO_ID = "unCD3pcd0FA";
 
@@ -44,6 +45,7 @@ function loadYouTubeApi(): Promise<void> {
  * lagi, supaya video tidak pernah terlihat ter-pause saat di-scroll.
  */
 export function HeroVideo() {
+  const t = useTranslation("heroVideo");
   const hostRef = React.useRef<HTMLDivElement>(null);
   const sectionRef = React.useRef<HTMLElement>(null);
   const playerRef = React.useRef<YTPlayer | null>(null);
@@ -174,7 +176,7 @@ export function HeroVideo() {
         href="#hero"
         className="absolute inset-x-0 bottom-2 z-10 mx-auto flex w-fit cursor-pointer flex-col items-center gap-1 text-xs font-semibold text-white/90 transition-colors hover:text-white md:bottom-5"
       >
-        Scroll untuk mulai mendukung
+        {t.scrollCta}
         <span className="animate-bounce">▾</span>
       </a>
     </section>

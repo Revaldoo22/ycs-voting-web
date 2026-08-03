@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn, formatNumber } from "@/lib/utils";
 import { RankMedal, podiumRowClass } from "@/components/rank-medal";
+import { useTranslation } from "@/lib/i18n";
 
 /**
  * Dropdown kabupaten yang bisa dicari: ketik nama, muncul rekomendasi,
@@ -29,6 +30,7 @@ function RegionCombobox({
   value: string;
   onChange: (id: string) => void;
 }) {
+  const t = useTranslation("schoolRankings");
   const [q, setQ] = React.useState("");
   const [open, setOpen] = React.useState(false);
 
@@ -50,7 +52,7 @@ function RegionCombobox({
             setOpen(true);
           }}
         >
-          Ganti
+          {t.change}
         </button>
       </div>
     );
@@ -60,7 +62,7 @@ function RegionCombobox({
     <div className="space-y-1.5">
       <Input
         value={q}
-        placeholder="Ketik nama kabupaten/kota…"
+        placeholder={t.searchPlaceholder}
         autoComplete="off"
         onChange={(e) => {
           setQ(e.target.value);
@@ -87,9 +89,7 @@ function RegionCombobox({
         </div>
       )}
       {open && q.trim() && filtered.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          Kabupaten tak ditemukan. Coba kata kunci lain.
-        </p>
+        <p className="text-xs text-muted-foreground">{t.noRegionFound}</p>
       )}
     </div>
   );
@@ -111,6 +111,7 @@ function RankingList({
   rows: SchoolRankingRow[];
   highlightId?: string;
 }) {
+  const t = useTranslation("schoolRankings");
   const max = Math.max(1, ...rows.map((r) => r.points));
   return (
     <div className="space-y-1.5">
@@ -142,12 +143,12 @@ function RankingList({
                   {r.school_name}
                   {mine && (
                     <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
-                      Sekolahmu
+                      {t.yourSchool}
                     </span>
                   )}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {r.region_name} · {r.participants} peserta
+                  {r.region_name} · {r.participants} {t.participants}
                 </p>
               </div>
               <span className="shrink-0 font-bold tabular-nums text-primary">
@@ -166,6 +167,7 @@ function RankingList({
  * di halaman /ranking.
  */
 export function SchoolRankings() {
+  const t = useTranslation("schoolRankings");
   const { data: me } = useMyProfile();
   const voterReady = !!me && me.role === "voter" && me.onboarded;
   const { data: myRank } = useMySchoolRank(voterReady);
@@ -190,9 +192,7 @@ export function SchoolRankings() {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">
-        Poin sekolah = akumulasi poin seluruh pesertanya.
-      </p>
+      <p className="text-sm text-muted-foreground">{t.pointsFormula}</p>
 
       {/* 2 pilihan */}
       <div className="flex rounded-xl border p-1 text-sm font-medium">
@@ -206,7 +206,7 @@ export function SchoolRankings() {
           onClick={() => setTab("kab")}
         >
           <MapPin className="h-4 w-4" />
-          Kabupatenmu
+          {t.tabRegion}
         </button>
         <button
           className={cn(
@@ -218,7 +218,7 @@ export function SchoolRankings() {
           onClick={() => setTab("nasional")}
         >
           <Trophy className="h-4 w-4" />
-          Nasional
+          {t.tabNational}
         </button>
       </div>
 
@@ -233,11 +233,11 @@ export function SchoolRankings() {
               <span className="font-bold text-foreground">
                 #{myRank.region_rank}
               </span>
-              /{myRank.region_total} di {myRank.region_name} ·{" "}
+              /{myRank.region_total} {t.ofRegion} {myRank.region_name} ·{" "}
               <span className="font-bold text-foreground">
                 #{myRank.global_rank}
               </span>
-              /{myRank.global_total} nasional
+              /{myRank.global_total} {t.national}
             </p>
           </CardContent>
         </Card>
@@ -247,7 +247,7 @@ export function SchoolRankings() {
       {tab === "kab" && (
         <div className="space-y-1">
           <span className="text-xs font-medium text-muted-foreground">
-            Kabupaten{regionName ? `: ${regionName}` : ""}
+            {t.regionLabel(regionName)}
           </span>
           <RegionCombobox
             regions={regions ?? []}
@@ -261,11 +261,11 @@ export function SchoolRankings() {
         <LoadingState />
       ) : tab === "kab" && !regionId ? (
         <EmptyState
-          title="Pilih kabupaten dulu"
-          description="Login sebagai pendukung agar kabupatenmu terpilih otomatis."
+          title={t.chooseRegionTitle}
+          description={t.chooseRegionDescription}
         />
       ) : !rows || rows.length === 0 ? (
-        <EmptyState title="Belum ada sekolah" />
+        <EmptyState title={t.emptySchools} />
       ) : (
         <RankingList rows={rows} highlightId={myRank?.school_id} />
       )}

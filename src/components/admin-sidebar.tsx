@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
   School,
   ScrollText,
+  Ticket,
   Trophy,
   UserPlus,
   Users,
@@ -48,6 +49,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/quests", label: "Quest", icon: Trophy },
       { href: "/admin/submissions", label: "Submission", icon: ClipboardCheck },
       { href: "/admin/votes", label: "Verifikasi Vote", icon: Vote },
+      { href: "/admin/kupon-klaim", label: "Verifikasi Klaim Kupon", icon: Ticket },
     ],
   },
   {

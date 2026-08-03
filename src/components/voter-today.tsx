@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMyProfile, useMySchoolRank, useVoterToday } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 /** Peringkat sekolah si voter: global & dalam kabupaten. */
 function SchoolRankCard({ enabled }: { enabled: boolean }) {
+  const t = useTranslation("voterToday");
   const { data: rank } = useMySchoolRank(enabled);
   if (!rank) return null;
   return (
@@ -20,13 +22,13 @@ function SchoolRankCard({ enabled }: { enabled: boolean }) {
             {rank.school_name}
           </p>
           <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-            {formatNumber(rank.points)} poin
+            {formatNumber(rank.points)} {t.points}
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-lg border bg-background p-2.5 text-center">
             <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-              <Trophy className="h-3.5 w-3.5" /> Global
+              <Trophy className="h-3.5 w-3.5" /> {t.global}
             </p>
             <p className="text-xl font-extrabold tabular-nums">
               #{rank.global_rank}
@@ -54,6 +56,7 @@ function SchoolRankCard({ enabled }: { enabled: boolean }) {
 
 /** Ringkasan vote voter login: 1 akun = 1 vote seumur event. */
 export function VoterTodayPanel() {
+  const t = useTranslation("voterToday");
   const { data: me } = useMyProfile();
   const enabled = !!me && me.role === "voter" && me.onboarded;
   const { data } = useVoterToday(enabled);
@@ -65,17 +68,15 @@ export function VoterTodayPanel() {
     <Card className="border-primary/20 bg-primary/[0.03]">
       <CardContent className="space-y-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold">Vote-mu</p>
+          <p className="text-sm font-semibold">{t.yourVote}</p>
           <Badge variant="outline" className="gap-1">
             <Heart className="h-3 w-3" />
-            {data.has_voted ? "Sudah vote" : "Belum vote"}
+            {data.has_voted ? t.hasVoted : t.notVoted}
           </Badge>
         </div>
 
         {data.votes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Kamu belum vote - pilih satu peserta untuk kamu dukung!
-          </p>
+          <p className="text-sm text-muted-foreground">{t.noVoteYet}</p>
         ) : (
           <ul className="flex flex-wrap gap-1.5">
             {data.votes.map((v, i) => (

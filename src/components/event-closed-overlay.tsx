@@ -14,41 +14,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/lib/queries";
+import { useTranslation } from "@/lib/i18n";
 
 const PMB_URL =
   "https://pmb.stekom.ac.id/?utm_source=fkp&utm_medium=overlay&utm_campaign=festival_karakter_pelajar&utm_content=event_closed";
 
-const REASONS = [
-  {
-    icon: CalendarClock,
-    title: "Kuliah Sambil Kerja",
-    desc: "6000+ mahasiswa aktif kelas karyawan. 90–95% mahasiswa belum wisuda sudah dapat kerja. Bisa full online, hybrid, atau tatap muka. Jadwal fleksibel weekend Sabtu/Minggu, tidak mengganggu jam kerja.",
-  },
-  {
-    icon: Wallet,
-    title: "Biaya Fleksibel",
-    desc: "Bisa dipilih sesuai keinginan dan kebutuhan karyawan. Dapat dicicil sesuai kemampuan, mulai 498rb/bulan.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Cepat Lulus, Bisa Tanpa Skripsi",
-    desc: "Kuliah lebih cepat, dijamin lulus tepat waktu, bisa tanpa skripsi. Semua ujian UTS & UAS bisa full online.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Langsung Kuliah Tanpa Tes",
-    desc: "Daftar sekarang bisa langsung ikut perkuliahan tanpa tes masuk!",
-  },
-  {
-    icon: Rocket,
-    title: "Kuliah Cepat 2,5 Tahun",
-    desc: "Jalur RPL, konversi mata kuliah hingga 3 semester untuk S1.",
-  },
-  {
-    icon: Wifi,
-    title: "Layanan Akademik Online",
-    desc: "Bisa diakses dari mana pun dan kapan pun secara full online.",
-  },
+const REASON_ICONS = [
+  CalendarClock,
+  Wallet,
+  GraduationCap,
+  BadgeCheck,
+  Rocket,
+  Wifi,
 ];
 
 /**
@@ -59,6 +36,7 @@ const REASONS = [
  */
 export function EventClosedOverlay() {
   const { data: settings } = useSettings();
+  const t = useTranslation("eventClosedOverlay");
   if (!settings || settings.event_open) return null;
 
   return (
@@ -75,11 +53,10 @@ export function EventClosedOverlay() {
               <PartyPopper className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Event Sudah Ditutup
+              {t.title}
             </h1>
             <p className="mx-auto max-w-xl text-muted-foreground">
-              {settings.closed_message ||
-                "Terima kasih sudah ikut meramaikan Youth Character Summit! Periode dukungan & quest sudah berakhir. Nantikan event berikutnya - sampai jumpa lagi! 🎉"}
+              {settings.closed_message || t.defaultMessage}
             </p>
           </div>
         </div>
@@ -89,19 +66,20 @@ export function EventClosedOverlay() {
           <div className="space-y-2 text-center">
             <div className="mx-auto inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium">
               <Sparkles className="h-4 w-4 text-primary" />
-              Sambil Menunggu Event Berikutnya
+              {t.promoTag}
             </div>
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-              Kenapa Memilih Universitas STEKOM?
+              {t.promoTitle}
             </h2>
             <p className="mx-auto max-w-xl text-sm text-muted-foreground">
-              Sistem kuliah fleksibel, biaya terjangkau, dan jalur belajar yang
-              relevan untuk masa depan karier. Yuk, wujudkan langkah kuliahmu!
+              {t.promoDescription}
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            {REASONS.map(({ icon: Icon, title, desc }, i) => (
+            {t.reasons.map(({ title, desc }, i) => {
+              const Icon = REASON_ICONS[i];
+              return (
               <div
                 key={title}
                 className="group flex gap-3 rounded-2xl border bg-background/60 p-4 transition-colors hover:border-primary/40 hover:bg-primary/[0.04]"
@@ -119,24 +97,23 @@ export function EventClosedOverlay() {
                   </p>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* CTA */}
           <div className="space-y-3 rounded-2xl bg-gradient-to-r from-primary/10 to-indigo-500/10 p-5 text-center">
             <p className="flex items-center justify-center gap-1.5 text-sm font-medium">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              Pendaftaran mahasiswa baru sedang dibuka
+              {t.registrationOpen}
             </p>
             <Button size="lg" className="w-full sm:w-auto" asChild>
               <a href={PMB_URL} target="_blank" rel="noopener noreferrer">
-                Daftar Kuliah Sekarang
+                {t.cta}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </a>
             </Button>
-            <p className="text-xs text-muted-foreground">
-              Info & pendaftaran di pmb.stekom.ac.id
-            </p>
+            <p className="text-xs text-muted-foreground">{t.ctaInfo}</p>
           </div>
         </div>
       </div>

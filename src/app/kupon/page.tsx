@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, LoadingState } from "@/components/states";
 import { useMyCoupons, useMyProfile, type CouponRow } from "@/lib/queries";
+import { useLocale, useTranslation } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n/types";
 
 /** Muat gambar hadiah handphone (public/hp.jpg); null bila gagal. */
 function loadPrizeImage(): Promise<HTMLImageElement | null> {
@@ -21,7 +23,11 @@ function loadPrizeImage(): Promise<HTMLImageElement | null> {
 }
 
 /** Render kartu kupon jadi PNG (canvas, 2x retina) lalu unduh. */
-async function downloadCoupon(c: CouponRow) {
+async function downloadCoupon(
+  c: CouponRow,
+  t: Dictionary["kupon"],
+  locale: "id" | "en",
+) {
   const W = 1000;
   const H = 460;
   const SCALE = 2;
@@ -29,7 +35,7 @@ async function downloadCoupon(c: CouponRow) {
   canvas.width = W * SCALE;
   canvas.height = H * SCALE;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return void toast.error("Browser tidak mendukung unduhan.");
+  if (!ctx) return void toast.error(t.downloadNotSupported);
   ctx.scale(SCALE, SCALE);
 
   const r = (
@@ -103,11 +109,11 @@ async function downloadCoupon(c: CouponRow) {
   const LX = TX + 44;
   ctx.fillStyle = "#0e7490";
   ctx.font = "800 15px Arial";
-  ctx.fillText("Y O U T H   C H A R A C T E R   S U M M I T", LX, TY + 46);
+  ctx.fillText(t.canvasBrand, LX, TY + 46);
 
   ctx.fillStyle = "#0f172a";
   ctx.font = "800 34px Arial";
-  ctx.fillText("Kupon Undian Handphone", LX, TY + 92);
+  ctx.fillText(t.canvasTitle, LX, TY + 92);
 
   // Kode dalam panel
   ctx.fillStyle = "#ecfeff";
@@ -127,18 +133,16 @@ async function downloadCoupon(c: CouponRow) {
   ctx.fillStyle = "#64748b";
   ctx.font = "15px Arial";
   ctx.fillText(
-    "Terbit " +
-      new Date(c.created_at).toLocaleDateString("id-ID", {
-        day: "2-digit", month: "long", year: "numeric",
-      }),
+    t.canvasIssued(
+      new Date(c.created_at).toLocaleDateString(
+        locale === "id" ? "id-ID" : "en-US",
+        { day: "2-digit", month: "long", year: "numeric" },
+      ),
+    ),
     LX,
     TY + 252,
   );
-  ctx.fillText(
-    "Simpan kupon ini - pemenang diumumkan panitia di akhir event.",
-    LX,
-    TY + 288,
-  );
+  ctx.fillText(t.canvasKeepNote, LX, TY + 288);
 
   // Pseudo-barcode dari kode
   let bx = LX;
@@ -154,7 +158,7 @@ async function downloadCoupon(c: CouponRow) {
   const SX = STUB_X + 34;
   ctx.fillStyle = "#f97316";
   ctx.font = "800 14px Arial";
-  ctx.fillText("HADIAH UTAMA", SX, TY + 60);
+  ctx.fillText(t.canvasMainPrize, SX, TY + 60);
   const prize = await loadPrizeImage();
   if (prize) {
     // PNG transparan — gambar langsung di atas tiket putih tanpa kotak,
@@ -166,7 +170,7 @@ async function downloadCoupon(c: CouponRow) {
     ctx.drawImage(prize, IX, IY, IW, IH);
     ctx.fillStyle = "#64748b";
     ctx.font = "14px Arial";
-    ctx.fillText("Diundi oleh panitia", SX, IY + IH + 28);
+    ctx.fillText(t.canvasDrawnBy, SX, IY + IH + 28);
   } else {
     ctx.fillStyle = "#0f172a";
     ctx.font = "800 40px Arial";
@@ -174,7 +178,7 @@ async function downloadCoupon(c: CouponRow) {
     ctx.fillText("PHONE", SX, TY + 160);
     ctx.fillStyle = "#64748b";
     ctx.font = "14px Arial";
-    ctx.fillText("Diundi oleh panitia", SX, TY + 196);
+    ctx.fillText(t.canvasDrawnBy, SX, TY + 196);
   }
 
   // Kode kecil vertikal di stub
@@ -194,6 +198,8 @@ async function downloadCoupon(c: CouponRow) {
 
 export default function CouponPage() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = useTranslation("kupon");
   const { data: me, isLoading: loadingMe } = useMyProfile();
   // Voter onboarded ATAU peserta (role "participant") — sama-sama punya kupon.
   const enabled =
@@ -211,21 +217,17 @@ export default function CouponPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <Ticket className="h-6 w-6 text-accent" />
-            Kupon Undian
+            {t.pageTitle}
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Hadiah handphone, diundi di akhir event. Kupon didapat dari follow
-            akun Universitas STEKOM saat vote pertamamu.
+            {t.pageSubtitle}
           </p>
         </div>
 
         {loadingMe || isLoading ? (
           <LoadingState />
         ) : !coupons || coupons.length === 0 ? (
-          <EmptyState
-            title="Belum ada kupon"
-            description="Vote peserta favoritmu dan follow akun Universitas STEKOM untuk mendapatkan kupon."
-          />
+          <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
         ) : (
           <div className="space-y-3">
             {coupons.map((c) => (
@@ -237,18 +239,17 @@ export default function CouponPage() {
                   {/* Kiri: identitas kupon */}
                   <CardContent className="flex-1 space-y-2 p-5">
                     <p className="text-xs font-bold uppercase tracking-wider text-accent">
-                      Kupon Undian Handphone
+                      {t.couponLabel}
                     </p>
                     <p className="font-mono text-2xl font-extrabold tracking-wide">
                       {c.code}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {c.owner_name} ·{" "}
-                      {new Date(c.created_at).toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {new Date(c.created_at).toLocaleDateString(
+                        locale === "id" ? "id-ID" : "en-US",
+                        { day: "2-digit", month: "long", year: "numeric" },
+                      )}
                     </p>
                   </CardContent>
                   {/* Kanan: aksi, dipisah garis putus ala tiket */}
@@ -256,10 +257,10 @@ export default function CouponPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/hp.png"
-                      alt="Hadiah handphone"
+                      alt={t.prizeAlt}
                       className="h-14 w-20 object-contain"
                     />
-                    <Button size="sm" onClick={() => downloadCoupon(c)}>
+                    <Button size="sm" onClick={() => downloadCoupon(c, t, locale)}>
                       <Download className="h-4 w-4" />
                     </Button>
                   </div>
@@ -267,8 +268,7 @@ export default function CouponPage() {
               </Card>
             ))}
             <p className="text-center text-xs text-muted-foreground">
-              Unduh dan simpan kuponmu. Pengundian dilakukan panitia di akhir
-              event.
+              {t.footerNote}
             </p>
           </div>
         )}
