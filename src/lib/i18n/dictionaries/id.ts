@@ -525,10 +525,23 @@ const id = {
     adminWaMessage:
       "Halo Admin YCS, saya butuh bantuan terkait web voting Youth Character Summit.",
     pageTitle: "Panduan Penggunaan",
+    pageSubtitle: "Panduan Resmi Youth Character Summit Universitas STEKOM.",
     intro:
       "Ikuti panduan yang sesuai dengan kamu: pendukung umum (teman, guru, keluarga, atau siapa pun) atau peserta YCS yang ingin ikut mendukung temannya.",
     introSupporterBold: "pendukung umum",
     introParticipantBold: "peserta YCS",
+    tocTitle: "Daftar Isi",
+    tocFree: "Pendaftaran Gratis",
+    tocSupporter: "Untuk Pendukung Umum",
+    tocParticipant: "Untuk Peserta YCS",
+    tocTimeline: "Timeline YCS 2026",
+    tocFaq: "Pertanyaan Seputar Biaya",
+    tocHelp: "Bantuan",
+    searchPlaceholder: "Cari informasi di panduan ini...",
+    searchClear: "Hapus pencarian",
+    searchNoResultsTitle: "Tidak ada yang cocok",
+    searchNoResults: (query: string) =>
+      `Tidak ada poin panduan yang cocok dengan "${query}". Coba kata kunci lain atau hapus pencarian.`,
     freeTitle: "Semua Pendaftaran GRATIS, Tanpa Biaya Apa Pun",
     freeDescBold:
       "Pendaftaran Youth Character Summit 2026 Universitas STEKOM sepenuhnya gratis alias Rp0.",

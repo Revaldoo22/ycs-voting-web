@@ -527,10 +527,23 @@ const en: Dictionary = {
     adminWaMessage:
       "Hello YCS Admin, I need help regarding the Youth Character Summit voting website.",
     pageTitle: "User Guide",
+    pageSubtitle: "Official Guide for Youth Character Summit Universitas STEKOM.",
     intro:
       "Follow the guide that fits you: a general supporter (friend, teacher, family, or anyone) or a YCS participant who wants to support a friend too.",
     introSupporterBold: "general supporter",
     introParticipantBold: "YCS participant",
+    tocTitle: "Table of Contents",
+    tocFree: "Free Registration",
+    tocSupporter: "For General Supporters",
+    tocParticipant: "For YCS Participants",
+    tocTimeline: "YCS 2026 Timeline",
+    tocFaq: "Fee FAQ",
+    tocHelp: "Help",
+    searchPlaceholder: "Search this guide...",
+    searchClear: "Clear search",
+    searchNoResultsTitle: "No matches found",
+    searchNoResults: (query: string) =>
+      `No guide section matches "${query}". Try a different keyword or clear the search.`,
     freeTitle: "All Registration Is FREE, No Fees Whatsoever",
     freeDescBold:
       "Registration for Youth Character Summit 2026 by Universitas STEKOM is completely free, i.e. Rp0.",
