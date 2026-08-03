@@ -44,7 +44,6 @@ import {
   useQuests,
   useSettings,
   useVoterToday,
-  submitCouponClaim,
 } from "@/lib/queries";
 import { CheckCircle2, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -59,6 +58,10 @@ import {
 } from "@/components/voter-form-fields";
 import { useConfirm } from "@/components/confirm-dialog";
 import { PhotoLightbox } from "@/components/photo-lightbox";
+import {
+  ClaimCouponDialog,
+  useFollowTasks,
+} from "@/components/claim-coupon-dialog";
 import type { ParticipantWithSchool, Quest } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
 import type { Dictionary } from "@/lib/i18n/types";
@@ -270,23 +273,24 @@ export default function PublicParticipantPage({
                     <button
                       type="button"
                       onClick={() => setClaimOpen(true)}
-                      className="flex w-full items-center gap-3 rounded-xl border-2 border-dashed border-amber-400/60 bg-gradient-to-r from-amber-50 to-orange-50 p-3 text-left transition-transform hover:scale-[1.01] dark:from-amber-950/40 dark:to-orange-950/40"
+                      className="group relative flex w-full flex-col items-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-amber-400/60 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 p-4 text-center shadow-md shadow-amber-500/10 transition-transform active:scale-[0.98] dark:from-amber-950/40 dark:via-orange-950/30 dark:to-amber-950/40 sm:flex-row sm:gap-3 sm:rounded-xl sm:p-3 sm:text-left sm:shadow-none sm:hover:scale-[1.01]"
                     >
+                      <span className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-amber-400/20 blur-xl sm:hidden" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src="/hp.png"
                         alt=""
-                        className="h-12 w-12 shrink-0 object-contain"
+                        className="h-20 w-20 shrink-0 object-contain drop-shadow-sm sm:h-12 sm:w-12"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold">
+                        <p className="text-base font-extrabold leading-tight sm:truncate sm:text-sm">
                           {t.claimCtaCard}
                         </p>
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="mt-0.5 text-xs text-muted-foreground sm:truncate">
                           {t.claimCtaCardDesc}
                         </p>
                       </div>
-                      <span className="shrink-0 text-xs font-semibold text-primary">
+                      <span className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500 px-4 py-1.5 text-xs font-bold text-white shadow-sm sm:mt-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-primary sm:shadow-none">
                         {t.claimTeaserCta} →
                       </span>
                     </button>
@@ -380,32 +384,6 @@ export default function PublicParticipantPage({
 type VoterCtx = ReturnType<typeof useVoterForm>;
 
 /**
- * Tugas follow IG/TikTok — syarat KLAIM KUPON undian HP (setelah vote sukses,
- * terpisah dari vote itu sendiri).
- */
-const FOLLOW_TASK_URLS = [
-  "https://tiktok.com/@stekomuniversity",
-  "https://instagram.com/universitasstekom",
-  "https://tiktok.com/@toploker.com",
-  "https://instagram.com/toplokercom",
-];
-const FOLLOW_TASK_KEYS = [
-  "stekom_tiktok",
-  "stekom_ig",
-  "toploker_tiktok",
-  "toploker_ig",
-];
-
-function useFollowTasks(t: Dictionary["peserta"]) {
-  return t.followTasks.map((task, i) => ({
-    key: FOLLOW_TASK_KEYS[i],
-    title: task.title,
-    url: FOLLOW_TASK_URLS[i],
-    linkLabel: task.linkLabel,
-  }));
-}
-
-/**
  * Tugas follow 2 saluran WhatsApp — syarat VOTE pertama (wajib sebelum vote
  * diterima). Key HARUS sinkron dengan REQUIRED_FOLLOW_TASKS di backend.
  */
@@ -473,155 +451,6 @@ function ClaimTeaserDialog({
           onClick={() => onOpenChange(false)}
         >
           {t.claimTeaserLater}
-        </Button>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/**
- * Klaim kupon undian handphone: follow akun Univ STEKOM/TopLoker + upload
- * bukti, TERPISAH dari vote (vote sudah sukses sebelum dialog ini muncul).
- */
-function ClaimCouponDialog({
-  open,
-  onOpenChange,
-  onClaimed,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onClaimed: () => void;
-}) {
-  const t = useTranslation("peserta");
-  const followTasks = useFollowTasks(t);
-  const MAX_PROOFS = 12;
-  const [proofFiles, setProofFiles] = React.useState<File[]>([]);
-  const [busy, setBusy] = React.useState(false);
-  const qc = useQueryClient();
-
-  async function uploadProof(file: File): Promise<string> {
-    const img = await compressImage(file, { maxSize: 900, quality: 0.7 });
-    const fd = new FormData();
-    fd.append("file", img);
-    const up = await api<{ url: string }>("/api/upload-proof", {
-      method: "POST",
-      body: fd,
-    });
-    return new URL(up.url, window.location.origin).toString();
-  }
-
-  async function submitClaim() {
-    if (proofFiles.length === 0) {
-      toast.error(t.uploadProofFirst);
-      return;
-    }
-    setBusy(true);
-    try {
-      const proofs: string[] = [];
-      try {
-        for (const f of proofFiles) proofs.push(await uploadProof(f));
-      } catch (err) {
-        toast.error(
-          t.uploadProofFailed(err instanceof Error ? err.message : ""),
-        );
-        return;
-      }
-      await submitCouponClaim(proofs);
-      toast.success(t.claimSubmitted);
-      qc.invalidateQueries({ queryKey: ["coupon-claim"] });
-      qc.invalidateQueries({ queryKey: ["profile", "me"] });
-      setProofFiles([]);
-      onOpenChange(false);
-      onClaimed();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t.voteFailed);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t.followTaskDialogTitle}</DialogTitle>
-          <DialogDescription>
-            {t.followTaskDialogDescription(followTasks.length)}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Daftar tugas: klik untuk membuka akun/saluran yang harus di-follow. */}
-        <div className="max-h-[35vh] space-y-1.5 overflow-y-auto pr-1">
-          {followTasks.map((task, i) => (
-            <a
-              key={task.key}
-              href={task.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
-            >
-              <span className="min-w-0 truncate font-medium">
-                {i + 1}. {task.title}
-              </span>
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </a>
-          ))}
-        </div>
-
-        {/* Satu tombol upload untuk semua bukti — boleh pilih banyak sekaligus. */}
-        <div className="space-y-1.5">
-          <Label>{t.screenshotProofLabel}</Label>
-          <Input
-            type="file"
-            accept="image/*"
-            multiple
-            disabled={proofFiles.length >= MAX_PROOFS}
-            onChange={(e) => {
-              const picked = Array.from(e.target.files ?? []);
-              setProofFiles((prev) => {
-                const merged = [...prev];
-                for (const f of picked) {
-                  if (
-                    merged.length < MAX_PROOFS &&
-                    !merged.some((x) => x.name === f.name && x.size === f.size)
-                  )
-                    merged.push(f);
-                }
-                return merged;
-              });
-              e.target.value = ""; // reset agar bisa pilih lagi
-            }}
-          />
-          {proofFiles.length > 0 && (
-            <ul className="space-y-1">
-              {proofFiles.map((f, i) => (
-                <li
-                  key={i}
-                  className="flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-xs"
-                >
-                  <span className="min-w-0 truncate">{f.name}</span>
-                  <button
-                    type="button"
-                    className="shrink-0 text-destructive"
-                    onClick={() =>
-                      setProofFiles((prev) => prev.filter((_, j) => j !== i))
-                    }
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
-              <li className="text-xs text-muted-foreground">
-                {proofFiles.length}/{MAX_PROOFS} {t.files}
-              </li>
-            </ul>
-          )}
-        </div>
-
-        <p className="text-xs text-muted-foreground">{t.proofNote}</p>
-        <Button onClick={submitClaim} disabled={busy || proofFiles.length === 0}>
-          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-          {t.sendProofAndVote(proofFiles.length)}
         </Button>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { GraduationCap, ShieldCheck, Ticket, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,18 +15,73 @@ import {
 import { Navbar } from "@/components/navbar";
 import { HeroVideo } from "@/components/hero-video";
 import { ParticipantGrid } from "@/components/participant-grid";
-import { PrizeButtons } from "@/components/prize-buttons";
+import { ClaimCouponDialog } from "@/components/claim-coupon-dialog";
 import { MaintenanceOverlay } from "@/components/maintenance-overlay";
 import { EventClosedOverlay } from "@/components/event-closed-overlay";
 import { VoterTodayPanel } from "@/components/voter-today";
 import { RoundCountdown } from "@/components/round-countdown";
+import { useMyProfile, useVoterToday } from "@/lib/queries";
 import { useTranslation } from "@/lib/i18n";
 
 function PrizeBanner() {
   const t = useTranslation("home");
+  const tPeserta = useTranslation("peserta");
+  const { data: me } = useMyProfile();
+  const { data: voterToday } = useVoterToday(true);
+  const [claimOpen, setClaimOpen] = React.useState(false);
+
+  const isParticipant = !!me?.is_participant;
+  const followed = !!me?.followed;
+  // Sudah pernah vote & belum klaim kupon: klik gambar langsung ke syarat
+  // klaim (skip penjelasan "Cara Dapat Kupon" — sudah tidak relevan lagi).
+  const alreadyVoted = !!voterToday?.has_voted;
+  const skipToClaimStep = alreadyVoted && !isParticipant && !followed;
 
   function goToParticipants() {
     document.getElementById("peserta")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  const bannerImage = (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/hp.png"
+        alt=""
+        className="h-40 w-full shrink-0 object-contain p-3 sm:h-auto sm:w-48 sm:p-2"
+      />
+      <div className="flex flex-1 flex-col justify-center gap-1.5 p-4 text-center sm:p-5 sm:pl-1 sm:text-left">
+        <span className="mx-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 sm:mx-0">
+          <Ticket className="h-3.5 w-3.5" />
+          {t.prizeBannerTag}
+        </span>
+        <p className="text-lg font-extrabold leading-tight sm:text-xl">
+          {t.prizeBannerTitle}
+        </p>
+        <p className="text-sm text-muted-foreground">{t.prizeBannerDesc}</p>
+        <span className="mt-1 text-xs font-semibold text-primary">
+          {skipToClaimStep ? tPeserta.claimTeaserCta : t.prizeBannerCta} →
+        </span>
+      </div>
+    </>
+  );
+
+  if (skipToClaimStep) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setClaimOpen(true)}
+          className="mx-auto flex max-w-xl flex-col items-stretch overflow-hidden rounded-2xl border-2 border-dashed border-amber-400/60 bg-gradient-to-r from-amber-50 to-orange-50 text-left shadow-lg shadow-amber-500/10 transition-transform hover:scale-[1.01] dark:from-amber-950/40 dark:to-orange-950/40 sm:flex-row"
+        >
+          {bannerImage}
+        </button>
+        <ClaimCouponDialog
+          open={claimOpen}
+          onOpenChange={setClaimOpen}
+          onClaimed={() => setClaimOpen(false)}
+        />
+      </>
+    );
   }
 
   return (
@@ -35,27 +91,7 @@ function PrizeBanner() {
           type="button"
           className="mx-auto flex max-w-xl flex-col items-stretch overflow-hidden rounded-2xl border-2 border-dashed border-amber-400/60 bg-gradient-to-r from-amber-50 to-orange-50 text-left shadow-lg shadow-amber-500/10 transition-transform hover:scale-[1.01] dark:from-amber-950/40 dark:to-orange-950/40 sm:flex-row"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/hp.png"
-            alt=""
-            className="h-40 w-full shrink-0 object-contain p-3 sm:h-auto sm:w-48 sm:p-2"
-          />
-          <div className="flex flex-1 flex-col justify-center gap-1.5 p-4 text-center sm:p-5 sm:pl-1 sm:text-left">
-            <span className="mx-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 sm:mx-0">
-              <Ticket className="h-3.5 w-3.5" />
-              {t.prizeBannerTag}
-            </span>
-            <p className="text-lg font-extrabold leading-tight sm:text-xl">
-              {t.prizeBannerTitle}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {t.prizeBannerDesc}
-            </p>
-            <span className="mt-1 text-xs font-semibold text-primary">
-              {t.prizeBannerCta} →
-            </span>
-          </div>
+          {bannerImage}
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
@@ -144,7 +180,6 @@ export function HomeBody() {
               </a>
             </Button>
           </div>
-          <PrizeButtons />
         </div>
       </section>
 
