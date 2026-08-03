@@ -444,6 +444,13 @@ const id = {
     followTaskDialogTitle: "Klaim Kupon Undian Handphone",
     followTaskDialogDescription: (n: number) =>
       `Vote kamu sudah masuk! Follow ${n} akun di bawah, upload bukti, lalu kirim untuk klaim kupon undian handphone. Bukti direview admin — kuponmu sah setelah di-approve.`,
+    claimTeaserTitle: "Vote Berhasil! 🎉",
+    claimTeaserBody:
+      "Sayang banget kalau dilewatkan — klaim kupon undian sekarang dan dapatkan kesempatan menangkan handphone & hadiah menarik lainnya!",
+    claimTeaserCta: "Klaim Sekarang",
+    claimTeaserLater: "Nanti Saja",
+    claimCtaCard: "Klaim Kupon Undian Handphone",
+    claimCtaCardDesc: "Menangkan handphone & hadiah menarik lainnya!",
     screenshotProofLabel: "Screenshot Bukti (boleh pilih banyak sekaligus)",
     files: "file",
     proofNote:

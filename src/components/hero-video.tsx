@@ -122,6 +122,11 @@ export function HeroVideo() {
           rel: 0,
           playsinline: 1,
           modestbranding: 1,
+          // Wajib cocok dengan origin halaman — tanpa ini, postMessage
+          // antara iframe & parent (dasar IFrame API: playVideo(),
+          // onStateChange, dst.) bisa ditolak diam-diam di domain produksi
+          // HTTPS meski tetap "berhasil" di localhost HTTP.
+          origin: window.location.origin,
         },
         events: {
           onReady: (e) => {

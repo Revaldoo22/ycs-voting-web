@@ -446,6 +446,13 @@ const en: Dictionary = {
     followTaskDialogTitle: "Claim Your Smartphone Raffle Coupon",
     followTaskDialogDescription: (n: number) =>
       `Your vote is in! Follow the ${n} accounts below, upload proof, then submit to claim your smartphone raffle coupon. Proof is reviewed by admin — your coupon is valid once approved.`,
+    claimTeaserTitle: "Vote Successful! 🎉",
+    claimTeaserBody:
+      "It'd be a shame to miss this — claim your raffle coupon now for a chance to win a smartphone & other exciting prizes!",
+    claimTeaserCta: "Claim Now",
+    claimTeaserLater: "Maybe Later",
+    claimCtaCard: "Claim Your Smartphone Raffle Coupon",
+    claimCtaCardDesc: "Win a smartphone & other exciting prizes!",
     screenshotProofLabel: "Screenshot Proof (you can select multiple at once)",
     files: "files",
     proofNote:

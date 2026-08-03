@@ -72,8 +72,13 @@ export default function PublicParticipantPage({
   const t = useTranslation("peserta");
   // Pop-up zoom foto peserta (latar halaman diblur).
   const [photoOpen, setPhotoOpen] = React.useState(false);
-  // Dialog klaim kupon undian — otomatis terbuka begitu vote sukses.
+  // Dialog klaim kupon undian (syarat follow + upload bukti).
   const [claimOpen, setClaimOpen] = React.useState(false);
+  // Dialog penawaran ("teaser") — muncul dengan jeda setelah vote sukses,
+  // sebelum syarat klaim ditampilkan. Kalau ditutup tanpa klaim, CTA
+  // persisten di card (berbasis status followed, bukan state lokal) tetap
+  // menawarkan klaim kapan saja — termasuk setelah reload halaman.
+  const [teaserOpen, setTeaserOpen] = React.useState(false);
   const anonVoter = useVoterForm();
   const { data: me } = useMyProfile();
   const { data: quests } = useQuests(true);
@@ -246,7 +251,8 @@ export default function PublicParticipantPage({
                 <ShareButton name={participant.name} />
 
                 {votedThis ? (
-                  votePending ? (
+                  <>
+                  {votePending ? (
                     <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/50 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-600 dark:text-amber-400">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       {t.votedPendingReview}
@@ -256,7 +262,36 @@ export default function PublicParticipantPage({
                       <BadgeCheck className="h-4 w-4" />
                       {t.votedThanks}
                     </div>
-                  )
+                  )}
+                  {/* CTA persisten: voter sudah vote tapi belum klaim kupon
+                      undian (belum follow IG/TikTok) — tetap tersedia walau
+                      dialog penawaran sudah ditutup atau halaman di-reload. */}
+                  {!isParticipant && !followed && (
+                    <button
+                      type="button"
+                      onClick={() => setClaimOpen(true)}
+                      className="flex w-full items-center gap-3 rounded-xl border-2 border-dashed border-amber-400/60 bg-gradient-to-r from-amber-50 to-orange-50 p-3 text-left transition-transform hover:scale-[1.01] dark:from-amber-950/40 dark:to-orange-950/40"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/hp.png"
+                        alt=""
+                        className="h-12 w-12 shrink-0 object-contain"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold">
+                          {t.claimCtaCard}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t.claimCtaCardDesc}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold text-primary">
+                        {t.claimTeaserCta} →
+                      </span>
+                    </button>
+                  )}
+                  </>
                 ) : (
                   <VoteDialog
                     participantId={id}
@@ -270,9 +305,12 @@ export default function PublicParticipantPage({
                       refetch();
                       // Kupon undian sudah otomatis untuk peserta YCS / voter
                       // yang follow IG/TikTok-nya sudah terverifikasi — selain
-                      // itu, langsung tawarkan klaim kupon begitu vote
-                      // terkirim (tak perlu tunggu admin approve bukti WA).
-                      if (!isParticipant && !followed) setClaimOpen(true);
+                      // itu, tawarkan klaim kupon lewat dialog penawaran dulu
+                      // (jeda sedikit biar tidak langsung menimpa toast sukses
+                      // vote), baru syarat follow muncul kalau diklik klaim.
+                      if (!isParticipant && !followed) {
+                        setTimeout(() => setTeaserOpen(true), 800);
+                      }
                     }}
                   />
                 )}
@@ -290,6 +328,15 @@ export default function PublicParticipantPage({
                 onClose={() => setPhotoOpen(false)}
               />
             )}
+
+            <ClaimTeaserDialog
+              open={teaserOpen}
+              onOpenChange={setTeaserOpen}
+              onClaim={() => {
+                setTeaserOpen(false);
+                setClaimOpen(true);
+              }}
+            />
 
             <ClaimCouponDialog
               open={claimOpen}
@@ -380,6 +427,56 @@ function useWaFollowTasks(t: Dictionary["peserta"]) {
 function validateVoter(data: VoterFormData, t: Dictionary["peserta"]): string | null {
   const r = voterInfoSchema.safeParse(data);
   return r.success ? null : r.error.issues[0]?.message ?? t.incompleteData;
+}
+
+/**
+ * Dialog penawaran ("teaser") — muncul dengan jeda setelah vote sukses,
+ * SEBELUM syarat follow ditampilkan. Tujuannya membuat ajakan klaim kupon
+ * terasa seperti hadiah, bukan langsung dibebani syarat. "Klaim Sekarang"
+ * membuka ClaimCouponDialog (syarat follow); ditutup (X) tidak menghilangkan
+ * kesempatan — CTA persisten tetap muncul di card peserta.
+ */
+function ClaimTeaserDialog({
+  open,
+  onOpenChange,
+  onClaim,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onClaim: () => void;
+}) {
+  const t = useTranslation("peserta");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hp.png"
+          alt=""
+          className="mx-auto h-28 w-28 object-contain"
+        />
+        <DialogHeader>
+          <DialogTitle className="text-center text-xl">
+            {t.claimTeaserTitle}
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            {t.claimTeaserBody}
+          </DialogDescription>
+        </DialogHeader>
+        <Button className="w-full" onClick={onClaim}>
+          {t.claimTeaserCta}
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full"
+          onClick={() => onOpenChange(false)}
+        >
+          {t.claimTeaserLater}
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 /**
