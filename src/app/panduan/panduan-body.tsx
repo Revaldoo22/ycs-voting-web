@@ -134,9 +134,10 @@ export function PanduanBody() {
           {/* --------------------- Panduan peserta --------------------- */}
           <Card className="border-accent/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-accent" />
-                {t.participantCardTitle} <Badge variant="accent">{t.participantBadge}</Badge>
+              <CardTitle className="flex flex-wrap items-center gap-2">
+                <GraduationCap className="h-5 w-5 shrink-0 text-accent" />
+                <span>{t.participantCardTitle}</span>
+                <Badge variant="accent">{t.participantBadge}</Badge>
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 {t.participantCardDesc}
@@ -178,9 +179,12 @@ export function PanduanBody() {
             </ol>
 
             {/* Jalur kelulusan */}
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
               {t.passStats.map((s) => (
-                <div key={s.label} className="rounded-xl border bg-muted/40 p-3">
+                <div
+                  key={s.label}
+                  className="flex items-center justify-center gap-2 rounded-xl border bg-muted/40 p-3 sm:flex-col sm:gap-0"
+                >
                   <p className="text-2xl font-extrabold text-primary">{s.n}</p>
                   <p className="text-xs text-muted-foreground">{s.label}</p>
                 </div>
@@ -247,10 +251,10 @@ export function PanduanBody() {
             </div>
             <Button
               asChild
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="h-auto min-h-9 w-full whitespace-normal bg-emerald-600 py-2 text-center text-white hover:bg-emerald-700 sm:w-auto"
             >
               <a href={adminWaLink} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4 shrink-0" />
                 {t.contactAdmin(ADMIN_WA_DISPLAY)}
               </a>
             </Button>
