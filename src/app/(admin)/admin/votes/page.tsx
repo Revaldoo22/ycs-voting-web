@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
 
-/** Alasan penolakan cepat — admin bisa klik atau ketik sendiri. */
+/** Alasan penolakan cepat, admin bisa klik atau ketik sendiri. */
 const REJECT_TEMPLATES = [
   "Bukti follow tidak jelas / buram.",
   "Screenshot bukan bukti follow.",
@@ -64,7 +64,7 @@ type VoteRow = {
 
 /**
  * Verifikasi vote pertama voter: bukti follow 2 saluran WhatsApp (UnivSTEKOM
- * & YCS 2026). Approve = poin masuk ke peserta (TIDAK menerbitkan kupon —
+ * & YCS 2026). Approve = poin masuk ke peserta (TIDAK menerbitkan kupon,
  * kupon undian HP adalah klaim terpisah lewat follow IG/TikTok, lihat
  * halaman "Verifikasi Klaim Kupon"). Reject = vote dihapus (hak vote voter
  * kembali). Mendukung pilih banyak + approve/tolak massal.
@@ -140,8 +140,8 @@ export default function AdminVotesPage() {
       await review.mutateAsync({ id, status, reason });
       toast.success(
         status === "approved"
-          ? "Vote disetujui — poin masuk."
-          : "Vote ditolak — voter dapat pemberitahuan & bisa vote ulang.",
+          ? "Vote disetujui, poin masuk."
+          : "Vote ditolak, voter dapat pemberitahuan & bisa vote ulang.",
       );
       setSelected((prev) => {
         const next = new Set(prev);
@@ -175,7 +175,7 @@ export default function AdminVotesPage() {
     if (ids.length === 0) return;
     try {
       const res = await bulkReview.mutateAsync({ ids, status: "rejected", reason });
-      toast.success(`${res.processed} vote ditolak — voter diberi tahu.`);
+      toast.success(`${res.processed} vote ditolak, voter diberi tahu.`);
       setSelected(new Set());
     } catch (e) {
       toast.error("Gagal memproses: " + (e as Error).message);
@@ -296,7 +296,7 @@ export default function AdminVotesPage() {
         )}
       </div>
 
-      {/* Bar aksi massal — muncul saat ada yang dipilih */}
+      {/* Bar aksi massal, muncul saat ada yang dipilih */}
       {selected.size > 0 && (
         <div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 backdrop-blur">
           <p className="text-sm font-semibold">

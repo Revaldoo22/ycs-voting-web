@@ -33,7 +33,7 @@ function PrizeBanner() {
   const isParticipant = !!me?.is_participant;
   const followed = !!me?.followed;
   // Sudah pernah vote & belum klaim kupon: klik gambar langsung ke syarat
-  // klaim (skip penjelasan "Cara Dapat Kupon" — sudah tidak relevan lagi).
+  // klaim (skip penjelasan "Cara Dapat Kupon", sudah tidak relevan lagi).
   const alreadyVoted = !!voterToday?.has_voted;
   const skipToClaimStep = alreadyVoted && !isParticipant && !followed;
 
@@ -199,7 +199,7 @@ export function HomeBody() {
         <ParticipantGrid />
       </section>
 
-      {/* FAQ biaya — jawaban wajib terlihat di halaman agar rich result FAQ valid. */}
+      {/* FAQ biaya, jawaban wajib terlihat di halaman agar rich result FAQ valid. */}
       <section
         id="faq-biaya"
         aria-labelledby="faq-biaya-title"

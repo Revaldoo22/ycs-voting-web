@@ -21,7 +21,7 @@ import { compressImage } from "@/lib/image-compress";
 import type { Dictionary } from "@/lib/i18n/types";
 
 /**
- * Tugas follow IG/TikTok — syarat KLAIM KUPON undian HP (setelah vote sukses,
+ * Tugas follow IG/TikTok, syarat KLAIM KUPON undian HP (setelah vote sukses,
  * terpisah dari vote itu sendiri).
  */
 const FOLLOW_TASK_URLS = [
@@ -137,7 +137,7 @@ export function ClaimCouponDialog({
           ))}
         </div>
 
-        {/* Satu tombol upload untuk semua bukti — boleh pilih banyak sekaligus. */}
+        {/* Satu tombol upload untuk semua bukti, boleh pilih banyak sekaligus. */}
         <div className="space-y-1.5">
           <Label>{t.screenshotProofLabel}</Label>
           <Input

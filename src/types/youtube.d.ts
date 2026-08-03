@@ -1,5 +1,5 @@
 /**
- * Tipe minimal untuk YouTube IFrame Player API — hanya bagian yang dipakai
+ * Tipe minimal untuk YouTube IFrame Player API, hanya bagian yang dipakai
  * hero-video.tsx, supaya tak perlu menambah dependency @types/youtube.
  * Dokumentasi: https://developers.google.com/youtube/iframe_api_reference
  */

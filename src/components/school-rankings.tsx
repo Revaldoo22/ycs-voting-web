@@ -163,7 +163,7 @@ function RankingList({
 }
 
 /**
- * Peringkat sekolah (kabupaten/nasional) — dipakai sebagai tab "Sekolah"
+ * Peringkat sekolah (kabupaten/nasional), dipakai sebagai tab "Sekolah"
  * di halaman /ranking.
  */
 export function SchoolRankings() {

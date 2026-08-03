@@ -61,7 +61,7 @@ export default function AdminParticipantsPage() {
   const { data: participants, isLoading, isError, refetch } =
     useAdminParticipants();
 
-  // Sekolah dicari dari DB (master) via endpoint search — bukan load semua.
+  // Sekolah dicari dari DB (master) via endpoint search, bukan load semua.
   const [schoolHits, setSchoolHits] = React.useState<
     { id: string; name: string }[]
   >([]);
@@ -210,7 +210,7 @@ export default function AdminParticipantsPage() {
 
   async function uploadPhoto(): Promise<string | null> {
     if (!photo) return null;
-    // Foto peserta tampil di home (paling sering diakses) — kompres kecil.
+    // Foto peserta tampil di home (paling sering diakses), kompres kecil.
     const compressed = await compressImage(photo, { maxSize: 600, quality: 0.72 });
     const fd = new FormData();
     fd.append("file", compressed);
@@ -646,7 +646,7 @@ export default function AdminParticipantsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Participant detail — supporters */}
+      {/* Participant detail, supporters */}
       <ParticipantDetailDialog
         participant={detail}
         onClose={() => setDetail(null)}

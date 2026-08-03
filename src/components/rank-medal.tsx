@@ -24,7 +24,7 @@ const MEDALS = [
   },
 ];
 
-/** Aksen baris untuk top 3 — border dan gradasi latar mewah tapi halus. */
+/** Aksen baris untuk top 3, border dan gradasi latar mewah tapi halus. */
 export const PODIUM_ROW = [
   "border-amber-400/70 bg-gradient-to-r from-amber-400/15 via-amber-300/5 to-transparent",
   "border-slate-400/70 bg-gradient-to-r from-slate-300/20 via-slate-200/5 to-transparent",

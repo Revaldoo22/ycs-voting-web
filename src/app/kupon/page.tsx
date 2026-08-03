@@ -154,14 +154,14 @@ async function downloadCoupon(
     bx += wBar + 3;
   }
 
-  // Stub kanan — gambar hadiah handphone (fallback teks bila gagal dimuat)
+  // Stub kanan, gambar hadiah handphone (fallback teks bila gagal dimuat)
   const SX = STUB_X + 34;
   ctx.fillStyle = "#f97316";
   ctx.font = "800 14px Arial";
   ctx.fillText(t.canvasMainPrize, SX, TY + 60);
   const prize = await loadPrizeImage();
   if (prize) {
-    // PNG transparan — gambar langsung di atas tiket putih tanpa kotak,
+    // PNG transparan, gambar langsung di atas tiket putih tanpa kotak,
     // biar menyatu dengan latar kupon.
     const IW = 210;
     const IH = Math.round((IW * prize.height) / prize.width);
@@ -201,7 +201,7 @@ export default function CouponPage() {
   const { locale } = useLocale();
   const t = useTranslation("kupon");
   const { data: me, isLoading: loadingMe } = useMyProfile();
-  // Voter onboarded ATAU peserta (role "participant") — sama-sama punya kupon.
+  // Voter onboarded ATAU peserta (role "participant"), sama-sama punya kupon.
   const enabled =
     !!me && (me.is_participant || (me.role === "voter" && me.onboarded));
   const { data: coupons, isLoading } = useMyCoupons(enabled);

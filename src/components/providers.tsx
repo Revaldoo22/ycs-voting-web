@@ -27,11 +27,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
             duration={3500}
             gap={10}
             toastOptions={{
-              // Kartu putih bersih + aksen tepi kiri berwarna per jenis —
-              // serasi tema YCS (radius 2xl, shadow lembut, font ikut app).
+              // Kartu putih bersih + aksen tepi kiri berwarna per jenis, // serasi tema YCS (radius 2xl, shadow lembut, font ikut app).
               unstyled: true,
               classNames: {
-                // Pill gelap kompak — netral, tanpa aksen ramai; jenis toast
+                // Pill gelap kompak, netral, tanpa aksen ramai; jenis toast
                 // cukup dibedakan warna ikonnya.
                 toast:
                   "group pointer-events-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-2.5 rounded-xl bg-foreground py-2.5 pl-3 pr-4 font-sans text-sm font-medium text-background shadow-lg",

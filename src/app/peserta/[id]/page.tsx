@@ -77,10 +77,10 @@ export default function PublicParticipantPage({
   const [photoOpen, setPhotoOpen] = React.useState(false);
   // Dialog klaim kupon undian (syarat follow + upload bukti).
   const [claimOpen, setClaimOpen] = React.useState(false);
-  // Dialog penawaran ("teaser") — muncul dengan jeda setelah vote sukses,
+  // Dialog penawaran ("teaser"), muncul dengan jeda setelah vote sukses,
   // sebelum syarat klaim ditampilkan. Kalau ditutup tanpa klaim, CTA
   // persisten di card (berbasis status followed, bukan state lokal) tetap
-  // menawarkan klaim kapan saja — termasuk setelah reload halaman.
+  // menawarkan klaim kapan saja, termasuk setelah reload halaman.
   const [teaserOpen, setTeaserOpen] = React.useState(false);
   const anonVoter = useVoterForm();
   const { data: me } = useMyProfile();
@@ -88,7 +88,7 @@ export default function PublicParticipantPage({
   const { data: settings } = useSettings();
   const eventClosed = settings ? !settings.event_open : false;
 
-  // Vote milik akun ini — untuk label "sudah kamu vote" di peserta terkait.
+  // Vote milik akun ini, untuk label "sudah kamu vote" di peserta terkait.
   const { data: myVotes } = useVoterToday(!!me);
   const myVote = (myVotes?.votes ?? []).find((v) => v.participant_id === id);
   const votedThis = !!myVote;
@@ -99,7 +99,7 @@ export default function PublicParticipantPage({
   // Aksi dukung/quest wajib login sebagai pendukung.
   // gate = null berarti boleh lanjut; selain itu fungsi pengalihan.
   // Peserta (voter yang email-nya cocok record peserta) TETAP boleh vote
-  // peserta lain — yang diblok hanya vote ke DIRINYA sendiri. Akun admin
+  // peserta lain, yang diblok hanya vote ke DIRINYA sendiri. Akun admin
   // sungguhan tidak boleh vote sama sekali.
   const isSelf = !!me && me.self_participant_id === id;
   const gate: (() => void) | null = !me
@@ -198,7 +198,7 @@ export default function PublicParticipantPage({
                     sizes="(max-width:768px) 100vw, 768px"
                     className="object-cover"
                     // Foto di-serve via redirect 302 ke signed URL storage
-                    // (berbatas waktu) — optimizer Next gagal; pakai apa adanya.
+                    // (berbatas waktu), optimizer Next gagal; pakai apa adanya.
                     unoptimized
                   />
                 </button>
@@ -267,7 +267,7 @@ export default function PublicParticipantPage({
                     </div>
                   )}
                   {/* CTA persisten: voter sudah vote tapi belum klaim kupon
-                      undian (belum follow IG/TikTok) — tetap tersedia walau
+                      undian (belum follow IG/TikTok), tetap tersedia walau
                       dialog penawaran sudah ditutup atau halaman di-reload. */}
                   {!isParticipant && !followed && (
                     <button
@@ -308,7 +308,7 @@ export default function PublicParticipantPage({
                     onVoted={() => {
                       refetch();
                       // Kupon undian sudah otomatis untuk peserta YCS / voter
-                      // yang follow IG/TikTok-nya sudah terverifikasi — selain
+                      // yang follow IG/TikTok-nya sudah terverifikasi, selain
                       // itu, tawarkan klaim kupon lewat dialog penawaran dulu
                       // (jeda sedikit biar tidak langsung menimpa toast sukses
                       // vote), baru syarat follow muncul kalau diklik klaim.
@@ -384,7 +384,7 @@ export default function PublicParticipantPage({
 type VoterCtx = ReturnType<typeof useVoterForm>;
 
 /**
- * Tugas follow 2 saluran WhatsApp — syarat VOTE pertama (wajib sebelum vote
+ * Tugas follow 2 saluran WhatsApp, syarat VOTE pertama (wajib sebelum vote
  * diterima). Key HARUS sinkron dengan REQUIRED_FOLLOW_TASKS di backend.
  */
 const WA_FOLLOW_TASK_URLS = [
@@ -408,11 +408,11 @@ function validateVoter(data: VoterFormData, t: Dictionary["peserta"]): string | 
 }
 
 /**
- * Dialog penawaran ("teaser") — muncul dengan jeda setelah vote sukses,
+ * Dialog penawaran ("teaser"), muncul dengan jeda setelah vote sukses,
  * SEBELUM syarat follow ditampilkan. Tujuannya membuat ajakan klaim kupon
  * terasa seperti hadiah, bukan langsung dibebani syarat. "Klaim Sekarang"
  * membuka ClaimCouponDialog (syarat follow); ditutup (X) tidak menghilangkan
- * kesempatan — CTA persisten tetap muncul di card peserta.
+ * kesempatan, CTA persisten tetap muncul di card peserta.
  */
 function ClaimTeaserDialog({
   open,
@@ -607,7 +607,7 @@ function VoteDialog({
       // Refresh label "sudah kamu vote" di card & halaman peserta.
       qc.invalidateQueries({ queryKey: ["voter-today"] });
       if (data.pending) {
-        // Bukti follow WA direview admin dulu — poin masuk setelah di-approve.
+        // Bukti follow WA direview admin dulu, poin masuk setelah di-approve.
         toast.success(t.votePendingSuccess);
         qc.invalidateQueries({ queryKey: ["profile", "me"] });
       } else {
@@ -785,7 +785,7 @@ function QuestCard({
   voter: VoterCtx;
   /** Voter login + onboarded: dialog hanya untuk bukti, tanpa form data. */
   locked: boolean;
-  /** Belum boleh mengerjakan quest — tombol mengalihkan. */
+  /** Belum boleh mengerjakan quest, tombol mengalihkan. */
   gate: (() => void) | null;
   disabled: boolean;
 }) {
@@ -859,7 +859,7 @@ function QuestCard({
           return;
         }
         for (const f of files) {
-          // Proof cuma untuk verifikasi admin — kompres kecil (tekan egress).
+          // Proof cuma untuk verifikasi admin, kompres kecil (tekan egress).
           const upFile = await compressImage(f, { maxSize: 900, quality: 0.7 });
           const fd = new FormData();
           fd.append("file", upFile);

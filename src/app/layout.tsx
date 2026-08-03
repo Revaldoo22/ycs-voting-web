@@ -6,7 +6,7 @@ import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
 import { HelpFab } from "@/components/help-fab";
 
-// Google Analytics 4 — bisa di-override / dimatikan lewat env.
+// Google Analytics 4, bisa di-override / dimatikan lewat env.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-FZZC7WVGJX";
 // Microsoft Clarity (heatmap + session recording).
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID ?? "xj40fbpzhu";

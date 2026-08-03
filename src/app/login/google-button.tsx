@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/i18n";
 
-/** Official Google "G" mark (SVG, per brand guidelines — not an emoji). */
+/** Official Google "G" mark (SVG, per brand guidelines, not an emoji). */
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>

@@ -36,7 +36,7 @@ export function Navbar({
   showLogout?: boolean;
 }) {
   const t = useTranslation("navbar");
-  // Menu publik standar — SATU sumber, dipakai semua halaman publik.
+  // Menu publik standar, SATU sumber, dipakai semua halaman publik.
   const publicLinks: NavLink[] = [
     { href: "/", label: t.home, icon: Home },
     { href: "/ranking", label: t.ranking },
@@ -136,7 +136,7 @@ export function Navbar({
           )}
         </nav>
 
-        {/* Panduan: selalu tampak di luar menu — icon tanda tanya di mobile,
+        {/* Panduan: selalu tampak di luar menu, icon tanda tanya di mobile,
             icon + teks di desktop. */}
         {!showLogout && (
           <Link

@@ -45,7 +45,7 @@ const FALLBACK_LOCALE: LocaleContextValue = {
 };
 
 /**
- * Falls back to Indonesian (no-op setter) outside LocaleProvider — some
+ * Falls back to Indonesian (no-op setter) outside LocaleProvider, some
  * shared components (e.g. states.tsx) are also used from admin pages that
  * Next.js statically prerenders without the full provider tree in scope.
  */

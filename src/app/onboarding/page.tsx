@@ -211,7 +211,7 @@ export default function OnboardingPage() {
   const [step, setStep] = React.useState(0);
   const [busy, setBusy] = React.useState(false);
 
-  // Halaman asal (?next=) — voter yang klik vote sebelum login dikembalikan
+  // Halaman asal (?next=), voter yang klik vote sebelum login dikembalikan
   // ke sana setelah onboarding selesai. Path internal saja (anti open redirect).
   // Dibaca dari window agar tak perlu Suspense useSearchParams.
   const [nextPath] = React.useState<string | null>(() => {
@@ -274,7 +274,7 @@ export default function OnboardingPage() {
       if (d.stekomSource) setStekomSource(d.stekomSource);
       if (typeof d.step === "number") setStep(d.step);
     } catch {
-      /* draft rusak — abaikan */
+      /* draft rusak, abaikan */
     } finally {
       restored.current = true;
     }
@@ -290,7 +290,7 @@ export default function OnboardingPage() {
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     } catch {
-      /* storage penuh — abaikan */
+      /* storage penuh, abaikan */
     }
   }, [
     name, phone, provinceCode, regencyCode, school, schoolManual, classManual,

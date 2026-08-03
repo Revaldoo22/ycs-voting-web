@@ -10,7 +10,7 @@
     --card-foreground: 198 74% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 198 74% 16%;
-    /* Youth Character Summit — cyan/teal (laut & langit Bali) */
+    /* Youth Character Summit, cyan/teal (laut & langit Bali) */
     --primary: 192 91% 36%;
     --primary-foreground: 0 0% 100%;
     --secondary: 196 55% 94%;
@@ -74,7 +74,7 @@
 }
 
 @layer utilities {
-  /* Judul gradient — dipakai hero & logo. */
+  /* Judul gradient, dipakai hero & logo. */
   .text-gradient {
     @apply bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 bg-clip-text text-transparent;
   }

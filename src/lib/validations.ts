@@ -8,7 +8,7 @@ const phone = z
   .regex(/^[0-9+\-\s().]+$/, "Nomor WhatsApp tidak valid");
 
 // NOTE: fingerprint is attached by the client at submit time and validated
-// server-side — it is intentionally NOT part of these form schemas so an
+// server-side, it is intentionally NOT part of these form schemas so an
 // empty initial value can't silently block React Hook Form submission.
 export const voterRegisterSchema = z
   .object({

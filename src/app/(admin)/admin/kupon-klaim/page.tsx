@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
 
-/** Alasan penolakan cepat — admin bisa klik atau ketik sendiri. */
+/** Alasan penolakan cepat, admin bisa klik atau ketik sendiri. */
 const REJECT_TEMPLATES = [
   "Bukti follow tidak jelas / buram.",
   "Screenshot bukan bukti follow.",
@@ -133,8 +133,8 @@ export default function AdminCouponClaimsPage() {
       await review.mutateAsync({ id, status, reason });
       toast.success(
         status === "approved"
-          ? "Klaim disetujui — kupon undian terbit."
-          : "Klaim ditolak — voter dapat pemberitahuan & bisa klaim ulang.",
+          ? "Klaim disetujui, kupon undian terbit."
+          : "Klaim ditolak, voter dapat pemberitahuan & bisa klaim ulang.",
       );
       setSelected((prev) => {
         const next = new Set(prev);
@@ -168,7 +168,7 @@ export default function AdminCouponClaimsPage() {
     if (ids.length === 0) return;
     try {
       const res = await bulkReview.mutateAsync({ ids, status: "rejected", reason });
-      toast.success(`${res.processed} klaim ditolak — voter diberi tahu.`);
+      toast.success(`${res.processed} klaim ditolak, voter diberi tahu.`);
       setSelected(new Set());
     } catch (e) {
       toast.error("Gagal memproses: " + (e as Error).message);
@@ -288,7 +288,7 @@ export default function AdminCouponClaimsPage() {
         )}
       </div>
 
-      {/* Bar aksi massal — muncul saat ada yang dipilih */}
+      {/* Bar aksi massal, muncul saat ada yang dipilih */}
       {selected.size > 0 && (
         <div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 backdrop-blur">
           <p className="text-sm font-semibold">

@@ -32,7 +32,7 @@ import { cn, formatNumber } from "@/lib/utils";
 import { RankMedal, podiumRowClass } from "@/components/rank-medal";
 import { useTranslation } from "@/lib/i18n";
 
-/** Node drill-down (provinsi/kabupaten) — key stabil walau id null. */
+/** Node drill-down (provinsi/kabupaten), key stabil walau id null. */
 type DrillGroup = {
   key: string;
   name: string;
@@ -125,7 +125,7 @@ function groupBy(
 }
 
 /**
- * Header kolom di atas daftar leaderboard — menjelaskan angka di kanan
+ * Header kolom di atas daftar leaderboard, menjelaskan angka di kanan
  * adalah total poin.
  */
 function ListHeader({ label }: { label: string }) {
@@ -226,7 +226,7 @@ export default function PublicRoundsPage() {
   const regKey = (r: RoundStanding) => r.region_id ?? "none";
 
   // Wilayah si voter (untuk highlight "Provinsimu/Kabupatenmu/Sekolahmu").
-  // Provinsi tak ada di profil — diturunkan dari baris standings sekolah /
+  // Provinsi tak ada di profil, diturunkan dari baris standings sekolah /
   // kabupaten yang cocok.
   const mine = React.useMemo(() => {
     const rows = results ?? [];

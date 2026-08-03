@@ -58,8 +58,7 @@ export function ParticipantGrid() {
   const [page, setPage] = React.useState(initial.page);
   const [scope, setScope] = React.useState<Scope>(initial.scope ?? "all");
 
-  // Filter lingkup muncul selama akun login punya identitas sekolah/daerah —
-  // baik voter yang sudah onboarding maupun peserta (email cocok record
+  // Filter lingkup muncul selama akun login punya identitas sekolah/daerah, // baik voter yang sudah onboarding maupun peserta (email cocok record
   // peserta → school_id/region_id terisi dari /me walau belum onboarding).
   // Jangan timpa lingkup hasil restore dari URL.
   const voterReady = !!me && (!!me.school_id || !!me.region_id);
@@ -67,7 +66,7 @@ export function ParticipantGrid() {
     if (voterReady && me?.school_id && !initial.scope) setScope("school");
   }, [voterReady, me?.school_id, initial.scope]);
 
-  // Reset halaman saat cari/lingkup berubah — skip render pertama supaya
+  // Reset halaman saat cari/lingkup berubah, skip render pertama supaya
   // page hasil restore tidak langsung ke-reset.
   const firstRun = React.useRef(true);
   React.useEffect(() => {
@@ -78,7 +77,7 @@ export function ParticipantGrid() {
     setPage(1);
   }, [search, scope]);
 
-  // Tulis balik state ke URL (replaceState — tanpa nambah riwayat browser).
+  // Tulis balik state ke URL (replaceState, tanpa nambah riwayat browser).
   React.useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     sp.delete("q");

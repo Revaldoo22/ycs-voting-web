@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Event structured data dengan offers.price "0" — inilah yang memungkinkan
+ * Event structured data dengan offers.price "0", inilah yang memungkinkan
  * Google menampilkan label "Free" pada rich result.
  */
 const EVENT_JSON_LD = {

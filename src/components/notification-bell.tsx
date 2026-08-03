@@ -29,7 +29,7 @@ function timeAgo(iso: string, t: Dictionary["notificationBell"]): string {
   return t.daysAgo(hari);
 }
 
-/** Lonceng pemberitahuan voter — hanya tampil untuk voter yang sudah login. */
+/** Lonceng pemberitahuan voter, hanya tampil untuk voter yang sudah login. */
 export function NotificationBell() {
   const { data: me } = useMyProfile();
   const enabled = !!me && me.role === "voter";

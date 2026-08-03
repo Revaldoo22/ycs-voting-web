@@ -17,7 +17,7 @@ export type SelectOption = { value: string; label: string; disabled?: boolean };
 const EMPTY = "__empty__";
 
 /**
- * Dropdown custom (bukan native browser) — scrollable, keyboard & touch
+ * Dropdown custom (bukan native browser), scrollable, keyboard & touch
  * friendly (mobile), styling seragam. API mirip native select:
  *   <SelectBox value onChange options placeholder />
  */

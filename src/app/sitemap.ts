@@ -4,7 +4,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://idola.stekom.ac.id"
 
 /**
  * Halaman publik yang layak diindeks. Halaman berbasis sesi (akun, kupon,
- * onboarding) sengaja tidak dimasukkan — lihat robots.ts.
+ * onboarding) sengaja tidak dimasukkan, lihat robots.ts.
  */
 const ROUTES: Array<{
   path: string;

@@ -11,7 +11,7 @@ export async function compressImage(
 ): Promise<File> {
   const { maxSize = 1000, quality = 0.8, mime = "image/jpeg" } = opts;
 
-  // Skip non-images and tiny files (< 200 KB) — not worth it.
+  // Skip non-images and tiny files (< 200 KB), not worth it.
   if (!file.type.startsWith("image/")) return file;
   if (file.size < 200 * 1024) return file;
 

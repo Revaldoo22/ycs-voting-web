@@ -148,7 +148,7 @@ export default function AdminSchoolsPage() {
     });
   }
 
-  // Filter nama/kabupaten lalu potong per halaman — DOM tetap ringan.
+  // Filter nama/kabupaten lalu potong per halaman, DOM tetap ringan.
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return data ?? [];
@@ -219,7 +219,7 @@ export default function AdminSchoolsPage() {
                       <TableCell className="font-medium">{s.name}</TableCell>
                       <TableCell>
                         {/* Nama kabupaten langsung dari data sekolah (join
-                            region_id di backend) — bukan hasil pencocokan
+                            region_id di backend), bukan hasil pencocokan
                             dropdown, jadi selalu sesuai data. */}
                         <button
                           type="button"
@@ -293,7 +293,7 @@ export default function AdminSchoolsPage() {
         </>
       )}
 
-      {/* Dialog ganti kabupaten — satu untuk semua baris, searchable +
+      {/* Dialog ganti kabupaten, satu untuk semua baris, searchable +
           bisa ketik manual (buat kabupaten baru lalu langsung pasang). */}
       <RegionPicker
         school={regionTarget}

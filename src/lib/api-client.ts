@@ -18,7 +18,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     const b = body as { error?: string; message?: string | string[] };
     // Nest ValidationPipe menaruh detail di message (bisa array); "error"
-    // cuma label generik ("Bad Request") — tampilkan yang informatif.
+    // cuma label generik ("Bad Request"), tampilkan yang informatif.
     const msg = Array.isArray(b.message) ? b.message[0] : b.message;
     throw new Error(msg ?? b.error ?? `Request gagal (${res.status})`);
   }

@@ -234,7 +234,7 @@ const en: Dictionary = {
     prizeDialogTitle: "How to Get a Smartphone Raffle Coupon",
     prizeDialogStep1: "Choose your favorite participant in the Participant List section below, then click Support.",
     prizeDialogStep2: "After your vote succeeds, claim your raffle coupon: follow the Universitas STEKOM account and upload proof.",
-    prizeDialogStep3: "Done! Your raffle coupon is added to your account once your proof is approved by admin — check it in the My Coupons menu.",
+    prizeDialogStep3: "Done! Your raffle coupon is added to your account once your proof is approved by admin, check it in the My Coupons menu.",
     prizeDialogCta: "Vote Now",
     rankingCta: "Current Standings",
     joinCta: "Become a YCS Participant",
@@ -422,7 +422,7 @@ const en: Dictionary = {
     shareMessage: (name: string) =>
       `Support ${name} at the Youth Character Summit, Universitas STEKOM! 🔥`,
     votedPendingReview:
-      "Already voted — your follow proof is awaiting admin review. Points will be added once approved.",
+      "Already voted, your follow proof is awaiting admin review. Points will be added once approved.",
     votedThanks: "You already voted for this participant. Thank you!",
     oneVotePerAccount: "Each account can only cast 1 vote for the entire event.",
     questSectionTitle: (name: string) =>
@@ -445,10 +445,10 @@ const en: Dictionary = {
     support: "Support",
     followTaskDialogTitle: "Claim Your Smartphone Raffle Coupon",
     followTaskDialogDescription: (n: number) =>
-      `Your vote is in! Follow the ${n} accounts below, upload proof, then submit to claim your smartphone raffle coupon. Proof is reviewed by admin — your coupon is valid once approved.`,
+      `Your vote is in! Follow the ${n} accounts below, upload proof, then submit to claim your smartphone raffle coupon. Proof is reviewed by admin, your coupon is valid once approved.`,
     claimTeaserTitle: "Vote Successful! 🎉",
     claimTeaserBody:
-      "It'd be a shame to miss this — claim your raffle coupon now for a chance to win a smartphone & other exciting prizes!",
+      "It'd be a shame to miss this, claim your raffle coupon now for a chance to win a smartphone & other exciting prizes!",
     claimTeaserCta: "Claim Now",
     claimTeaserLater: "Maybe Later",
     claimCtaCard: "Claim Your Smartphone Raffle Coupon",
@@ -493,7 +493,7 @@ const en: Dictionary = {
       `You must follow the ${n} WhatsApp channels below before your first vote is processed. Upload proof, then submit. Your vote goes through once proof is approved by admin.`,
     sendProofAndVoteWa: (n: number) => `Submit Proof & Vote (${n} files)`,
     votePendingSuccess:
-      "Vote submitted! Your WhatsApp follow proof is being reviewed by admin — points will be added once approved.",
+      "Vote submitted! Your WhatsApp follow proof is being reviewed by admin, points will be added once approved.",
     chooseContentFirst: "Choose a participant's content first.",
     invalidLink: "Enter a valid post link (starting with http).",
     chooseAtLeastOneFile: "Choose at least 1 proof file.",
@@ -605,7 +605,7 @@ const en: Dictionary = {
     participantNote2:
       "Not recognized as a participant when logging in? The email you used might be different from your registration data. Contact the admin below.",
     timelineTitle: "YCS 2026 Timeline",
-    timelineSubtitle: "The full activity schedule — join in and win!",
+    timelineSubtitle: "The full activity schedule, join in and win!",
     timelineSteps: [
       {
         title: "Registration opens July 10, 2026, free of charge",

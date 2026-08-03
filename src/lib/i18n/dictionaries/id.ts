@@ -420,7 +420,7 @@ const id = {
     shareMessage: (name: string) =>
       `Dukung ${name} di Youth Character Summit Universitas STEKOM! 🔥`,
     votedPendingReview:
-      "Sudah vote — bukti follow menunggu review admin. Poin masuk setelah di-approve.",
+      "Sudah vote, bukti follow menunggu review admin. Poin masuk setelah di-approve.",
     votedThanks: "Kamu sudah vote peserta ini. Terima kasih!",
     oneVotePerAccount: "Setiap akun hanya bisa memberi 1 vote seumur event.",
     questSectionTitle: (name: string) =>
@@ -443,10 +443,10 @@ const id = {
     support: "Dukung",
     followTaskDialogTitle: "Klaim Kupon Undian Handphone",
     followTaskDialogDescription: (n: number) =>
-      `Vote kamu sudah masuk! Follow ${n} akun di bawah, upload bukti, lalu kirim untuk klaim kupon undian handphone. Bukti direview admin — kuponmu sah setelah di-approve.`,
+      `Vote kamu sudah masuk! Follow ${n} akun di bawah, upload bukti, lalu kirim untuk klaim kupon undian handphone. Bukti direview admin, kuponmu sah setelah di-approve.`,
     claimTeaserTitle: "Vote Berhasil! 🎉",
     claimTeaserBody:
-      "Sayang banget kalau dilewatkan — klaim kupon undian sekarang dan dapatkan kesempatan menangkan handphone & hadiah menarik lainnya!",
+      "Sayang banget kalau dilewatkan, klaim kupon undian sekarang dan dapatkan kesempatan menangkan handphone & hadiah menarik lainnya!",
     claimTeaserCta: "Klaim Sekarang",
     claimTeaserLater: "Nanti Saja",
     claimCtaCard: "Klaim Kupon Undian Handphone",
@@ -491,7 +491,7 @@ const id = {
       `Wajib follow ${n} saluran WhatsApp di bawah sebelum vote pertamamu diproses. Upload bukti, lalu kirim. Vote masuk setelah bukti di-approve admin.`,
     sendProofAndVoteWa: (n: number) => `Kirim Bukti & Vote (${n} file)`,
     votePendingSuccess:
-      "Vote terkirim! Bukti follow WA-mu sedang direview admin — poin masuk setelah di-approve.",
+      "Vote terkirim! Bukti follow WA-mu sedang direview admin, poin masuk setelah di-approve.",
     chooseContentFirst: "Pilih konten peserta dulu.",
     invalidLink: "Masukkan link postingan yang valid (mulai http).",
     chooseAtLeastOneFile: "Pilih minimal 1 file bukti.",

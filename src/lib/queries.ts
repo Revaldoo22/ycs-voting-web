@@ -1,6 +1,6 @@
 "use client";
 
-// Data hooks — SAME signatures as the old Supabase version, but every call
+// Data hooks, SAME signatures as the old Supabase version, but every call
 // now hits the NestJS API (same-origin /api/*, proxied by next.config).
 import {
   useMutation,
@@ -139,7 +139,7 @@ export function useAdminVotersCount(filters: VoterFilters) {
   });
 }
 
-/** All voters matching the filters (no paging) — for the Excel export. */
+/** All voters matching the filters (no paging), for the Excel export. */
 export async function fetchAllAdminVoters(
   filters: VoterFilters,
 ): Promise<AdminVoter[]> {
@@ -297,7 +297,7 @@ export function useParticipants(schoolId?: string | null) {
   });
 }
 
-/** Admin list — includes the login phone number per participant. */
+/** Admin list, includes the login phone number per participant. */
 export function useAdminParticipants() {
   return useQuery({
     queryKey: ["participants", "admin"],
@@ -599,7 +599,7 @@ export type HeatmapRow = {
   votes: number;
 };
 
-/** Kabupaten/kota (regency) — dipakai filter admin, akun voter, peringkat. */
+/** Kabupaten/kota (regency), dipakai filter admin, akun voter, peringkat. */
 export function useRegions() {
   return useQuery({
     queryKey: ["regions", "regency"],

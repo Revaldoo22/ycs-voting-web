@@ -99,7 +99,7 @@ export default function AdminLeadsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Leads PMB</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Voter yang sudah lengkapi profil — calon prospek Penerimaan Mahasiswa
+            Voter yang sudah lengkapi profil, calon prospek Penerimaan Mahasiswa
             Baru. {data ? `${filtered.length} data.` : ""}
           </p>
         </div>

@@ -388,7 +388,7 @@ function PopulateDialog({
         <DialogHeader>
           <DialogTitle>Isi Sekolah: {round?.name}</DialogTitle>
           <DialogDescription>
-            Opsional — sekolah yang punya peserta sudah otomatis ikut. Pakai ini
+            Opsional, sekolah yang punya peserta sudah otomatis ikut. Pakai ini
             hanya untuk menarik manual sekolah gugur dari gelombang lain.
           </DialogDescription>
         </DialogHeader>

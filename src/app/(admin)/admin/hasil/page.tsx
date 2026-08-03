@@ -109,7 +109,7 @@ export default function AdminHasilPage() {
                 <div className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-inset ring-amber-200">
                   <Trophy className="mt-0.5 h-4 w-4 shrink-0" />
                   <p>
-                    <b>{round.name}</b> belum ditutup — ini peringkat sementara.
+                    <b>{round.name}</b> belum ditutup, ini peringkat sementara.
                     Lolos/gugur ditetapkan saat ditutup{" "}
                     {round.select_mode === "global"
                       ? `(top ${round.top_n} nasional)`
