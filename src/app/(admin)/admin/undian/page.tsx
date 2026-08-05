@@ -1,7 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Gift, Loader2, Radio, Smartphone, Ticket, Undo2, X } from "lucide-react";
+import {
+  Gift,
+  Loader2,
+  Maximize,
+  Minimize,
+  Radio,
+  Smartphone,
+  Ticket,
+  Undo2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -304,20 +314,24 @@ function randChar(): string {
 }
 
 /**
- * Satu reel (gulungan) mesin slot bergaya kabinet: 3 baris terlihat, baris
- * TENGAH adalah digit terpilih, baris atas/bawah hanya karakter sekitarnya
- * (efek gulungan). Saat `spinning` ketiganya berganti acak; begitu berhenti,
- * baris tengah menampilkan `finalChar`.
+ * Satu reel (gulungan) mesin slot bergaya kabinet 3D: 3 baris terlihat,
+ * baris TENGAH adalah digit terpilih, baris atas/bawah karakter sekitarnya
+ * (efek gulungan). Saat `spinning`, karakter berganti dengan kecepatan yang
+ * MELAMBAT mengikuti `slowdown` (0 = masih cepat, 1 = hampir berhenti),
+ * meniru gulungan fisik yang kehilangan momentum sebelum terkunci.
  */
 function SlotReel({
   finalChar,
   spinning,
   idle,
+  slowdown = 0,
 }: {
   finalChar: string;
   spinning: boolean;
   /** Belum diundi sama sekali: placeholder redup, tidak berputar. */
   idle?: boolean;
+  /** 0..1, semakin besar semakin lambat gantinya (efek melambat). */
+  slowdown?: number;
 }) {
   const [rows, setRows] = React.useState<[string, string, string]>([
     randChar(),
@@ -331,58 +345,85 @@ function SlotReel({
       setRows([randChar(), finalChar, randChar()]);
       return;
     }
+    // Interval naik dari 55ms (cepat) sampai ~340ms (hampir berhenti).
+    const delay = 55 + Math.round(slowdown * slowdown * 285);
     const id = setInterval(() => {
       setRows([randChar(), randChar(), randChar()]);
-    }, 80);
+    }, delay);
     return () => clearInterval(id);
-  }, [spinning, finalChar]);
+  }, [spinning, finalChar, slowdown]);
 
   const state = idle ? "idle" : spinning ? "spin" : "locked";
-  const display: [string, string, string] = idle
-    ? ["?", "?", "?"]
-    : rows;
+  const display: [string, string, string] = idle ? ["?", "?", "?"] : rows;
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border-2 bg-gradient-to-b from-slate-50 via-white to-slate-50 transition-all duration-300",
-        state === "idle" && "border-slate-200",
-        state === "spin" && "border-primary/50 shadow-sm",
+        "relative overflow-hidden rounded-2xl transition-all duration-500",
+        // Cangkang luar: bevel logam terang, memberi kesan kabinet fisik.
+        "bg-gradient-to-b from-white via-slate-100 to-slate-300 p-[3px]",
+        state === "idle" && "shadow-[0_2px_6px_rgba(15,23,42,0.10)]",
+        state === "spin" &&
+          "shadow-[0_8px_24px_-4px_rgba(8,145,178,0.45),0_0_0_1px_rgba(8,145,178,0.35)]",
         state === "locked" &&
-          "border-accent shadow-[0_4px_18px_rgba(249,115,22,0.28)]",
+          "-translate-y-0.5 scale-[1.04] shadow-[0_14px_32px_-6px_rgba(249,115,22,0.55),0_0_0_2px_rgba(249,115,22,0.65)]",
       )}
     >
-      {display.map((ch, r) => {
-        const isCenter = r === 1;
-        return (
-          <div
-            key={r}
-            className={cn(
-              "flex w-11 items-center justify-center font-mono font-extrabold transition-colors sm:w-14",
-              // Baris tengah lebih tinggi & tegas: itu digit yang dipilih.
-              isCenter
-                ? "h-14 text-3xl sm:h-16 sm:text-4xl"
-                : "h-9 text-lg opacity-40 sm:h-10 sm:text-xl",
-              isCenter && state === "idle" && "text-slate-300",
-              isCenter && state === "spin" && "text-primary",
-              isCenter && state === "locked" && "text-accent",
-              !isCenter && "text-slate-400",
-            )}
-          >
-            {ch}
-          </div>
-        );
-      })}
-
-      {/* Garis penanda baris terpilih (atas & bawah baris tengah). */}
+      {/* Rongga dalam: gelap di tepi atas/bawah, terang di tengah (kedalaman) */}
       <div
         className={cn(
-          "pointer-events-none absolute inset-x-0 top-9 h-14 border-y-2 transition-colors sm:top-10 sm:h-16",
-          state === "locked" ? "border-accent/70" : "border-primary/30",
+          "relative overflow-hidden rounded-[13px] transition-colors duration-500",
+          state === "locked"
+            ? "bg-gradient-to-b from-orange-100 via-white to-orange-100"
+            : "bg-gradient-to-b from-slate-200 via-white to-slate-200",
         )}
-      />
-      {/* Highlight kaca di baris tengah biar terasa seperti kabinet fisik. */}
-      <div className="pointer-events-none absolute inset-x-0 top-9 h-14 bg-gradient-to-b from-white/60 via-transparent to-white/40 sm:top-10 sm:h-16" />
+      >
+        {display.map((ch, r) => {
+          const isCenter = r === 1;
+          return (
+            <div
+              key={r}
+              className={cn(
+                "flex w-12 items-center justify-center font-mono font-extrabold tabular-nums transition-colors sm:w-16",
+                // Baris tengah lebih tinggi, tajam, dan menonjol.
+                isCenter
+                  ? "h-16 text-4xl sm:h-20 sm:text-5xl"
+                  : "h-8 text-base blur-[0.6px] sm:h-10 sm:text-lg",
+                isCenter && state === "idle" && "text-slate-300",
+                isCenter && state === "spin" && "text-primary",
+                isCenter && state === "locked" && "text-accent",
+                !isCenter && "text-slate-400/70",
+              )}
+              style={
+                isCenter
+                  ? {
+                      // Timbul: sorot terang di atas, bayangan di bawah.
+                      textShadow:
+                        state === "locked"
+                          ? "0 1px 0 rgba(255,255,255,0.9), 0 3px 8px rgba(249,115,22,0.45)"
+                          : "0 1px 0 rgba(255,255,255,0.9), 0 2px 5px rgba(15,23,42,0.18)",
+                    }
+                  : undefined
+              }
+            >
+              {ch}
+            </div>
+          );
+        })}
+
+        {/* Bayangan dalam di tepi atas & bawah: rongga terasa punya kedalaman */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-slate-900/20 to-transparent sm:h-10" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-900/20 to-transparent sm:h-10" />
+
+        {/* Jendela baris terpilih: garis penanda + kilau kaca melintang */}
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-8 h-16 border-y-2 transition-colors duration-500 sm:top-10 sm:h-20",
+            state === "locked" ? "border-accent/80" : "border-primary/25",
+          )}
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-8 h-16 bg-gradient-to-br from-white/70 via-transparent to-white/25 sm:top-10 sm:h-20" />
+      </div>
     </div>
   );
 }
@@ -396,18 +437,27 @@ function SlotCabinet({
   digits,
   revealedCount,
   spinningIndexes,
+  slowdown = 0,
 }: {
   digits: string[];
   revealedCount: number;
   spinningIndexes: number[];
+  /** 0..1 progres perlambatan untuk reel yang sedang berputar. */
+  slowdown?: number;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-primary/30 bg-gradient-to-b from-primary/10 to-accent/10 p-3 shadow-inner sm:p-4">
-      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+    <div
+      className="rounded-3xl border border-white/60 bg-gradient-to-b from-primary/15 via-white/40 to-accent/15 p-3 sm:p-5"
+      style={{
+        boxShadow:
+          "inset 0 2px 10px rgba(15,23,42,0.10), inset 0 -2px 8px rgba(255,255,255,0.85), 0 12px 28px -12px rgba(8,145,178,0.30)",
+      }}
+    >
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2.5">
         {digits.map((ch, i) => (
           <React.Fragment key={i}>
             {i === 4 && (
-              <span className="mx-0.5 text-2xl font-extrabold text-primary/40 sm:text-3xl">
+              <span className="mx-1 text-3xl font-extrabold text-primary/50 sm:text-4xl">
                 -
               </span>
             )}
@@ -415,6 +465,7 @@ function SlotCabinet({
               finalChar={ch}
               spinning={spinningIndexes.includes(i)}
               idle={i >= revealedCount && !spinningIndexes.includes(i)}
+              slowdown={slowdown}
             />
           </React.Fragment>
         ))}
@@ -447,6 +498,8 @@ function LiveDraw({
   const [spinningIndexes, setSpinningIndexes] = React.useState<number[]>([]);
   /** Berapa digit diundi tiap kali tombol spin ditekan (1, 2, 4, atau 8). */
   const [perSpin, setPerSpin] = React.useState(1);
+  /** 0..1: progres perlambatan reel yang berputar (1 = hampir berhenti). */
+  const [slowdown, setSlowdown] = React.useState(0);
   /**
    * Pemenang yang sudah ditandai backend tapi BELUM diumumkan (kode masih
    * diungkap digit demi digit). Kalau panggung ditutup sebelum semua digit
@@ -463,6 +516,27 @@ function LiveDraw({
       alive.current = false;
     };
   }, []);
+
+  // ------------------------- Mode layar penuh -------------------------
+  const stageRef = React.useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  React.useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await stageRef.current?.requestFullscreen();
+      }
+    } catch {
+      toast.error("Layar penuh tidak didukung browser ini.");
+    }
+  }
 
   /**
    * Batalkan pemenang yang belum diumumkan (kupon kembali ke kolam undian).
@@ -497,7 +571,6 @@ function LiveDraw({
     return () => {
       discardPendingWinner();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Prefetch kandidat begitu panggung dibuka: shuffle mulai tanpa jeda.
@@ -604,21 +677,38 @@ function LiveDraw({
     const idxs = Array.from({ length: batch }, (_, k) => start + k);
 
     setSpinningIndexes(idxs);
-    await new Promise((r) => setTimeout(r, 1200));
+
+    // Fase 1: berputar cepat & mantap (belum melambat).
+    setSlowdown(0);
+    await new Promise((r) => setTimeout(r, 2200));
     if (!alive.current) return;
 
-    // Kunci berurutan dari kiri: tiap reel berhenti dengan jeda pendek.
+    // Fase 2: momentum habis perlahan, ~2,2 detik menjelang terkunci.
+    const STEPS = 22;
+    for (let s = 1; s <= STEPS; s++) {
+      setSlowdown(s / STEPS);
+      await new Promise((r) => setTimeout(r, 100));
+      if (!alive.current) return;
+    }
+
+    // Kunci berurutan dari kiri: tiap reel berhenti dengan jeda dramatis.
     for (let k = 0; k < batch; k++) {
       setSpinningIndexes(idxs.slice(k + 1));
       setRevealed(start + k + 1);
       if (k < batch - 1) {
-        await new Promise((r) => setTimeout(r, 420));
+        // Reel berikutnya "berputar lagi" sebentar sebelum ikut berhenti.
+        setSlowdown(0.45);
+        await new Promise((r) => setTimeout(r, 380));
+        if (!alive.current) return;
+        setSlowdown(1);
+        await new Promise((r) => setTimeout(r, 320));
         if (!alive.current) return;
       }
     }
+    setSlowdown(0);
 
     if (start + batch >= digits.length) {
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 900));
       if (!alive.current) return;
       // Semua digit terungkap: kemenangan resmi, tak lagi boleh dibatalkan
       // otomatis saat panggung ditutup, dan voter berhak diberi tahu.
@@ -636,7 +726,10 @@ function LiveDraw({
   const nextBatch = Math.min(perSpin, Math.max(0, digits.length - revealed));
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-slate-50 text-slate-900">
+    <div
+      ref={stageRef}
+      className="fixed inset-0 z-[200] flex flex-col overflow-auto bg-slate-50 text-slate-900"
+    >
       {/* Aksen latar lembut: biru primary di atas, oranye accent di bawah. */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -647,13 +740,27 @@ function LiveDraw({
       />
       {stage === "reveal" && <Confetti />}
 
-      <button
-        onClick={handleClose}
-        className="absolute right-5 top-5 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-slate-500 shadow-sm transition-colors hover:text-slate-900"
-        aria-label="Tutup"
-      >
-        <X className="h-5 w-5" />
-      </button>
+      <div className="absolute right-5 top-5 z-10 flex gap-2">
+        <button
+          onClick={toggleFullscreen}
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-slate-500 shadow-sm transition-colors hover:text-primary"
+          aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+          title={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+        >
+          {isFullscreen ? (
+            <Minimize className="h-5 w-5" />
+          ) : (
+            <Maximize className="h-5 w-5" />
+          )}
+        </button>
+        <button
+          onClick={handleClose}
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-slate-500 shadow-sm transition-colors hover:text-slate-900"
+          aria-label="Tutup"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
       <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-primary">
@@ -669,8 +776,16 @@ function LiveDraw({
               Pastikan layar ini yang dibagikan ke penonton. Pilih gaya animasi
               lalu mulai.
             </p>
+            {!isFullscreen && (
+              <button
+                onClick={toggleFullscreen}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-primary/30 bg-white px-4 py-1.5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5"
+              >
+                <Maximize className="h-4 w-4" /> Layar Penuh
+              </button>
+            )}
             {/* Pilih gaya animasi */}
-            <div className="inline-flex rounded-xl border bg-white p-1 shadow-sm">
+            <div className="inline-flex rounded-2xl border border-white/80 bg-white p-1 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
               {(
                 [
                   { v: "slot", label: "Slot Digit" },
@@ -681,9 +796,9 @@ function LiveDraw({
                   key={o.v}
                   onClick={() => setStyle(o.v)}
                   className={cn(
-                    "cursor-pointer rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors",
+                    "cursor-pointer rounded-xl px-4 py-1.5 text-sm font-semibold transition-all",
                     style === o.v
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-gradient-to-b from-cyan-500 to-primary text-white shadow-[0_3px_0_-1px_rgb(14,116,144)]"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -696,9 +811,19 @@ function LiveDraw({
                 Mode slot: kode pemenang diungkap 8 digit, satu digit per klik.
               </p>
             )}
-            <Button size="lg" variant="accent" onClick={run}>
-              <Radio className="h-5 w-5" /> Mulai Undian
-            </Button>
+            <button
+              onClick={run}
+              className={cn(
+                "relative flex h-14 items-center justify-center gap-3 rounded-full px-10 text-base font-extrabold uppercase tracking-widest text-white transition-all duration-200",
+                "bg-gradient-to-b from-orange-400 via-accent to-orange-600",
+                "shadow-[0_9px_0_-2px_rgb(194,65,12),0_16px_28px_-10px_rgba(249,115,22,0.7)]",
+                "hover:brightness-105",
+                "active:translate-y-1 active:shadow-[0_4px_0_-2px_rgb(194,65,12),0_10px_18px_-10px_rgba(249,115,22,0.7)]",
+              )}
+            >
+              <span className="pointer-events-none absolute inset-x-3 top-1 h-4 rounded-full bg-white/30 blur-[2px]" />
+              <Radio className="h-5 w-5 shrink-0" /> Mulai Undian
+            </button>
           </>
         )}
 
@@ -721,9 +846,15 @@ function LiveDraw({
         )}
 
         {stage === "slot" && (
-          <div className="w-full max-w-3xl space-y-4">
+          <div className="w-full max-w-4xl space-y-4">
             {/* Kabinet reel: baris tengah = digit terpilih. */}
-            <div className="rounded-3xl border-2 border-primary/25 bg-white p-4 shadow-lg shadow-primary/5 sm:p-6">
+            <div
+              className="rounded-[28px] border border-white/70 bg-white/80 p-4 backdrop-blur sm:p-6"
+              style={{
+                boxShadow:
+                  "0 24px 60px -20px rgba(8,145,178,0.35), 0 2px 0 rgba(255,255,255,0.9) inset",
+              }}
+            >
               <p className="mb-3 text-center font-mono text-xs font-bold tracking-[0.35em] text-primary">
                 KODE PEMENANG
               </p>
@@ -731,15 +862,22 @@ function LiveDraw({
                 digits={digits}
                 revealedCount={revealed}
                 spinningIndexes={spinningIndexes}
+                slowdown={slowdown}
               />
             </div>
 
             {/* Panel kontrol bawah, gaya konsol mesin slot. */}
-            <div className="rounded-3xl border-2 border-accent/30 bg-gradient-to-b from-accent/10 to-accent/5 p-4 shadow-sm sm:p-5">
+            <div
+              className="rounded-[28px] border border-white/70 bg-gradient-to-b from-accent/15 via-white/60 to-accent/10 p-4 backdrop-blur sm:p-5"
+              style={{
+                boxShadow:
+                  "0 18px 40px -18px rgba(249,115,22,0.35), 0 2px 0 rgba(255,255,255,0.9) inset",
+              }}
+            >
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
                 {/* Info kiri: progres & sisa digit */}
                 <div className="flex gap-2">
-                  <div className="rounded-xl border bg-white px-3 py-2 text-left shadow-sm">
+                  <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Terungkap
                     </p>
@@ -747,7 +885,7 @@ function LiveDraw({
                       {revealed}/{digits.length}
                     </p>
                   </div>
-                  <div className="rounded-xl border bg-white px-3 py-2 text-left shadow-sm">
+                  <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Per Spin
                     </p>
@@ -757,41 +895,50 @@ function LiveDraw({
                   </div>
                 </div>
 
-                {/* Tombol SPIN besar di tengah */}
-                <Button
-                  size="lg"
-                  variant="accent"
-                  className="h-16 w-full rounded-full px-10 text-lg font-extrabold uppercase tracking-widest shadow-lg shadow-accent/25 sm:w-auto"
+                {/* Tombol SPIN besar di tengah, timbul seperti tombol fisik */}
+                <button
                   onClick={spinDigit}
                   disabled={spinning || allRevealed}
+                  className={cn(
+                    "group relative flex h-16 w-full items-center justify-center gap-3 rounded-full text-lg font-extrabold uppercase tracking-widest text-white transition-all duration-200 sm:w-auto sm:px-12",
+                    "bg-gradient-to-b from-orange-400 via-accent to-orange-600",
+                    "shadow-[0_10px_0_-2px_rgb(194,65,12),0_18px_30px_-10px_rgba(249,115,22,0.7)]",
+                    "enabled:hover:brightness-105",
+                    "enabled:active:translate-y-1 enabled:active:shadow-[0_5px_0_-2px_rgb(194,65,12),0_10px_20px_-10px_rgba(249,115,22,0.7)]",
+                    "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-[0_6px_0_-2px_rgb(194,65,12)]",
+                  )}
                 >
+                  {/* Kilau kaca di separuh atas tombol */}
+                  <span className="pointer-events-none absolute inset-x-3 top-1 h-5 rounded-full bg-white/30 blur-[2px]" />
                   {spinning ? (
                     <>
-                      <Loader2 className="h-6 w-6 animate-spin" /> Mengundi
+                      <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
+                      Mengundi
                     </>
                   ) : (
                     <>
-                      <Smartphone className="h-6 w-6" /> Spin {nextBatch} Digit
+                      <Smartphone className="h-6 w-6 shrink-0" />
+                      Spin {nextBatch} Digit
                     </>
                   )}
-                </Button>
+                </button>
 
                 {/* Setelan digit per spin */}
                 <div className="flex flex-col items-center gap-1.5 sm:items-end">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     Digit per spin
                   </p>
-                  <div className="inline-flex rounded-xl border bg-white p-1 shadow-sm">
+                  <div className="inline-flex rounded-2xl border border-white/80 bg-white p-1 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
                     {[1, 2, 4, 8].map((n) => (
                       <button
                         key={n}
                         onClick={() => setPerSpin(n)}
                         disabled={spinning}
                         className={cn(
-                          "cursor-pointer rounded-lg px-3 py-1.5 font-mono text-sm font-bold transition-colors disabled:opacity-50",
+                          "cursor-pointer rounded-xl px-3.5 py-1.5 font-mono text-sm font-bold transition-all disabled:opacity-50",
                           perSpin === n
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:text-foreground",
+                            ? "bg-gradient-to-b from-cyan-500 to-primary text-white shadow-[0_3px_0_-1px_rgb(14,116,144)]"
+                            : "text-muted-foreground hover:bg-slate-100 hover:text-foreground",
                         )}
                       >
                         {n}
@@ -805,11 +952,22 @@ function LiveDraw({
         )}
 
         {stage === "reveal" && winner && (
-          <div className="w-full max-w-2xl space-y-3 rounded-3xl border-2 border-accent bg-white px-6 py-10 shadow-lg shadow-accent/10">
+          <div
+            className="w-full max-w-2xl space-y-3 rounded-[28px] border-2 border-accent/60 bg-white px-6 py-10"
+            style={{
+              boxShadow:
+                "0 28px 70px -24px rgba(249,115,22,0.55), 0 2px 0 rgba(255,255,255,0.9) inset",
+            }}
+          >
             <p className="text-sm font-bold uppercase tracking-widest text-accent">
               Selamat kepada
             </p>
-            <p className="text-4xl font-extrabold sm:text-6xl">{winner.name}</p>
+            <p
+              className="text-4xl font-extrabold sm:text-6xl"
+              style={{ textShadow: "0 2px 10px rgba(15,23,42,0.15)" }}
+            >
+              {winner.name}
+            </p>
             <p className="text-lg text-muted-foreground">
               {maskPhone(winner.phone_number)}
             </p>
