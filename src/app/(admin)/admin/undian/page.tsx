@@ -308,58 +308,84 @@ function codeDigits(code: string): string[] {
     .split("");
 }
 
-/** Karakter acak, dipakai untuk baris atas/bawah reel (sekadar hiasan). */
-function randChar(): string {
-  return SLOT_CHARS[Math.floor(Math.random() * SLOT_CHARS.length)];
-}
+/**
+ * Baris tengah dari 5 baris yang terlihat (indeks 0..4) adalah digit
+ * terpilih. Tinggi baris & jendela diatur CSS (.reel, lihat globals.css)
+ * lewat satu variabel --row agar strip selalu mendarat pas di tengah.
+ */
+const CENTER_ROW = 2;
+/** Strip diulang agar geseran panjang tetap punya karakter untuk dilewati. */
+const STRIP_REPEAT = 12;
+/** Durasi satu putaran reel (ms). Dipakai reel & orkestrasi agar sinkron. */
+const SPIN_MS = 4200;
 
 /**
- * Satu reel (gulungan) mesin slot bergaya kabinet 3D: 3 baris terlihat,
- * baris TENGAH adalah digit terpilih, baris atas/bawah karakter sekitarnya
- * (efek gulungan). Saat `spinning`, karakter berganti dengan kecepatan yang
- * MELAMBAT mengikuti `slowdown` (0 = masih cepat, 1 = hampir berhenti),
- * meniru gulungan fisik yang kehilangan momentum sebelum terkunci.
+ * Satu reel (gulungan) mesin slot: SATU strip karakter panjang yang DIGESER
+ * (translateY), bukan karakter yang diganti-ganti. Dengan begitu karakter
+ * mengalir naik mulus tanpa blink, dan saat berhenti ia mendarat tepat di
+ * karakter target lewat transisi ease-out panjang, bukan berganti mendadak.
+ *
+ * `spinKey` naik tiap kali reel disuruh berputar lagi; perubahannya memicu
+ * putaran baru (jarak geser besar) yang lalu melambat sampai target.
  */
 function SlotReel({
   finalChar,
   spinning,
   idle,
-  slowdown = 0,
+  spinKey = 0,
 }: {
   finalChar: string;
   spinning: boolean;
-  /** Belum diundi sama sekali: placeholder redup, tidak berputar. */
+  /** Belum diundi sama sekali: placeholder redup, strip diam. */
   idle?: boolean;
-  /** 0..1, semakin besar semakin lambat gantinya (efek melambat). */
-  slowdown?: number;
+  spinKey?: number;
 }) {
-  const [rows, setRows] = React.useState<[string, string, string]>([
-    randChar(),
-    finalChar,
-    randChar(),
-  ]);
+  const chars = React.useMemo(
+    () => Array.from({ length: STRIP_REPEAT }, () => SLOT_CHARS).join(""),
+    [],
+  );
+  const perLap = SLOT_CHARS.length;
+  const targetInLap = Math.max(0, SLOT_CHARS.indexOf(finalChar));
 
+  // Offset (dalam satuan baris) posisi strip saat ini. Nilai 0 berarti
+  // karakter indeks 0 berada di baris tengah. Mulai dari posisi acak supaya
+  // reel yang belum diundi tidak semua memperlihatkan karakter yang sama.
+  const [offsetRows, setOffsetRows] = React.useState(
+    () => Math.floor(Math.random() * SLOT_CHARS.length),
+  );
+  const [duration, setDuration] = React.useState(0);
+
+  // Saat diminta berputar: geser jauh (beberapa lap) lalu berhenti tepat di
+  // target. Satu transisi ease-out panjang = mengalir cepat lalu melambat,
+  // mendarat pas tanpa koreksi mendadak.
   React.useEffect(() => {
-    if (!spinning) {
-      // Berhenti: baris tengah = digit final, tetangganya acak (stabil).
-      setRows([randChar(), finalChar, randChar()]);
-      return;
-    }
-    // Interval naik dari 55ms (cepat) sampai ~340ms (hampir berhenti).
-    const delay = 55 + Math.round(slowdown * slowdown * 285);
-    const id = setInterval(() => {
-      setRows([randChar(), randChar(), randChar()]);
-    }, delay);
-    return () => clearInterval(id);
-  }, [spinning, finalChar, slowdown]);
+    if (!spinning) return;
+    const laps = 6;
+    setDuration(SPIN_MS);
+    setOffsetRows((prev) => {
+      // Selalu bergerak MAJU (strip naik) menuju target di lap ke-n, supaya
+      // tidak pernah ada lompatan arah balik yang terlihat sebagai flicker.
+      const base = Math.ceil((prev + 1) / perLap) * perLap;
+      return base + laps * perLap + targetInLap;
+    });
+
+    // Setelah animasi selesai, tarik offset kembali ke lap awal TANPA
+    // transisi. Karakter di posisi itu identik (strip berulang), jadi tak
+    // terlihat berubah, tapi strip tidak akan pernah kehabisan baris walau
+    // reel diputar berkali-kali.
+    const id = setTimeout(() => {
+      setDuration(0);
+      setOffsetRows((prev) => (prev % perLap) + perLap);
+    }, SPIN_MS + 60);
+    return () => clearTimeout(id);
+  }, [spinning, spinKey, perLap, targetInLap]);
 
   const state = idle ? "idle" : spinning ? "spin" : "locked";
-  const display: [string, string, string] = idle ? ["?", "?", "?"] : rows;
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl transition-all duration-500",
+        "reel relative rounded-2xl transition-all duration-500",
         // Cangkang luar: bevel logam terang, memberi kesan kabinet fisik.
         "bg-gradient-to-b from-white via-slate-100 to-slate-300 p-[3px]",
         state === "idle" && "shadow-[0_2px_6px_rgba(15,23,42,0.10)]",
@@ -369,81 +395,93 @@ function SlotReel({
           "-translate-y-0.5 scale-[1.04] shadow-[0_14px_32px_-6px_rgba(249,115,22,0.55),0_0_0_2px_rgba(249,115,22,0.65)]",
       )}
     >
-      {/* Rongga dalam: gelap di tepi atas/bawah, terang di tengah (kedalaman) */}
       <div
         className={cn(
-          "relative overflow-hidden rounded-[13px] transition-colors duration-500",
+          "reel-window relative w-12 overflow-hidden rounded-[13px] transition-colors duration-500 sm:w-16",
           state === "locked"
             ? "bg-gradient-to-b from-orange-100 via-white to-orange-100"
             : "bg-gradient-to-b from-slate-200 via-white to-slate-200",
         )}
       >
-        {display.map((ch, r) => {
-          const isCenter = r === 1;
-          return (
+        {/* Strip SELALU dirender (tak pernah di-mount ulang) supaya transisi
+            geser tidak pernah terputus / terlihat melompat. */}
+        <div
+          className={cn(
+            "will-change-transform transition-opacity duration-300",
+            idle && "opacity-0",
+          )}
+          style={{
+            // Strip digeser naik: offset target dikurangi posisi baris tengah.
+            transform: `translate3d(0, calc((${CENTER_ROW} - ${offsetRows}) * var(--row)), 0)`,
+            transition: duration
+              ? `transform ${duration}ms cubic-bezier(0.12, 0.62, 0, 1), opacity 300ms`
+              : "opacity 300ms",
+          }}
+        >
+          {chars.split("").map((ch, i) => (
             <div
-              key={r}
+              key={i}
               className={cn(
-                "flex w-12 items-center justify-center font-mono font-extrabold tabular-nums transition-colors sm:w-16",
-                // Baris tengah lebih tinggi, tajam, dan menonjol.
-                isCenter
-                  ? "h-16 text-4xl sm:h-20 sm:text-5xl"
-                  : "h-8 text-base blur-[0.6px] sm:h-10 sm:text-lg",
-                isCenter && state === "idle" && "text-slate-300",
-                isCenter && state === "spin" && "text-primary",
-                isCenter && state === "locked" && "text-accent",
-                !isCenter && "text-slate-400/70",
+                "reel-row flex items-center justify-center font-mono text-4xl font-extrabold tabular-nums sm:text-5xl",
+                state === "locked" ? "text-accent" : "text-slate-700",
               )}
-              style={
-                isCenter
-                  ? {
-                      // Timbul: sorot terang di atas, bayangan di bawah.
-                      textShadow:
-                        state === "locked"
-                          ? "0 1px 0 rgba(255,255,255,0.9), 0 3px 8px rgba(249,115,22,0.45)"
-                          : "0 1px 0 rgba(255,255,255,0.9), 0 2px 5px rgba(15,23,42,0.18)",
-                    }
-                  : undefined
-              }
+              style={{
+                textShadow:
+                  state === "locked"
+                    ? "0 1px 0 rgba(255,255,255,0.9), 0 3px 8px rgba(249,115,22,0.45)"
+                    : "0 1px 0 rgba(255,255,255,0.9), 0 2px 5px rgba(15,23,42,0.15)",
+              }}
             >
               {ch}
             </div>
-          );
-        })}
+          ))}
+        </div>
 
-        {/* Bayangan dalam di tepi atas & bawah: rongga terasa punya kedalaman */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-slate-900/20 to-transparent sm:h-10" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-900/20 to-transparent sm:h-10" />
+        {/* Placeholder saat belum diundi, menimpa strip yang disembunyikan. */}
+        {idle && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="font-mono text-4xl font-extrabold text-slate-300 sm:text-5xl">
+              ?
+            </span>
+          </div>
+        )}
 
-        {/* Jendela baris terpilih: garis penanda + kilau kaca melintang */}
+        {/* Kabut atas & bawah: karakter di tepi memudar, fokus ke tengah. */}
+        <div className="reel-fade pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-white via-white/85 to-transparent" />
+        <div className="reel-fade pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/85 to-transparent" />
+        {/* Bayangan dalam supaya rongga terasa punya kedalaman. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-slate-900/25 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-slate-900/25 to-transparent" />
+
+        {/* Jendela baris terpilih: garis penanda + kilau kaca melintang. */}
         <div
           className={cn(
-            "pointer-events-none absolute inset-x-0 top-8 h-16 border-y-2 transition-colors duration-500 sm:top-10 sm:h-20",
+            "reel-center pointer-events-none absolute inset-x-0 border-y-2 transition-colors duration-500",
             state === "locked" ? "border-accent/80" : "border-primary/25",
           )}
         />
-        <div className="pointer-events-none absolute inset-x-0 top-8 h-16 bg-gradient-to-br from-white/70 via-transparent to-white/25 sm:top-10 sm:h-20" />
+        <div className="reel-center pointer-events-none absolute inset-x-0 bg-gradient-to-br from-white/45 via-transparent to-white/20" />
       </div>
     </div>
   );
 }
 
 /**
- * Kabinet mesin slot: deretan reel 3-baris untuk kode YCS-XXXX-XXXX.
- * Digit diundi bertahap sesuai `revealedCount`; reel yang indeksnya ada di
+ * Kabinet mesin slot: deretan reel untuk kode YCS-XXXX-XXXX. Digit diundi
+ * bertahap sesuai `revealedCount`; reel yang indeksnya ada di
  * `spinningIndexes` sedang berputar (bisa lebih dari satu sekaligus).
  */
 function SlotCabinet({
   digits,
   revealedCount,
   spinningIndexes,
-  slowdown = 0,
+  spinKey = 0,
 }: {
   digits: string[];
   revealedCount: number;
   spinningIndexes: number[];
-  /** 0..1 progres perlambatan untuk reel yang sedang berputar. */
-  slowdown?: number;
+  /** Naik tiap ronde spin baru, memicu putaran ulang pada reel terkait. */
+  spinKey?: number;
 }) {
   return (
     <div
@@ -465,7 +503,7 @@ function SlotCabinet({
               finalChar={ch}
               spinning={spinningIndexes.includes(i)}
               idle={i >= revealedCount && !spinningIndexes.includes(i)}
-              slowdown={slowdown}
+              spinKey={spinKey}
             />
           </React.Fragment>
         ))}
@@ -498,8 +536,8 @@ function LiveDraw({
   const [spinningIndexes, setSpinningIndexes] = React.useState<number[]>([]);
   /** Berapa digit diundi tiap kali tombol spin ditekan (1, 2, 4, atau 8). */
   const [perSpin, setPerSpin] = React.useState(1);
-  /** 0..1: progres perlambatan reel yang berputar (1 = hampir berhenti). */
-  const [slowdown, setSlowdown] = React.useState(0);
+  /** Naik tiap ronde spin: memicu reel menggeser stripnya lagi. */
+  const [spinKey, setSpinKey] = React.useState(0);
   /**
    * Pemenang yang sudah ditandai backend tapi BELUM diumumkan (kode masih
    * diungkap digit demi digit). Kalau panggung ditutup sebelum semua digit
@@ -676,36 +714,25 @@ function LiveDraw({
     const batch = Math.min(perSpin, digits.length - start);
     const idxs = Array.from({ length: batch }, (_, k) => start + k);
 
+    // Semua reel dalam batch mulai berputar bersamaan; masing-masing menggeser
+    // strip ke karakter targetnya dengan transisi ease-out (SPIN_MS). Karena
+    // easing ada di CSS, tak perlu mengatur perlambatan manual di sini.
+    setSpinKey((k) => k + 1);
     setSpinningIndexes(idxs);
 
-    // Fase 1: berputar cepat & mantap (belum melambat).
-    setSlowdown(0);
-    await new Promise((r) => setTimeout(r, 2200));
+    // Tunggu putaran selesai (durasi transisi reel), lalu kunci berurutan dari
+    // kiri dengan jeda pendek supaya terasa satu-satu mendarat.
+    await new Promise((r) => setTimeout(r, SPIN_MS));
     if (!alive.current) return;
 
-    // Fase 2: momentum habis perlahan, ~2,2 detik menjelang terkunci.
-    const STEPS = 22;
-    for (let s = 1; s <= STEPS; s++) {
-      setSlowdown(s / STEPS);
-      await new Promise((r) => setTimeout(r, 100));
-      if (!alive.current) return;
-    }
-
-    // Kunci berurutan dari kiri: tiap reel berhenti dengan jeda dramatis.
     for (let k = 0; k < batch; k++) {
       setSpinningIndexes(idxs.slice(k + 1));
       setRevealed(start + k + 1);
       if (k < batch - 1) {
-        // Reel berikutnya "berputar lagi" sebentar sebelum ikut berhenti.
-        setSlowdown(0.45);
-        await new Promise((r) => setTimeout(r, 380));
-        if (!alive.current) return;
-        setSlowdown(1);
-        await new Promise((r) => setTimeout(r, 320));
+        await new Promise((r) => setTimeout(r, 260));
         if (!alive.current) return;
       }
     }
-    setSlowdown(0);
 
     if (start + batch >= digits.length) {
       await new Promise((r) => setTimeout(r, 900));
@@ -862,7 +889,7 @@ function LiveDraw({
                 digits={digits}
                 revealedCount={revealed}
                 spinningIndexes={spinningIndexes}
-                slowdown={slowdown}
+                spinKey={spinKey}
               />
             </div>
 

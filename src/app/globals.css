@@ -109,3 +109,34 @@
     opacity: 0.6;
   }
 }
+
+/*
+ * Reel mesin slot undian. Satu variabel --row mengatur tinggi baris, tinggi
+ * jendela (5 baris), dan posisi bingkai baris terpilih sekaligus, supaya
+ * strip yang digeser translateY selalu mendarat pas di tengah jendela.
+ */
+.reel {
+  --row: 56px;
+  --visible: 5;
+  --center: 2;
+}
+@media (min-width: 640px) {
+  .reel {
+    --row: 68px;
+  }
+}
+.reel-window {
+  height: calc(var(--row) * var(--visible));
+}
+.reel-row {
+  height: var(--row);
+}
+/* Bingkai + kilau baris terpilih, tepat di baris tengah jendela. */
+.reel-center {
+  top: calc(var(--row) * var(--center));
+  height: var(--row);
+}
+/* Kabut tepi: menutup dua baris di atas dan di bawah baris terpilih. */
+.reel-fade {
+  height: calc(var(--row) * var(--center));
+}
