@@ -736,6 +736,9 @@ export type CouponRow = {
   source: string;
   created_at: string;
   owner_name: string | null;
+  /** Terisi kalau kupon ini sudah terpilih sebagai pemenang undian. */
+  won_at: string | null;
+  prize: string | null;
 };
 
 export function useMyCoupons(enabled: boolean) {

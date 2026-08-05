@@ -281,109 +281,87 @@ function Confetti() {
   );
 }
 
-const WHEEL_COLORS = [
-  "#0891b2",
-  "#f97316",
-  "#0e7490",
-  "#fb923c",
-  "#155e75",
-  "#f59e0b",
-];
+const SLOT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 /**
- * Roda putar SVG. Menampilkan seluruh kandidat sebagai slice; berputar dan
- * berhenti tepat di indeks pemenang (dikontrol lewat prop `rotation`).
- * Label hanya ditampilkan bila slice cukup lebar agar tetap terbaca.
+ * Satu reel (gulungan) mesin slot: menampilkan satu karakter, berputar cepat
+ * (ganti karakter acak) sampai `locked`, lalu berhenti tepat di `finalChar`.
+ * Delay berhenti dikontrol dari luar (per-digit, kiri ke kanan) lewat prop
+ * `spinning` + `finalChar` (reel berhenti begitu `spinning` jadi false).
+ * Interval diperlambat sedikit (90ms) dan transisi CSS ringan dipakai untuk
+ * efek "settle" saat berhenti, biar animasi tetap halus tanpa berat render.
  */
-function Wheel({
-  names,
-  rotation,
+function SlotReel({
+  finalChar,
   spinning,
 }: {
-  names: string[];
-  rotation: number;
+  finalChar: string;
   spinning: boolean;
 }) {
-  const n = Math.max(names.length, 1);
-  const slice = 360 / n;
-  const R = 200;
-  const C = R;
-  // Nama selalu ditampilkan; ukuran font menyusut mengikuti lebar slice.
-  // Teks radial (memanjang dari tepi ke pusat) agar muat walau slice tipis.
-  const fontSize = Math.max(4, Math.min(13, slice * 0.62));
-  const maxChars =
-    slice >= 20 ? 16 : slice >= 10 ? 12 : slice >= 5 ? 9 : slice >= 2 ? 6 : 4;
-  const clip = (s: string) =>
-    s.length > maxChars ? s.slice(0, maxChars - 1) + "…" : s;
+  const [display, setDisplay] = React.useState(finalChar);
+  const justLocked = !spinning;
 
-  const arc = (i: number) => {
-    const a0 = (i * slice - 90) * (Math.PI / 180);
-    const a1 = ((i + 1) * slice - 90) * (Math.PI / 180);
-    const x0 = C + R * Math.cos(a0);
-    const y0 = C + R * Math.sin(a0);
-    const x1 = C + R * Math.cos(a1);
-    const y1 = C + R * Math.sin(a1);
-    const large = slice > 180 ? 1 : 0;
-    return `M ${C} ${C} L ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} Z`;
-  };
+  React.useEffect(() => {
+    if (!spinning) {
+      setDisplay(finalChar);
+      return;
+    }
+    const id = setInterval(() => {
+      setDisplay(SLOT_CHARS[Math.floor(Math.random() * SLOT_CHARS.length)]);
+    }, 90);
+    return () => clearInterval(id);
+  }, [spinning, finalChar]);
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[min(80vw,460px)]">
-      {/* Penunjuk di atas */}
-      <div className="absolute left-1/2 top-[-6px] z-10 -translate-x-1/2">
-        <div className="h-0 w-0 border-x-[14px] border-t-[22px] border-x-transparent border-t-accent drop-shadow" />
-      </div>
-      <svg
-        viewBox={`0 0 ${R * 2} ${R * 2}`}
-        className="h-full w-full drop-shadow-2xl"
-        style={{
-          transform: `rotate(${rotation}deg)`,
-          transition: spinning
-            ? "transform 5s cubic-bezier(0.15, 0.9, 0.2, 1)"
-            : "none",
-        }}
-      >
-        {names.map((name, i) => (
-          <path
-            key={i}
-            d={arc(i)}
-            fill={WHEEL_COLORS[i % WHEEL_COLORS.length]}
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth={1}
-          />
-        ))}
-        {names.map((name, i) => {
-          // Titik jangkar dekat tepi luar, di tengah slice; teks radial
-          // membaca dari tepi menuju pusat (rata kanan = mepet tepi).
-          const midDeg = i * slice + slice / 2;
-          const mid = (midDeg - 90) * (Math.PI / 180);
-          const tx = C + R * 0.96 * Math.cos(mid);
-          const ty = C + R * 0.96 * Math.sin(mid);
-          return (
-            <text
-              key={i}
-              x={tx}
-              y={ty}
-              fill="#fff"
-              fontSize={fontSize}
-              fontWeight={700}
-              textAnchor="end"
-              dominantBaseline="central"
-              transform={`rotate(${midDeg + 90}, ${tx}, ${ty})`}
-            >
-              {clip(name)}
-            </text>
-          );
-        })}
-      </svg>
-      {/* Hub tengah */}
-      <div className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-accent bg-[#06222e]" />
+    <div
+      className={
+        "flex h-16 w-11 items-center justify-center rounded-xl border-2 font-mono text-3xl font-extrabold transition-all duration-300 sm:h-20 sm:w-14 sm:text-4xl " +
+        (justLocked
+          ? "scale-105 border-accent bg-accent/15 text-white shadow-[0_0_16px_rgba(249,115,22,0.45)]"
+          : "border-white/15 bg-white/5 text-white/60")
+      }
+    >
+      {display}
+    </div>
+  );
+}
+
+/**
+ * Mesin slot 8 digit untuk format kode kupon YCS-XXXX-XXXX. Tiap digit
+ * adalah reel independen yang berhenti satu-satu dari kiri ke kanan
+ * (dikontrol lewat `stoppedCount`: reel ke-i berhenti bila i < stoppedCount).
+ */
+function SlotDigits({
+  code,
+  stoppedCount,
+}: {
+  code: string;
+  stoppedCount: number;
+}) {
+  // Ambil hanya 8 karakter unik setelah prefix "YCS-" (format YCS-XXXX-XXXX).
+  const digits = code
+    .toUpperCase()
+    .replace(/^YCS-?/, "")
+    .replace(/[^A-Z0-9]/g, "")
+    .split("");
+  return (
+    <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+      {digits.map((ch, i) => (
+        <React.Fragment key={i}>
+          {i === 4 && (
+            <span className="mx-0.5 text-3xl font-extrabold text-white/40 sm:text-4xl">
+              -
+            </span>
+          )}
+          <SlotReel finalChar={ch} spinning={i >= stoppedCount} />
+        </React.Fragment>
+      ))}
     </div>
   );
 }
 
 type Stage = "idle" | "count" | "spin" | "reveal";
-type LiveStyle = "shuffle" | "wheel";
+type LiveStyle = "shuffle" | "slot";
 
 /** Panggung undian layar penuh: countdown, shuffle nama melambat, reveal. */
 function LiveDraw({
@@ -398,9 +376,8 @@ function LiveDraw({
   const [count, setCount] = React.useState(3);
   const [ticker, setTicker] = React.useState<string>("");
   const [winner, setWinner] = React.useState<Winner | null>(null);
-  const [wheelNames, setWheelNames] = React.useState<string[]>([]);
-  const [rotation, setRotation] = React.useState(0);
-  const [spinning, setSpinning] = React.useState(false);
+  // Slot digit: berapa reel (dari kiri) yang sudah berhenti di kode final.
+  const [stoppedCount, setStoppedCount] = React.useState(0);
   const alive = React.useRef(true);
   // StrictMode dev menjalankan mount-cleanup-mount: cleanup mematikan flag,
   // jadi WAJIB dinyalakan lagi di body effect.
@@ -436,8 +413,8 @@ function LiveDraw({
         body: JSON.stringify({ prize }),
       });
 
-      if (style === "wheel") {
-        await runWheel(drawPromise);
+      if (style === "slot") {
+        await runSlot(drawPromise);
       } else {
         await runShuffle(drawPromise);
       }
@@ -474,40 +451,30 @@ function LiveDraw({
     setStage("reveal");
   }
 
-  /** Animasi roda putar: berhenti tepat di slice pemenang. */
-  async function runWheel(drawPromise: Promise<{ winner: Winner }>) {
+  /**
+   * Animasi mesin slot: 8 reel (kode YCS-XXXX-XXXX) berputar bersamaan,
+   * lalu berhenti satu-satu dari kiri ke kanan begitu kode pemenang dari
+   * backend sudah diketahui.
+   */
+  async function runSlot(drawPromise: Promise<{ winner: Winner }>) {
     setStage("spin");
+    setStoppedCount(0);
+    // Semua reel berputar dulu (belum tahu kode final) sambil menunggu backend.
+    await new Promise((r) => setTimeout(r, 1200));
     const res = await drawPromise;
     if (!alive.current) return;
 
-    // Susun daftar nama roda dari pool; pastikan pemenang ada di dalamnya.
-    const pool = poolRef.current.length ? poolRef.current : [];
-    let names = pool.map((p) => p.name || "?");
-    let idx = pool.findIndex((p) => p.code === res.winner.code);
-    if (idx < 0) {
-      names = [res.winner.name ?? "?", ...names];
-      idx = 0;
+    const digitCount = res.winner.code
+      .toUpperCase()
+      .replace(/^YCS-?/, "")
+      .replace(/[^A-Z0-9]/g, "").length;
+    // Berhenti satu reel per jeda, dari kiri ke kanan, gaya mesin slot asli.
+    for (let i = 1; i <= digitCount; i++) {
+      await new Promise((r) => setTimeout(r, 450));
+      if (!alive.current) return;
+      setStoppedCount(i);
     }
-    if (names.length === 0) {
-      names = [res.winner.name ?? "?"];
-      idx = 0;
-    }
-    setWheelNames(names);
-
-    const n = names.length;
-    const slice = 360 / n;
-    // Slice 0 mulai di atas (-90°); penunjuk menunjuk ke atas. Untuk membawa
-    // tengah slice pemenang ke penunjuk, putar mundur sebesar posisinya +
-    // beberapa putaran penuh untuk efek dramatis.
-    const target = 360 * 6 - (idx * slice + slice / 2);
-    // Reset ke 0 tanpa transisi lalu putar (biar konsisten tiap ronde).
-    setSpinning(false);
-    setRotation(0);
-    await new Promise((r) => setTimeout(r, 30));
-    if (!alive.current) return;
-    setSpinning(true);
-    setRotation(target);
-    await new Promise((r) => setTimeout(r, 5200)); // sesuai durasi transisi
+    await new Promise((r) => setTimeout(r, 500));
     if (!alive.current) return;
     setWinner(res.winner);
     setStage("reveal");
@@ -552,7 +519,7 @@ function LiveDraw({
               {(
                 [
                   { v: "shuffle", label: "Shuffle Nama" },
-                  { v: "wheel", label: "Roda Putar" },
+                  { v: "slot", label: "Slot Digit" },
                 ] as const
               ).map((o) => (
                 <button
@@ -593,8 +560,11 @@ function LiveDraw({
           </div>
         )}
 
-        {stage === "spin" && style === "wheel" && (
-          <Wheel names={wheelNames} rotation={rotation} spinning={spinning} />
+        {stage === "spin" && style === "slot" && (
+          <SlotDigits
+            code={winner?.code ?? "YCS-0000-0000"}
+            stoppedCount={stoppedCount}
+          />
         )}
 
         {stage === "reveal" && winner && (

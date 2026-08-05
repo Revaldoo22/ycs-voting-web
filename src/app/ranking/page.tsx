@@ -78,7 +78,7 @@ export default function RankingPage() {
           })}
         </div>
 
-        {tab === "peserta" ? <Leaderboard limit={100} /> : <SchoolRankings />}
+        {tab === "peserta" ? <Leaderboard limit={200} /> : <SchoolRankings />}
       </main>
     </div>
   );

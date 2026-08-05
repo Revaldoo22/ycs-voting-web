@@ -288,6 +288,9 @@ const id = {
     prizeAlt: "Hadiah handphone",
     footerNote:
       "Unduh dan simpan kuponmu. Pengundian dilakukan panitia di akhir event.",
+    winnerBadge: "Menang!",
+    winnerNote: (prize: string) => `Selamat! Kupon ini menang: ${prize}.`,
+    winnerNoteGeneric: "Selamat! Kupon ini terpilih sebagai pemenang undian.",
   },
   gelombang: {
     schools: "sekolah",

@@ -290,6 +290,9 @@ const en: Dictionary = {
     prizeAlt: "Smartphone prize",
     footerNote:
       "Download and save your coupon. The draw will be held by the committee at the end of the event.",
+    winnerBadge: "Winner!",
+    winnerNote: (prize: string) => `Congrats! This coupon won: ${prize}.`,
+    winnerNoteGeneric: "Congrats! This coupon was drawn as a winner.",
   },
   gelombang: {
     schools: "schools",
