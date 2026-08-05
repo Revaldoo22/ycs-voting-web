@@ -49,6 +49,10 @@ export default function AdminRafflePage() {
         body: JSON.stringify({ prize: prize.trim() || "Handphone" }),
       });
       setReveal(res.winner);
+      // Undi cepat langsung mengumumkan pemenang: kunci & beri tahu voter.
+      await api(`/api/admin/raffle/confirm/${res.winner.code}`, {
+        method: "POST",
+      }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["raffle"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal mengundi.");
@@ -443,6 +447,12 @@ function LiveDraw({
   const [spinningIndexes, setSpinningIndexes] = React.useState<number[]>([]);
   /** Berapa digit diundi tiap kali tombol spin ditekan (1, 2, 4, atau 8). */
   const [perSpin, setPerSpin] = React.useState(1);
+  /**
+   * Pemenang yang sudah ditandai backend tapi BELUM diumumkan (kode masih
+   * diungkap digit demi digit). Kalau panggung ditutup sebelum semua digit
+   * terungkap, kemenangan ini harus dibatalkan supaya kuponnya kembali ke
+   * kolam undian. Di-null-kan begitu pemenang resmi diumumkan (reveal).
+   */
   const pendingWinner = React.useRef<Winner | null>(null);
   const alive = React.useRef(true);
   // StrictMode dev menjalankan mount-cleanup-mount: cleanup mematikan flag,
@@ -452,6 +462,42 @@ function LiveDraw({
     return () => {
       alive.current = false;
     };
+  }, []);
+
+  /**
+   * Batalkan pemenang yang belum diumumkan (kupon kembali ke kolam undian).
+   * Mengembalikan promise agar pemanggil bisa menunggu sebelum menyegarkan
+   * statistik; dipanggil tanpa await pun aman (fire-and-forget).
+   */
+  function discardPendingWinner(): Promise<void> {
+    const w = pendingWinner.current;
+    if (!w) return Promise.resolve();
+    pendingWinner.current = null;
+    return api(`/api/admin/raffle/winners/${w.code}`, { method: "DELETE" })
+      .then(() => {})
+      .catch(() => {});
+  }
+
+  /** Tutup panggung; kemenangan yang belum diumumkan dibatalkan dulu. */
+  async function handleClose() {
+    const hadPending = !!pendingWinner.current;
+    // Tunggu pembatalan selesai supaya statistik yang di-refresh oleh
+    // onClose sudah mencerminkan kupon yang kembali ke kolam.
+    await discardPendingWinner();
+    if (hadPending) {
+      toast.info("Undian dibatalkan, kupon kembali ke kolam undian.");
+    }
+    onClose();
+  }
+
+  // Jaring pengaman: komponen dibongkar tanpa lewat tombol tutup (mis. admin
+  // pindah halaman). Pending yang belum diumumkan tetap dibatalkan. Aman di
+  // StrictMode karena saat mount-cleanup-mount pending masih null.
+  React.useEffect(() => {
+    return () => {
+      discardPendingWinner();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Prefetch kandidat begitu panggung dibuka: shuffle mulai tanpa jeda.
@@ -468,13 +514,23 @@ function LiveDraw({
       .catch(() => {});
   }
 
+  /**
+   * Kunci pemenang sebagai final: backend mengirim notifikasi ke voter.
+   * Dipanggil hanya setelah pemenang benar-benar diumumkan di panggung.
+   */
+  function confirmWinner(code: string) {
+    api(`/api/admin/raffle/confirm/${code}`, { method: "POST" }).catch(() => {});
+  }
+
   async function run() {
     try {
+      // Ronde baru sementara ronde slot sebelumnya belum tuntas: kemenangan
+      // yang belum diumumkan dibatalkan supaya kuponnya tidak hangus.
+      discardPendingWinner();
       setWinner(null);
       setDigits([]);
       setRevealed(0);
       setSpinningIndexes([]);
-      pendingWinner.current = null;
 
       // 1. Countdown 3..2..1
       setStage("count");
@@ -494,8 +550,13 @@ function LiveDraw({
         // Kode pemenang disiapkan, lalu diungkap digit demi digit oleh admin
         // lewat tombol "Undi Digit" (8 kali klik).
         const res = await drawPromise;
-        if (!alive.current) return;
         pendingWinner.current = res.winner;
+        // Panggung sudah ditutup selagi menunggu: batalkan, jangan sampai
+        // kupon tercatat menang padahal tidak pernah diumumkan.
+        if (!alive.current) {
+          discardPendingWinner();
+          return;
+        }
         setDigits(codeDigits(res.winner.code));
         setStage("slot");
       } else {
@@ -527,6 +588,7 @@ function LiveDraw({
     setTicker(res.winner.name ?? "?");
     await new Promise((r) => setTimeout(r, 650));
     setWinner(res.winner);
+    confirmWinner(res.winner.code);
     setStage("reveal");
   }
 
@@ -558,7 +620,12 @@ function LiveDraw({
     if (start + batch >= digits.length) {
       await new Promise((r) => setTimeout(r, 800));
       if (!alive.current) return;
-      setWinner(pendingWinner.current);
+      // Semua digit terungkap: kemenangan resmi, tak lagi boleh dibatalkan
+      // otomatis saat panggung ditutup, dan voter berhak diberi tahu.
+      const w = pendingWinner.current;
+      setWinner(w);
+      pendingWinner.current = null;
+      if (w) confirmWinner(w.code);
       setStage("reveal");
       refreshPool();
     }
@@ -581,7 +648,7 @@ function LiveDraw({
       {stage === "reveal" && <Confetti />}
 
       <button
-        onClick={onClose}
+        onClick={handleClose}
         className="absolute right-5 top-5 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-slate-500 shadow-sm transition-colors hover:text-slate-900"
         aria-label="Tutup"
       >
@@ -753,7 +820,7 @@ function LiveDraw({
               <Button variant="accent" onClick={run}>
                 Undi Lagi
               </Button>
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={handleClose}>
                 Selesai
               </Button>
             </div>
