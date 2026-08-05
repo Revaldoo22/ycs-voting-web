@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { EmptyState, LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
-import { formatNumber } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 
 type Winner = {
   code: string;
@@ -246,7 +246,9 @@ function maskPhone(p: string | null): string {
   return p.slice(0, 4) + "****" + p.slice(-3);
 }
 
-const CONFETTI_COLORS = ["#f97316", "#0891b2", "#22d3ee", "#fbbf24", "#34d399"];
+// Palet senada tema: oranye accent + biru primary + kuning/emerald aksen.
+// Semua cukup pekat agar tetap kontras di latar terang.
+const CONFETTI_COLORS = ["#f97316", "#0891b2", "#0e7490", "#f59e0b", "#059669"];
 
 function Confetti() {
   const pieces = React.useMemo(
@@ -283,23 +285,31 @@ function Confetti() {
 
 const SLOT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
+/** Ambil 8 karakter kode tanpa prefix "YCS-" dan tanpa pemisah. */
+function codeDigits(code: string): string[] {
+  return code
+    .toUpperCase()
+    .replace(/^YCS-?/, "")
+    .replace(/[^A-Z0-9]/g, "")
+    .split("");
+}
+
 /**
- * Satu reel (gulungan) mesin slot: menampilkan satu karakter, berputar cepat
- * (ganti karakter acak) sampai `locked`, lalu berhenti tepat di `finalChar`.
- * Delay berhenti dikontrol dari luar (per-digit, kiri ke kanan) lewat prop
- * `spinning` + `finalChar` (reel berhenti begitu `spinning` jadi false).
- * Interval diperlambat sedikit (90ms) dan transisi CSS ringan dipakai untuk
- * efek "settle" saat berhenti, biar animasi tetap halus tanpa berat render.
+ * Satu reel (gulungan) mesin slot. Saat `spinning` karakter berganti acak;
+ * begitu berhenti, tampil `finalChar` dengan transisi CSS ringan (tanpa
+ * animasi berat) sebagai efek "settle".
  */
 function SlotReel({
   finalChar,
   spinning,
+  idle,
 }: {
   finalChar: string;
   spinning: boolean;
+  /** Belum diundi sama sekali: tampil placeholder redup, tidak berputar. */
+  idle?: boolean;
 }) {
   const [display, setDisplay] = React.useState(finalChar);
-  const justLocked = !spinning;
 
   React.useEffect(() => {
     if (!spinning) {
@@ -312,58 +322,63 @@ function SlotReel({
     return () => clearInterval(id);
   }, [spinning, finalChar]);
 
+  const state = idle ? "idle" : spinning ? "spin" : "locked";
   return (
     <div
-      className={
-        "flex h-16 w-11 items-center justify-center rounded-xl border-2 font-mono text-3xl font-extrabold transition-all duration-300 sm:h-20 sm:w-14 sm:text-4xl " +
-        (justLocked
-          ? "scale-105 border-accent bg-accent/15 text-white shadow-[0_0_16px_rgba(249,115,22,0.45)]"
-          : "border-white/15 bg-white/5 text-white/60")
-      }
+      className={cn(
+        "flex h-16 w-11 items-center justify-center rounded-xl border-2 bg-white font-mono text-3xl font-extrabold transition-all duration-300 sm:h-20 sm:w-14 sm:text-4xl",
+        state === "idle" && "border-slate-200 text-slate-300",
+        state === "spin" && "border-primary/40 text-primary/70 shadow-sm",
+        state === "locked" &&
+          "scale-105 border-accent bg-accent/5 text-accent shadow-[0_4px_16px_rgba(249,115,22,0.25)]",
+      )}
     >
-      {display}
+      {idle ? "?" : display}
     </div>
   );
 }
 
 /**
- * Mesin slot 8 digit untuk format kode kupon YCS-XXXX-XXXX. Tiap digit
- * adalah reel independen yang berhenti satu-satu dari kiri ke kanan
- * (dikontrol lewat `stoppedCount`: reel ke-i berhenti bila i < stoppedCount).
+ * Mesin slot 8 digit untuk kode kupon YCS-XXXX-XXXX. Satu digit diundi per
+ * klik: reel ke-`spinningIndex` sedang berputar, reel sebelumnya sudah
+ * terkunci, sisanya masih placeholder.
  */
 function SlotDigits({
-  code,
-  stoppedCount,
+  digits,
+  revealedCount,
+  spinningIndex,
 }: {
-  code: string;
-  stoppedCount: number;
+  /** 8 karakter kode pemenang (sudah diketahui, diungkap bertahap). */
+  digits: string[];
+  /** Berapa digit yang sudah selesai diundi (terkunci). */
+  revealedCount: number;
+  /** Indeks reel yang sedang berputar, -1 bila tidak ada. */
+  spinningIndex: number;
 }) {
-  // Ambil hanya 8 karakter unik setelah prefix "YCS-" (format YCS-XXXX-XXXX).
-  const digits = code
-    .toUpperCase()
-    .replace(/^YCS-?/, "")
-    .replace(/[^A-Z0-9]/g, "")
-    .split("");
   return (
     <div className="flex items-center justify-center gap-1.5 sm:gap-2">
       {digits.map((ch, i) => (
         <React.Fragment key={i}>
           {i === 4 && (
-            <span className="mx-0.5 text-3xl font-extrabold text-white/40 sm:text-4xl">
+            <span className="mx-0.5 text-3xl font-extrabold text-slate-300 sm:text-4xl">
               -
             </span>
           )}
-          <SlotReel finalChar={ch} spinning={i >= stoppedCount} />
+          <SlotReel
+            finalChar={ch}
+            spinning={i === spinningIndex}
+            idle={i >= revealedCount && i !== spinningIndex}
+          />
         </React.Fragment>
       ))}
     </div>
   );
 }
 
-type Stage = "idle" | "count" | "spin" | "reveal";
+type Stage = "idle" | "count" | "shuffle" | "slot" | "reveal";
 type LiveStyle = "shuffle" | "slot";
 
-/** Panggung undian layar penuh: countdown, shuffle nama melambat, reveal. */
+/** Panggung undian layar penuh: countdown, animasi, reveal pemenang. */
 function LiveDraw({
   prize,
   onClose,
@@ -372,12 +387,17 @@ function LiveDraw({
   onClose: () => void;
 }) {
   const [stage, setStage] = React.useState<Stage>("idle");
-  const [style, setStyle] = React.useState<LiveStyle>("shuffle");
+  const [style, setStyle] = React.useState<LiveStyle>("slot");
   const [count, setCount] = React.useState(3);
   const [ticker, setTicker] = React.useState<string>("");
   const [winner, setWinner] = React.useState<Winner | null>(null);
-  // Slot digit: berapa reel (dari kiri) yang sudah berhenti di kode final.
-  const [stoppedCount, setStoppedCount] = React.useState(0);
+  // Mode slot: pemenang sudah diundi backend, kodenya diungkap per digit.
+  // `digits` = 8 karakter kode; `revealed` = jumlah digit yang sudah diundi;
+  // `spinningIndex` = reel yang sedang berputar (-1 = tidak ada).
+  const [digits, setDigits] = React.useState<string[]>([]);
+  const [revealed, setRevealed] = React.useState(0);
+  const [spinningIndex, setSpinningIndex] = React.useState(-1);
+  const pendingWinner = React.useRef<Winner | null>(null);
   const alive = React.useRef(true);
   // StrictMode dev menjalankan mount-cleanup-mount: cleanup mematikan flag,
   // jadi WAJIB dinyalakan lagi di body effect.
@@ -396,9 +416,20 @@ function LiveDraw({
       .catch(() => {});
   }, []);
 
+  function refreshPool() {
+    api<{ name: string; code: string }[]>("/api/admin/raffle/candidates")
+      .then((c) => (poolRef.current = c))
+      .catch(() => {});
+  }
+
   async function run() {
     try {
       setWinner(null);
+      setDigits([]);
+      setRevealed(0);
+      setSpinningIndex(-1);
+      pendingWinner.current = null;
+
       // 1. Countdown 3..2..1
       setStage("count");
       for (let i = 3; i >= 1; i--) {
@@ -407,23 +438,25 @@ function LiveDraw({
         if (!alive.current) return;
       }
 
-      // 2. Undi di backend (paralel dg animasi).
+      // 2. Undi pemenang di backend (sah & atomik, sekali saja).
       const drawPromise = api<{ winner: Winner }>("/api/admin/raffle/draw", {
         method: "POST",
         body: JSON.stringify({ prize }),
       });
 
       if (style === "slot") {
-        await runSlot(drawPromise);
+        // Kode pemenang disiapkan, lalu diungkap digit demi digit oleh admin
+        // lewat tombol "Undi Digit" (8 kali klik).
+        const res = await drawPromise;
+        if (!alive.current) return;
+        pendingWinner.current = res.winner;
+        setDigits(codeDigits(res.winner.code));
+        setStage("slot");
       } else {
         await runShuffle(drawPromise);
+        if (!alive.current) return;
+        refreshPool();
       }
-      if (!alive.current) return;
-
-      // 3. Segarkan pool untuk ronde berikutnya.
-      api<{ name: string; code: string }[]>("/api/admin/raffle/candidates")
-        .then((c) => (poolRef.current = c))
-        .catch(() => {});
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal mengundi.");
       setStage("idle");
@@ -432,7 +465,7 @@ function LiveDraw({
 
   /** Animasi shuffle nama (gaya lama). */
   async function runShuffle(drawPromise: Promise<{ winner: Winner }>) {
-    setStage("spin");
+    setStage("shuffle");
     const pool = poolRef.current.length
       ? poolRef.current
       : [{ name: "...", code: "" }];
@@ -452,90 +485,90 @@ function LiveDraw({
   }
 
   /**
-   * Animasi mesin slot: 8 reel (kode YCS-XXXX-XXXX) berputar bersamaan,
-   * lalu berhenti satu-satu dari kiri ke kanan begitu kode pemenang dari
-   * backend sudah diketahui.
+   * Undi satu digit: reel berputar sebentar lalu terkunci di karakter kode
+   * pemenang. Setelah digit ke-8, pemenang diungkap penuh.
    */
-  async function runSlot(drawPromise: Promise<{ winner: Winner }>) {
-    setStage("spin");
-    setStoppedCount(0);
-    // Semua reel berputar dulu (belum tahu kode final) sambil menunggu backend.
-    await new Promise((r) => setTimeout(r, 1200));
-    const res = await drawPromise;
+  async function spinDigit() {
+    if (spinningIndex !== -1 || revealed >= digits.length) return;
+    const i = revealed;
+    setSpinningIndex(i);
+    await new Promise((r) => setTimeout(r, 1100));
     if (!alive.current) return;
+    setSpinningIndex(-1);
+    setRevealed(i + 1);
 
-    const digitCount = res.winner.code
-      .toUpperCase()
-      .replace(/^YCS-?/, "")
-      .replace(/[^A-Z0-9]/g, "").length;
-    // Berhenti satu reel per jeda, dari kiri ke kanan, gaya mesin slot asli.
-    for (let i = 1; i <= digitCount; i++) {
-      await new Promise((r) => setTimeout(r, 450));
+    if (i + 1 >= digits.length) {
+      await new Promise((r) => setTimeout(r, 700));
       if (!alive.current) return;
-      setStoppedCount(i);
+      setWinner(pendingWinner.current);
+      setStage("reveal");
+      refreshPool();
     }
-    await new Promise((r) => setTimeout(r, 500));
-    if (!alive.current) return;
-    setWinner(res.winner);
-    setStage("reveal");
   }
 
+  const allRevealed = digits.length > 0 && revealed >= digits.length;
+
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-[#06222e] text-white">
-      {/* Latar glow */}
+    <div className="fixed inset-0 z-[200] flex flex-col bg-slate-50 text-slate-900">
+      {/* Aksen latar lembut: biru primary di atas, oranye accent di bawah. */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(700px circle at 50% 20%, rgba(8,145,178,0.35), transparent 60%), radial-gradient(600px circle at 80% 90%, rgba(249,115,22,0.18), transparent 60%)",
+            "radial-gradient(700px circle at 50% 0%, rgba(8,145,178,0.12), transparent 60%), radial-gradient(600px circle at 85% 100%, rgba(249,115,22,0.10), transparent 60%)",
         }}
       />
       {stage === "reveal" && <Confetti />}
 
       <button
         onClick={onClose}
-        className="absolute right-5 top-5 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+        className="absolute right-5 top-5 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-slate-500 shadow-sm transition-colors hover:text-slate-900"
         aria-label="Tutup"
       >
         <X className="h-5 w-5" />
       </button>
 
       <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-cyan-300">
+        <p className="text-sm font-bold uppercase tracking-[0.3em] text-primary">
           Youth Character Summit
         </p>
-        <h2 className="text-3xl font-extrabold sm:text-5xl">
+        <h2 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
           Undian {prize}
         </h2>
 
         {stage === "idle" && (
           <>
-            <p className="max-w-md text-white/70">
+            <p className="max-w-md text-sm text-muted-foreground">
               Pastikan layar ini yang dibagikan ke penonton. Pilih gaya animasi
               lalu mulai.
             </p>
             {/* Pilih gaya animasi */}
-            <div className="inline-flex rounded-xl border border-white/20 bg-white/5 p-1">
+            <div className="inline-flex rounded-xl border bg-white p-1 shadow-sm">
               {(
                 [
-                  { v: "shuffle", label: "Shuffle Nama" },
                   { v: "slot", label: "Slot Digit" },
+                  { v: "shuffle", label: "Shuffle Nama" },
                 ] as const
               ).map((o) => (
                 <button
                   key={o.v}
                   onClick={() => setStyle(o.v)}
-                  className={
-                    "cursor-pointer rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors " +
-                    (style === o.v
-                      ? "bg-accent text-white"
-                      : "text-white/70 hover:text-white")
-                  }
+                  className={cn(
+                    "cursor-pointer rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors",
+                    style === o.v
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
                 >
                   {o.label}
                 </button>
               ))}
             </div>
+            {style === "slot" && (
+              <p className="max-w-md text-xs text-muted-foreground">
+                Mode slot: kode pemenang diungkap 8 digit, satu digit per klik.
+              </p>
+            )}
             <Button size="lg" variant="accent" onClick={run}>
               <Radio className="h-5 w-5" /> Mulai Undian
             </Button>
@@ -552,42 +585,65 @@ function LiveDraw({
           </p>
         )}
 
-        {stage === "spin" && style === "shuffle" && (
-          <div className="w-full max-w-2xl rounded-3xl border border-white/15 bg-white/5 px-6 py-14 backdrop-blur">
+        {stage === "shuffle" && (
+          <div className="w-full max-w-2xl rounded-3xl border bg-white px-6 py-14 shadow-sm">
             <p className="truncate text-4xl font-extrabold sm:text-6xl">
               {ticker}
             </p>
           </div>
         )}
 
-        {stage === "spin" && style === "slot" && (
-          <SlotDigits
-            code={winner?.code ?? "YCS-0000-0000"}
-            stoppedCount={stoppedCount}
-          />
+        {stage === "slot" && (
+          <div className="flex w-full max-w-3xl flex-col items-center gap-6 rounded-3xl border bg-white px-4 py-8 shadow-sm sm:px-8 sm:py-10">
+            <p className="font-mono text-sm font-bold tracking-[0.3em] text-primary">
+              YCS
+            </p>
+            <SlotDigits
+              digits={digits}
+              revealedCount={revealed}
+              spinningIndex={spinningIndex}
+            />
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                Digit {Math.min(revealed + 1, digits.length)} dari{" "}
+                {digits.length}
+              </p>
+              <Button
+                size="lg"
+                variant="accent"
+                onClick={spinDigit}
+                disabled={spinningIndex !== -1 || allRevealed}
+              >
+                {spinningIndex !== -1 ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Smartphone className="h-5 w-5" />
+                )}
+                {spinningIndex !== -1
+                  ? "Mengundi..."
+                  : `Undi Digit ${Math.min(revealed + 1, digits.length)}`}
+              </Button>
+            </div>
+          </div>
         )}
 
         {stage === "reveal" && winner && (
-          <div className="w-full max-w-2xl space-y-4 rounded-3xl border-2 border-accent bg-white/[0.07] px-6 py-12 backdrop-blur">
+          <div className="w-full max-w-2xl space-y-3 rounded-3xl border-2 border-accent bg-white px-6 py-10 shadow-lg shadow-accent/10">
             <p className="text-sm font-bold uppercase tracking-widest text-accent">
               Selamat kepada
             </p>
             <p className="text-4xl font-extrabold sm:text-6xl">{winner.name}</p>
-            <p className="text-lg text-white/80">
+            <p className="text-lg text-muted-foreground">
               {maskPhone(winner.phone_number)}
             </p>
-            <p className="font-mono text-xl font-bold text-cyan-300">
+            <p className="font-mono text-xl font-bold text-primary">
               {winner.code}
             </p>
             <div className="flex justify-center gap-3 pt-2">
               <Button variant="accent" onClick={run}>
                 Undi Lagi
               </Button>
-              <Button
-                variant="outline"
-                className="border-white/30 bg-transparent text-white hover:bg-white/10"
-                onClick={onClose}
-              >
+              <Button variant="outline" onClick={onClose}>
                 Selesai
               </Button>
             </div>
