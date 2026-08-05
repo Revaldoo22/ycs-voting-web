@@ -58,13 +58,12 @@ export function ParticipantGrid() {
   const [page, setPage] = React.useState(initial.page);
   const [scope, setScope] = React.useState<Scope>(initial.scope ?? "all");
 
-  // Filter lingkup muncul selama akun login punya identitas sekolah/daerah, // baik voter yang sudah onboarding maupun peserta (email cocok record
+  // Filter lingkup muncul selama akun login punya identitas sekolah/daerah,
+  // baik voter yang sudah onboarding maupun peserta (email cocok record
   // peserta → school_id/region_id terisi dari /me walau belum onboarding).
-  // Jangan timpa lingkup hasil restore dari URL.
+  // Default tetap "Semua" walau voter punya sekolah/daerah; scope lain
+  // hanya aktif kalau dipilih manual atau di-restore dari URL.
   const voterReady = !!me && (!!me.school_id || !!me.region_id);
-  React.useEffect(() => {
-    if (voterReady && me?.school_id && !initial.scope) setScope("school");
-  }, [voterReady, me?.school_id, initial.scope]);
 
   // Reset halaman saat cari/lingkup berubah, skip render pertama supaya
   // page hasil restore tidak langsung ke-reset.
