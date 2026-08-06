@@ -621,31 +621,31 @@ function BaliBackdrop() {
   );
 }
 
-/** Judul flat modern: pill badge + teks solid dengan soft glow (tanpa stroke tebal/italic). */
+/**
+ * Judul flat modern untuk panggung berlatar TERANG: teks gelap pekat dengan
+ * aksen oranye, tanpa stroke tebal/italic. Hindari warna terang (putih/amber
+ * muda) di sini karena backdrop Bali-nya biru muda, kontrasnya hilang.
+ */
 function StickerTitle({ prize }: { prize: string }) {
   return (
     <div className="flex flex-col items-center gap-3">
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-100 ring-1 ring-white/25 backdrop-blur-sm sm:text-xs">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-700 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-white shadow-sm sm:text-xs">
         <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
         Youth Character Summit
       </span>
       <h2
-        className="text-center font-extrabold uppercase leading-[1.05] tracking-tight text-white"
+        className="text-center font-extrabold uppercase leading-[1.05] tracking-tight text-slate-900"
         style={{
           // Ikut tinggi viewport supaya judul tidak memakan ruang konsol
           // spin di jendela pendek maupun mode layar penuh.
           fontSize: "clamp(1.8rem, 6vh, 4rem)",
-          textShadow: "0 2px 20px rgba(56,189,248,0.35)",
         }}
       >
-        Undian{" "}
-        <span className="text-amber-300" style={{ textShadow: "0 2px 20px rgba(251,191,36,0.45)" }}>
-          Berhadiah
-        </span>
+        Undian <span className="text-orange-500">Berhadiah</span>
       </h2>
-      <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-4 py-1 text-xs font-semibold text-amber-200 ring-1 ring-amber-300/30 sm:text-sm">
+      <p className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-900/10 sm:text-sm">
         <span aria-hidden>🎁</span>
-        Hadiah utama <span className="font-bold text-amber-100">{prize}</span>
+        Hadiah utama <span className="font-bold text-orange-600">{prize}</span>
       </p>
     </div>
   );
