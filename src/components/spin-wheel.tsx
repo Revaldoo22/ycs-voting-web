@@ -9,7 +9,6 @@ export type PrizeType = "HP" | "E-Money" | "Tumbler";
 export interface WheelSegment {
   id: number;
   label: string;
-  subLabel?: string;
   type: PrizeType;
   color: string;
   textColor: string;
@@ -21,16 +20,14 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
   {
     id: 0,
     label: "Tumbler",
-    subLabel: "Eksklusif",
     type: "Tumbler",
     color: "#ffffff",
-    textColor: "#1e293b",
+    textColor: "#0f172a",
     gradient: ["#ffffff", "#f1f5f9"],
   },
   {
     id: 1,
     label: "E-Money",
-    subLabel: "Rp 100k",
     type: "E-Money",
     color: "#0284c7",
     textColor: "#ffffff",
@@ -39,16 +36,14 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
   {
     id: 2,
     label: "Tumbler",
-    subLabel: "Eksklusif",
     type: "Tumbler",
     color: "#ffffff",
-    textColor: "#1e293b",
+    textColor: "#0f172a",
     gradient: ["#ffffff", "#f1f5f9"],
   },
   {
     id: 3,
     label: "E-Money",
-    subLabel: "Rp 50k",
     type: "E-Money",
     color: "#2563eb",
     textColor: "#ffffff",
@@ -57,7 +52,6 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
   {
     id: 4,
     label: "1 HP",
-    subLabel: "GRAND PRIZE",
     type: "HP",
     color: "#d946ef",
     textColor: "#ffffff",
@@ -66,16 +60,14 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
   {
     id: 5,
     label: "Tumbler",
-    subLabel: "Eksklusif",
     type: "Tumbler",
     color: "#ffffff",
-    textColor: "#1e293b",
+    textColor: "#0f172a",
     gradient: ["#ffffff", "#f1f5f9"],
   },
   {
     id: 6,
     label: "E-Money",
-    subLabel: "Rp 100k",
     type: "E-Money",
     color: "#0284c7",
     textColor: "#ffffff",
@@ -84,16 +76,14 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
   {
     id: 7,
     label: "Tumbler",
-    subLabel: "Eksklusif",
     type: "Tumbler",
     color: "#ffffff",
-    textColor: "#1e293b",
+    textColor: "#0f172a",
     gradient: ["#ffffff", "#f1f5f9"],
   },
   {
     id: 8,
     label: "E-Money",
-    subLabel: "Rp 50k",
     type: "E-Money",
     color: "#2563eb",
     textColor: "#ffffff",
@@ -102,10 +92,9 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
   {
     id: 9,
     label: "Tumbler",
-    subLabel: "Eksklusif",
     type: "Tumbler",
     color: "#ffffff",
-    textColor: "#1e293b",
+    textColor: "#0f172a",
     gradient: ["#ffffff", "#f1f5f9"],
   },
 ];
@@ -196,31 +185,32 @@ export function SpinWheel({
       ctx.strokeStyle = "rgba(251, 191, 36, 0.6)";
       ctx.stroke();
 
-      // Render Text Label
+      // Render Text Label (Besar, Bold, Sangat Jelas)
       ctx.save();
       ctx.rotate(startAngle + arc / 2);
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
 
-      // Teks Utama (mis. "1 HP" / "E-Money" / "Tumbler")
       ctx.fillStyle = seg.textColor;
       ctx.font =
         seg.type === "HP"
-          ? "900 15px system-ui, sans-serif"
-          : "800 13px system-ui, sans-serif";
+          ? "900 19px system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+          : "900 17px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
       
-      // Shadow teks biar sangat jelas & kontras
-      ctx.shadowColor = seg.textColor === "#ffffff" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.7)";
-      ctx.shadowBlur = 3;
-      ctx.fillText(seg.label, radius - 20, 0);
-
-      // Sub-label kecil
-      if (seg.subLabel) {
-        ctx.font = "700 9px system-ui, sans-serif";
-        ctx.fillStyle = seg.textColor === "#ffffff" ? "rgba(255,255,255,0.9)" : "rgba(30,41,59,0.85)";
-        ctx.fillText(seg.subLabel, radius - 20, 13);
+      // Shadow & kontras tinggi agar teks sangat jelas terbaca
+      if (seg.textColor === "#ffffff") {
+        ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+      } else {
+        ctx.shadowColor = "rgba(255, 255, 255, 0.9)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
       }
 
+      ctx.fillText(seg.label, radius - 16, 0);
       ctx.restore();
     }
 
