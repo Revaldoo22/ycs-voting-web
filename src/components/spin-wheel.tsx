@@ -15,7 +15,7 @@ export interface WheelSegment {
   gradient: [string, string];
 }
 
-// 10 segmen: 1 HP, 4 E-Money, 5 Tumbler (diselang-seling)
+// 10 segmen: 5 Tumbler, 1 HP, 4 E-Money (Tumbler sebagai penengah di setiap posisi genap)
 export const WHEEL_SEGMENTS: WheelSegment[] = [
   {
     id: 0,
@@ -27,11 +27,11 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
   },
   {
     id: 1,
-    label: "E-Money",
-    type: "E-Money",
-    color: "#0284c7",
+    label: "1 HP",
+    type: "HP",
+    color: "#d946ef",
     textColor: "#ffffff",
-    gradient: ["#38bdf8", "#0284c7"],
+    gradient: ["#ec4899", "#c026d3"],
   },
   {
     id: 2,
@@ -45,20 +45,12 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
     id: 3,
     label: "E-Money",
     type: "E-Money",
-    color: "#2563eb",
+    color: "#0284c7",
     textColor: "#ffffff",
-    gradient: ["#60a5fa", "#2563eb"],
+    gradient: ["#38bdf8", "#0284c7"],
   },
   {
     id: 4,
-    label: "1 HP",
-    type: "HP",
-    color: "#d946ef",
-    textColor: "#ffffff",
-    gradient: ["#ec4899", "#c026d3"],
-  },
-  {
-    id: 5,
     label: "Tumbler",
     type: "Tumbler",
     color: "#ffffff",
@@ -66,7 +58,23 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
     gradient: ["#ffffff", "#f1f5f9"],
   },
   {
+    id: 5,
+    label: "E-Money",
+    type: "E-Money",
+    color: "#2563eb",
+    textColor: "#ffffff",
+    gradient: ["#60a5fa", "#2563eb"],
+  },
+  {
     id: 6,
+    label: "Tumbler",
+    type: "Tumbler",
+    color: "#ffffff",
+    textColor: "#0f172a",
+    gradient: ["#ffffff", "#f1f5f9"],
+  },
+  {
+    id: 7,
     label: "E-Money",
     type: "E-Money",
     color: "#0284c7",
@@ -74,7 +82,7 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
     gradient: ["#38bdf8", "#0284c7"],
   },
   {
-    id: 7,
+    id: 8,
     label: "Tumbler",
     type: "Tumbler",
     color: "#ffffff",
@@ -82,20 +90,12 @@ export const WHEEL_SEGMENTS: WheelSegment[] = [
     gradient: ["#ffffff", "#f1f5f9"],
   },
   {
-    id: 8,
+    id: 9,
     label: "E-Money",
     type: "E-Money",
     color: "#2563eb",
     textColor: "#ffffff",
     gradient: ["#60a5fa", "#2563eb"],
-  },
-  {
-    id: 9,
-    label: "Tumbler",
-    type: "Tumbler",
-    color: "#ffffff",
-    textColor: "#0f172a",
-    gradient: ["#ffffff", "#f1f5f9"],
   },
 ];
 
