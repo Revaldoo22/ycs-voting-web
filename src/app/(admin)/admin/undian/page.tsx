@@ -621,52 +621,31 @@ function BaliBackdrop() {
   );
 }
 
-/** Judul bergaya stiker: teks gradasi dengan garis tepi putih tebal. */
+/** Judul flat modern: pill badge + teks solid dengan soft glow (tanpa stroke tebal/italic). */
 function StickerTitle({ prize }: { prize: string }) {
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-primary to-cyan-700 px-4 py-1 text-[11px] font-extrabold uppercase tracking-[0.28em] text-white shadow-[0_2px_10px_rgba(8,145,178,0.45)] ring-1 ring-white/20 sm:text-xs">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_6px_rgba(252,211,77,0.9)]" />
+    <div className="flex flex-col items-center gap-3">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-100 ring-1 ring-white/25 backdrop-blur-sm sm:text-xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
         Youth Character Summit
       </span>
-      <h2 className="relative -mt-0.5 text-center">
-        <span
-          className="block font-black uppercase italic leading-[0.95] tracking-tight text-transparent"
-          style={{
-            // Ikut tinggi viewport supaya judul tidak memakan ruang konsol
-            // spin di jendela pendek maupun mode layar penuh.
-            fontSize: "clamp(1.6rem, 5.4vh, 3.8rem)",
-            backgroundImage:
-              "linear-gradient(180deg, #fff 0%, #fff 45%, #e0f2fe 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            WebkitTextStroke: "3px #1e3a5f",
-            paintOrder: "stroke fill",
-            filter: "drop-shadow(0 4px 8px rgba(15,23,42,0.30))",
-          }}
-        >
-          Undian
-        </span>
-        <span
-          className="relative mt-0.5 block font-black uppercase italic leading-[0.95] tracking-tight text-transparent"
-          style={{
-            fontSize: "clamp(1.6rem, 5.4vh, 3.8rem)",
-            backgroundImage:
-              "linear-gradient(180deg, #fde047 0%, #fb923c 55%, #f97316 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            WebkitTextStroke: "3px #ffffff",
-            paintOrder: "stroke fill",
-            filter: "drop-shadow(0 5px 10px rgba(249,115,22,0.45))",
-          }}
-        >
+      <h2
+        className="text-center font-extrabold uppercase leading-[1.05] tracking-tight text-white"
+        style={{
+          // Ikut tinggi viewport supaya judul tidak memakan ruang konsol
+          // spin di jendela pendek maupun mode layar penuh.
+          fontSize: "clamp(1.8rem, 6vh, 4rem)",
+          textShadow: "0 2px 20px rgba(56,189,248,0.35)",
+        }}
+      >
+        Undian{" "}
+        <span className="text-amber-300" style={{ textShadow: "0 2px 20px rgba(251,191,36,0.45)" }}>
           Berhadiah
         </span>
       </h2>
-      <p className="inline-flex items-center gap-1.5 rounded-full bg-[#1e3a5f]/90 px-4 py-1 text-[11px] font-extrabold uppercase italic tracking-wide text-white shadow-md ring-1 ring-white/10 sm:text-sm">
+      <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-4 py-1 text-xs font-semibold text-amber-200 ring-1 ring-amber-300/30 sm:text-sm">
         <span aria-hidden>🎁</span>
-        Hadiah utama{" "}
-        <span className="text-amber-300">{prize}</span>
+        Hadiah utama <span className="font-bold text-amber-100">{prize}</span>
       </p>
     </div>
   );
