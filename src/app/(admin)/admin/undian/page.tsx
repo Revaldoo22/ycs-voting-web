@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import {
+  Crown,
   Gift,
   Loader2,
   Maximize,
   Minimize,
+  Play,
   Radio,
+  ScanLine,
   Smartphone,
-  Sparkles,
-  Star,
   Ticket,
   Undo2,
   X,
@@ -605,17 +606,18 @@ function BaliBackdrop() {
         ))}
       </svg>
 
-      {/* Kilau kecil bertabur */}
+      {/* Bokeh lembut: titik blur, bukan bintang clip-art, agar terasa premium. */}
       {sparkles.map((sp, i) => (
-        <svg
+        <span
           key={i}
-          className="absolute text-amber-300/70"
-          style={{ left: `${sp.x}%`, top: `${sp.y}%`, width: sp.s, height: sp.s }}
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <path d="M12 0 L14.5 9.5 L24 12 L14.5 14.5 L12 24 L9.5 14.5 L0 12 L9.5 9.5 Z" />
-        </svg>
+          className="absolute rounded-full bg-white/50 blur-[2px]"
+          style={{
+            left: `${sp.x}%`,
+            top: `${sp.y}%`,
+            width: sp.s,
+            height: sp.s,
+          }}
+        />
       ))}
     </div>
   );
@@ -643,8 +645,8 @@ function StickerTitle({ prize }: { prize: string }) {
       >
         Undian <span className="text-orange-500">Berhadiah</span>
       </h2>
-      <p className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-900/10 sm:text-sm">
-        <span aria-hidden>🎁</span>
+      <p className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-900/10 sm:text-sm">
+        <Gift className="h-4 w-4 shrink-0 text-orange-500" aria-hidden />
         Hadiah utama <span className="font-bold text-orange-600">{prize}</span>
       </p>
     </div>
@@ -1029,10 +1031,9 @@ function LiveDraw({
                   "0 30px 70px -24px rgba(8,145,178,0.45), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 1px rgba(255,255,255,0.7)",
               }}
             >
-              <p className="mb-3 flex items-center justify-center gap-2 text-sm font-extrabold uppercase tracking-[0.3em] text-[#1e3a5f]">
-                <Sparkles className="h-4 w-4 text-amber-500" />
+              <p className="mb-3 flex items-center justify-center gap-2.5 text-sm font-semibold uppercase tracking-[0.32em] text-slate-500">
+                <ScanLine className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
                 Kode Pemenang
-                <Sparkles className="h-4 w-4 text-amber-500" />
               </p>
               <SlotCabinet
                 digits={digits}
@@ -1053,22 +1054,25 @@ function LiveDraw({
               <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 {/* Info kiri: progres & sisa digit */}
                 <div className="flex gap-2">
-                  <div className="rounded-2xl bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <div className="rounded-2xl bg-white px-3.5 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                       Terungkap
                     </p>
-                    <p className="flex items-center gap-1 font-mono text-lg font-extrabold tabular-nums text-[#1e3a5f]">
-                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                      {revealed} / {digits.length}
+                    <p className="font-mono text-lg font-bold tabular-nums text-[#1e3a5f]">
+                      {revealed}
+                      <span className="text-slate-300"> / </span>
+                      <span className="text-slate-400">{digits.length}</span>
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <div className="rounded-2xl bg-white px-3.5 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                       Per Spin
                     </p>
-                    <p className="flex items-center gap-1 font-mono text-lg font-extrabold tabular-nums text-accent">
-                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                      {perSpin} digit
+                    <p className="font-mono text-lg font-bold tabular-nums text-primary">
+                      {perSpin}
+                      <span className="ml-1 text-xs font-semibold text-slate-400">
+                        digit
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -1078,25 +1082,29 @@ function LiveDraw({
                   onClick={spinDigit}
                   disabled={spinning || allRevealed}
                   className={cn(
-                    "relative flex w-full flex-col items-center justify-center rounded-full px-8 py-3 text-white transition-all duration-200 sm:w-auto sm:px-14",
-                    "bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500",
-                    "shadow-[0_10px_0_-2px_rgb(190,24,93),0_20px_34px_-10px_rgba(236,72,153,0.6)]",
-                    "enabled:hover:brightness-105",
-                    "enabled:active:translate-y-1 enabled:active:shadow-[0_5px_0_-2px_rgb(190,24,93),0_12px_22px_-10px_rgba(236,72,153,0.6)]",
-                    "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-[0_6px_0_-2px_rgb(190,24,93)]",
+                    "group relative flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-full px-8 py-3.5 text-white transition-all duration-200 sm:w-auto sm:px-14",
+                    "bg-gradient-to-b from-orange-400 to-orange-600",
+                    "shadow-[0_8px_0_-1px_rgb(154,52,18),0_18px_30px_-12px_rgba(234,88,12,0.55)]",
+                    "enabled:hover:from-orange-300 enabled:hover:to-orange-500",
+                    "enabled:active:translate-y-[3px] enabled:active:shadow-[0_5px_0_-1px_rgb(154,52,18),0_10px_20px_-12px_rgba(234,88,12,0.55)]",
+                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-300/60",
+                    "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-[0_5px_0_-1px_rgb(154,52,18)]",
                   )}
                 >
-                  {/* Kilau kaca di separuh atas tombol */}
-                  <span className="pointer-events-none absolute inset-x-4 top-1 h-4 rounded-full bg-white/35 blur-[2px]" />
-                  <span className="flex items-center gap-2.5 text-lg font-black uppercase tracking-wide sm:text-2xl">
+                  {/* Kilau halus di separuh atas tombol */}
+                  <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent" />
+                  <span className="relative flex items-center gap-2.5 text-lg font-extrabold uppercase tracking-[0.06em] sm:text-2xl">
                     {spinning ? (
-                      <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden />
                     ) : (
-                      <Smartphone className="h-6 w-6 shrink-0" />
+                      <Play
+                        className="h-5 w-5 shrink-0 fill-current"
+                        aria-hidden
+                      />
                     )}
                     {spinning ? "Mengundi..." : `Spin ${nextBatch} Digit`}
                   </span>
-                  <span className="text-[11px] font-semibold text-white/85">
+                  <span className="relative text-[11px] font-medium tracking-wide text-white/85">
                     {allRevealed
                       ? "Semua digit terungkap"
                       : `Gunakan ${nextBatch} kesempatan`}
@@ -1105,19 +1113,26 @@ function LiveDraw({
 
                 {/* Setelan digit per spin */}
                 <div className="flex flex-col items-center gap-1.5 sm:items-end">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                     Digit per spin
                   </p>
-                  <div className="inline-flex rounded-2xl bg-white p-1 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
+                  <div
+                    role="group"
+                    aria-label="Jumlah digit per spin"
+                    className="inline-flex rounded-2xl bg-white p-1 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100"
+                  >
                     {[1, 2, 4, 8].map((n) => (
                       <button
                         key={n}
                         onClick={() => setPerSpin(n)}
                         disabled={spinning}
+                        aria-pressed={perSpin === n}
                         className={cn(
-                          "h-9 w-9 cursor-pointer rounded-full font-mono text-sm font-extrabold transition-all disabled:opacity-50",
+                          "h-9 w-9 cursor-pointer rounded-full font-mono text-sm font-bold transition-colors duration-200",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                          "disabled:cursor-not-allowed disabled:opacity-50",
                           perSpin === n
-                            ? "bg-gradient-to-b from-cyan-500 to-primary text-white shadow-[0_3px_0_-1px_rgb(14,116,144)]"
+                            ? "bg-primary text-white"
                             : "text-slate-400 hover:bg-slate-100 hover:text-slate-700",
                         )}
                       >
@@ -1131,9 +1146,9 @@ function LiveDraw({
 
             {/* Disembunyikan di layar pendek (lihat .stage-note di globals.css)
                 agar konsol spin tetap terlihat tanpa perlu scroll. */}
-            <p className="stage-note items-center justify-center gap-1.5 text-sm font-semibold text-[#1e3a5f] drop-shadow-sm">
-              Dukung terus peserta favoritmu dan menangkan {prize} impianmu!
-              <Sparkles className="h-4 w-4 text-amber-500" />
+            <p className="stage-note items-center justify-center gap-2 text-sm font-medium text-slate-600">
+              <Gift className="h-4 w-4 shrink-0 text-orange-500" aria-hidden />
+              Dukung terus peserta favoritmu dan menangkan {prize} impianmu
             </p>
           </div>
         )}
@@ -1146,9 +1161,11 @@ function LiveDraw({
                 "0 30px 70px -24px rgba(249,115,22,0.55), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 2px rgba(249,115,22,0.45)",
             }}
           >
-            <p className="flex items-center justify-center gap-2 text-sm font-extrabold uppercase tracking-[0.28em] text-accent">
-              <Sparkles className="h-4 w-4" /> Selamat kepada
-              <Sparkles className="h-4 w-4" />
+            <span className="mx-auto mb-1 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-b from-amber-300 to-orange-500 shadow-[0_8px_20px_-6px_rgba(234,88,12,0.65)]">
+              <Crown className="h-7 w-7 text-white" aria-hidden />
+            </span>
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-orange-600">
+              Selamat kepada
             </p>
             <p
               className="text-4xl font-black text-[#1e3a5f] sm:text-6xl"
