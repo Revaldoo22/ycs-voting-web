@@ -311,12 +311,17 @@ function Confetti() {
 const SLOT_CHARS = "K7QA3ZM0WFJ8CTX1PVE5HN9RBLU2YGS6DIO4";
 
 /** Ambil 8 karakter kode tanpa prefix "YCS-" dan tanpa pemisah. */
-function codeDigits(code: string): string[] {
-  return code
+function codeDigits(code: string | null | undefined): string[] {
+  if (!code) return ["?", "?", "?", "?", "?", "?", "?", "?"];
+  const cleaned = code
     .toUpperCase()
     .replace(/^YCS-?/, "")
-    .replace(/[^A-Z0-9]/g, "")
-    .split("");
+    .replace(/[^A-Z0-9]/g, "");
+  const chars = cleaned.split("");
+  while (chars.length < 8) {
+    chars.push("?");
+  }
+  return chars.slice(0, 8);
 }
 
 /**
@@ -785,11 +790,18 @@ function LiveDraw({
     try {
       // Ronde baru sementara ronde slot sebelumnya belum tuntas: kemenangan
       // yang belum diumumkan dibatalkan supaya kuponnya tidak hangus.
-      discardPendingWinner();
+      await discardPendingWinner();
       setWinner(null);
       setDigits([]);
       setRevealed(0);
       setSpinningIndexes([]);
+
+      // Undi pemenang di backend SECEPAT MUNGKIN di awal agar jika kupon habis /
+      // error, langsung memberikan feedback sebelum countdown dimulai.
+      const drawPromise = api<{ winner: Winner }>("/api/admin/raffle/draw", {
+        method: "POST",
+        body: JSON.stringify({ prize }),
+      });
 
       // 1. Countdown 3..2..1
       setStage("count");
@@ -799,23 +811,23 @@ function LiveDraw({
         if (!alive.current) return;
       }
 
-      // 2. Undi pemenang di backend (sah & atomik, sekali saja).
-      const drawPromise = api<{ winner: Winner }>("/api/admin/raffle/draw", {
-        method: "POST",
-        body: JSON.stringify({ prize }),
-      });
+      // 2. Ambil hasil draw dari backend
+      const res = await drawPromise;
+      if (!res?.winner) {
+        throw new Error("Pemenang tidak ditemukan.");
+      }
+      pendingWinner.current = res.winner;
+
+      // Panggung sudah ditutup selagi menunggu: batalkan, jangan sampai
+      // kupon tercatat menang padahal tidak pernah diumumkan.
+      if (!alive.current) {
+        await discardPendingWinner();
+        return;
+      }
 
       if (style === "slot") {
         // Kode pemenang disiapkan, lalu diungkap digit demi digit oleh admin
         // lewat tombol "Undi Digit" (8 kali klik).
-        const res = await drawPromise;
-        pendingWinner.current = res.winner;
-        // Panggung sudah ditutup selagi menunggu: batalkan, jangan sampai
-        // kupon tercatat menang padahal tidak pernah diumumkan.
-        if (!alive.current) {
-          discardPendingWinner();
-          return;
-        }
         setDigits(codeDigits(res.winner.code));
         setStage("slot");
       } else {
@@ -824,6 +836,7 @@ function LiveDraw({
         refreshPool();
       }
     } catch (e) {
+      console.error("Raffle draw error:", e);
       toast.error(e instanceof Error ? e.message : "Gagal mengundi.");
       setStage("idle");
     }
