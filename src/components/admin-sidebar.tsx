@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
   School,
   ScrollText,
+  Settings,
   Ticket,
   Trophy,
   UserPlus,
@@ -68,6 +69,7 @@ const GROUPS: NavGroup[] = [
     icon: MoreHorizontal,
     items: [
       { href: "/admin/undian", label: "Undian", icon: Gift },
+      { href: "/admin/setting", label: "Pengaturan", icon: Settings },
       { href: "/admin/log", label: "Log Aktivitas", icon: ScrollText },
     ],
   },

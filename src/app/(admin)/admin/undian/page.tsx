@@ -25,6 +25,7 @@ import { EmptyState, LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
 import { cn, formatNumber } from "@/lib/utils";
+import { SpinWheel, WheelSegment } from "@/components/spin-wheel";
 
 type Winner = {
   code: string;
@@ -653,7 +654,7 @@ function StickerTitle({ prize }: { prize: string }) {
   );
 }
 
-type Stage = "idle" | "count" | "shuffle" | "slot" | "reveal";
+type Stage = "idle" | "count" | "shuffle" | "slot" | "wheel" | "reveal";
 type LiveStyle = "shuffle" | "slot";
 
 /** Panggung undian layar penuh: countdown, animasi, reveal pemenang. */
@@ -667,6 +668,12 @@ function LiveDraw({
   const [stage, setStage] = React.useState<Stage>("idle");
   const [style, setStyle] = React.useState<LiveStyle>("slot");
   const [count, setCount] = React.useState(3);
+
+  // Ambil pengaturan Spin Wheel dari backend
+  const { data: settingsData } = useQuery<{ spin_wheel_mode?: string }>({
+    queryKey: ["public-settings"],
+    queryFn: () => api<{ spin_wheel_mode?: string }>("/api/public/settings"),
+  });
   const [ticker, setTicker] = React.useState<string>("");
   const [winner, setWinner] = React.useState<Winner | null>(null);
   // Mode slot: pemenang sudah diundi backend, kodenya diungkap per digit.
@@ -878,15 +885,27 @@ function LiveDraw({
     if (start + batch >= digits.length) {
       await new Promise((r) => setTimeout(r, 900));
       if (!alive.current) return;
-      // Semua digit terungkap: kemenangan resmi, tak lagi boleh dibatalkan
-      // otomatis saat panggung ditutup, dan voter berhak diberi tahu.
-      const w = pendingWinner.current;
-      setWinner(w);
-      pendingWinner.current = null;
-      if (w) confirmWinner(w.code);
-      setStage("reveal");
-      refreshPool();
+      // Semua digit terungkap: berpindah ke panggung Spin Wheel
+      setStage("wheel");
     }
+  }
+
+  async function handleWheelEnd(seg: WheelSegment) {
+    const w = pendingWinner.current;
+    if (w) {
+      w.prize = seg.label;
+      setWinner({ ...w, prize: seg.label });
+      await api(`/api/admin/raffle/winners/${w.code}/prize`, {
+        method: "POST",
+        body: JSON.stringify({ prize: seg.label }),
+      }).catch(() => {});
+      confirmWinner(w.code);
+      pendingWinner.current = null;
+    }
+    await new Promise((r) => setTimeout(r, 600));
+    if (!alive.current) return;
+    setStage("reveal");
+    refreshPool();
   }
 
   const allRevealed = digits.length > 0 && revealed >= digits.length;
@@ -1153,6 +1172,33 @@ function LiveDraw({
           </div>
         )}
 
+        {stage === "wheel" && (
+          <div
+            className="w-full max-w-xl space-y-4 rounded-[36px] bg-white/90 p-6 sm:p-8 backdrop-blur-md"
+            style={{
+              boxShadow:
+                "0 30px 70px -24px rgba(8,145,178,0.45), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 1px rgba(255,255,255,0.7)",
+            }}
+          >
+            <div className="text-center space-y-1">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider text-primary">
+                Kode Pemenang: {pendingWinner.current?.code || "YCS-XXXX-XXXX"}
+              </span>
+              <h3 className="text-2xl font-black text-slate-800">
+                Putar Roda Hadiah
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Tekan tombol di bawah untuk memutar Spin Wheel 10 bagian (1 HP, 4 E-Money, 5 Tumbler) & menentukan hadiah fisik pemenang!
+              </p>
+            </div>
+
+            <SpinWheel
+              mode={settingsData?.spin_wheel_mode || "ALWAYS_TUMBLER"}
+              onSpinEnd={handleWheelEnd}
+            />
+          </div>
+        )}
+
         {stage === "reveal" && winner && (
           <div
             className="w-full max-w-2xl space-y-3 rounded-[36px] bg-white/90 px-6 py-10 backdrop-blur-md"
@@ -1176,9 +1222,14 @@ function LiveDraw({
             <p className="text-lg font-semibold text-slate-500">
               {maskPhone(winner.phone_number)}
             </p>
-            <p className="inline-flex rounded-full bg-primary/10 px-4 py-1 font-mono text-xl font-black tracking-wider text-primary">
-              {winner.code}
-            </p>
+            <div className="flex flex-wrap justify-center items-center gap-2 pt-1">
+              <p className="inline-flex rounded-full bg-primary/10 px-4 py-1 font-mono text-xl font-black tracking-wider text-primary">
+                {winner.code}
+              </p>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 px-4 py-1.5 text-sm font-extrabold text-white shadow-md">
+                <Gift className="h-4 w-4" /> Hadiah: {winner.prize || prize}
+              </span>
+            </div>
             <div className="flex justify-center gap-3 pt-2">
               <button
                 onClick={run}
