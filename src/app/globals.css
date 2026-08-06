@@ -116,20 +116,30 @@
  * strip yang digeser translateY selalu mendarat pas di tengah jendela.
  */
 .reel {
-  --row: 56px;
+  /*
+   * Tinggi baris ikut tinggi viewport supaya seluruh panggung (judul, reel,
+   * konsol dengan tombol spin, footer) selalu muat tanpa perlu zoom out,
+   * baik di jendela pendek maupun mode layar penuh. clamp menjaga agar tetap
+   * terbaca di layar kecil dan tidak berlebihan di monitor besar.
+   */
+  --row: clamp(30px, 6.4vh, 58px);
   --visible: 5;
   --center: 2;
 }
-@media (min-width: 640px) {
-  .reel {
-    --row: 68px;
-  }
-}
 .reel-window {
   height: calc(var(--row) * var(--visible));
+  /* Lebar & ukuran huruf ikut tinggi baris agar proporsinya selalu pas. */
+  width: calc(var(--row) * 0.82);
 }
 .reel-row {
   height: var(--row);
+  font-size: calc(var(--row) * 0.62);
+  line-height: 1;
+}
+/* Placeholder "?" saat digit belum diundi, seukuran digit biasa. */
+.reel-placeholder {
+  font-size: calc(var(--row) * 0.62);
+  line-height: 1;
 }
 /* Bingkai + kilau baris terpilih, tepat di baris tengah jendela. */
 .reel-center {
@@ -139,4 +149,17 @@
 /* Kabut tepi: menutup dua baris di atas dan di bawah baris terpilih. */
 .reel-fade {
   height: calc(var(--row) * var(--center));
+}
+/*
+ * Catatan motivasi di bawah konsol undian. Hanya tampil kalau tinggi layar
+ * memadai, supaya di jendela pendek tombol spin tidak sampai terdorong keluar
+ * pandangan (query pakai TINGGI viewport, bukan lebar).
+ */
+.stage-note {
+  display: none;
+}
+@media (min-height: 760px) {
+  .stage-note {
+    display: flex;
+  }
 }

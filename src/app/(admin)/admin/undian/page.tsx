@@ -299,7 +299,14 @@ function Confetti() {
   );
 }
 
-const SLOT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+/**
+ * Susunan karakter pada gulungan reel. URUTANNYA SENGAJA DIACAK (bukan
+ * A-B-C-...) supaya saat berputar tidak terlihat seperti sedang menghitung
+ * alfabet. Urutannya tetap (konstan, bukan di-shuffle saat runtime) karena
+ * strip diulang dan posisi karakter target dihitung dari indeks di sini,
+ * jadi tiap lap harus identik.
+ */
+const SLOT_CHARS = "K7QA3ZM0WFJ8CTX1PVE5HN9RBLU2YGS6DIO4";
 
 /** Ambil 8 karakter kode tanpa prefix "YCS-" dan tanpa pemisah. */
 function codeDigits(code: string): string[] {
@@ -399,7 +406,7 @@ function SlotReel({
     >
       <div
         className={cn(
-          "reel-window relative w-12 overflow-hidden rounded-[13px] transition-colors duration-500 sm:w-16",
+          "reel-window relative overflow-hidden rounded-[13px] transition-colors duration-500",
           state === "locked"
             ? "bg-gradient-to-b from-orange-100 via-white to-orange-100"
             : "bg-gradient-to-b from-slate-200 via-white to-slate-200",
@@ -424,7 +431,7 @@ function SlotReel({
             <div
               key={i}
               className={cn(
-                "reel-row flex items-center justify-center font-mono text-4xl font-extrabold tabular-nums sm:text-5xl",
+                "reel-row flex items-center justify-center font-mono font-extrabold tabular-nums",
                 state === "locked" ? "text-accent" : "text-slate-700",
               )}
               style={{
@@ -442,7 +449,7 @@ function SlotReel({
         {/* Placeholder saat belum diundi, menimpa strip yang disembunyikan. */}
         {idle && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-mono text-4xl font-extrabold text-slate-300 sm:text-5xl">
+            <span className="reel-placeholder font-mono font-extrabold text-slate-300">
               ?
             </span>
           </div>
@@ -623,8 +630,11 @@ function StickerTitle({ prize }: { prize: string }) {
       </span>
       <h2 className="relative -mt-0.5 text-center">
         <span
-          className="block text-4xl font-black uppercase italic leading-[0.95] tracking-tight text-transparent sm:text-6xl lg:text-7xl"
+          className="block font-black uppercase italic leading-[0.95] tracking-tight text-transparent"
           style={{
+            // Ikut tinggi viewport supaya judul tidak memakan ruang konsol
+            // spin di jendela pendek maupun mode layar penuh.
+            fontSize: "clamp(1.6rem, 5.4vh, 3.8rem)",
             backgroundImage:
               "linear-gradient(180deg, #fff 0%, #fff 45%, #e0f2fe 100%)",
             WebkitBackgroundClip: "text",
@@ -637,8 +647,9 @@ function StickerTitle({ prize }: { prize: string }) {
           Undian
         </span>
         <span
-          className="mt-0.5 block text-4xl font-black uppercase italic leading-[0.95] tracking-tight text-transparent sm:text-6xl lg:text-7xl"
+          className="mt-0.5 block font-black uppercase italic leading-[0.95] tracking-tight text-transparent"
           style={{
+            fontSize: "clamp(1.6rem, 5.4vh, 3.8rem)",
             backgroundImage:
               "linear-gradient(180deg, #fde047 0%, #fb923c 55%, #f97316 100%)",
             WebkitBackgroundClip: "text",
@@ -929,7 +940,10 @@ function LiveDraw({
         </button>
       </div>
 
-      <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-5 p-5 text-center sm:gap-6 sm:p-6">
+      {/* justify-center dipakai lewat margin auto (bukan justify-center) supaya
+          konten yang lebih tinggi dari viewport tetap bisa di-scroll penuh,
+          tidak terpotong di bagian atas. */}
+      <div className="relative z-[1] my-auto flex flex-col items-center gap-4 p-4 text-center sm:gap-5 sm:p-6">
         <StickerTitle prize={prize} />
 
         {stage === "idle" && (
@@ -1134,7 +1148,9 @@ function LiveDraw({
               </div>
             </div>
 
-            <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-[#1e3a5f] drop-shadow-sm">
+            {/* Disembunyikan di layar pendek (lihat .stage-note di globals.css)
+                agar konsol spin tetap terlihat tanpa perlu scroll. */}
+            <p className="stage-note items-center justify-center gap-1.5 text-sm font-semibold text-[#1e3a5f] drop-shadow-sm">
               Dukung terus peserta favoritmu dan menangkan {prize} impianmu!
               <Sparkles className="h-4 w-4 text-amber-500" />
             </p>
