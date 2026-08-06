@@ -1187,21 +1187,21 @@ function LiveDraw({
 
         {stage === "wheel" && (
           <div
-            className="w-full max-w-xl space-y-4 rounded-[36px] bg-white/90 p-6 sm:p-8 backdrop-blur-md"
+            className="w-full max-w-md space-y-2.5 rounded-[28px] bg-white/90 p-4 sm:p-5 backdrop-blur-md"
             style={{
               boxShadow:
-                "0 30px 70px -24px rgba(8,145,178,0.45), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 1px rgba(255,255,255,0.7)",
+                "0 20px 50px -20px rgba(8,145,178,0.45), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 1px rgba(255,255,255,0.7)",
             }}
           >
-            <div className="text-center space-y-1">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider text-primary">
+            <div className="text-center space-y-0.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-primary">
                 Kode Pemenang: {pendingWinner.current?.code || "YCS-XXXX-XXXX"}
               </span>
-              <h3 className="text-2xl font-black text-slate-800">
+              <h3 className="text-xl font-black text-slate-800">
                 Putar Roda Hadiah
               </h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Tekan tombol di bawah untuk memutar Spin Wheel 10 bagian (1 HP, 4 E-Money, 5 Tumbler) & menentukan hadiah fisik pemenang!
+              <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-tight">
+                Tekan tombol di bawah untuk memutar Spin Wheel 10 bagian (1 HP, 4 E-Money, 5 Tumbler) & menentukan hadiah pemenang!
               </p>
             </div>
 

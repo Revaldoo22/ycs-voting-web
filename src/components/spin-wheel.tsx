@@ -157,7 +157,7 @@ export function SpinWheel({
     const height = canvas.height;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(centerX, centerY) - 16;
+    const radius = Math.min(centerX, centerY) - 12;
 
     ctx.clearRect(0, 0, width, height);
 
@@ -192,7 +192,7 @@ export function SpinWheel({
       ctx.fill();
 
       // Divider lines (Emas halus)
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.strokeStyle = "rgba(251, 191, 36, 0.6)";
       ctx.stroke();
 
@@ -206,19 +206,19 @@ export function SpinWheel({
       ctx.fillStyle = seg.textColor;
       ctx.font =
         seg.type === "HP"
-          ? "900 20px system-ui, sans-serif"
-          : "800 17px system-ui, sans-serif";
+          ? "900 15px system-ui, sans-serif"
+          : "800 13px system-ui, sans-serif";
       
       // Shadow teks biar sangat jelas & kontras
       ctx.shadowColor = seg.textColor === "#ffffff" ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.7)";
-      ctx.shadowBlur = 4;
-      ctx.fillText(seg.label, radius - 28, 0);
+      ctx.shadowBlur = 3;
+      ctx.fillText(seg.label, radius - 20, 0);
 
       // Sub-label kecil
       if (seg.subLabel) {
-        ctx.font = "700 10px system-ui, sans-serif";
+        ctx.font = "700 9px system-ui, sans-serif";
         ctx.fillStyle = seg.textColor === "#ffffff" ? "rgba(255,255,255,0.9)" : "rgba(30,41,59,0.85)";
-        ctx.fillText(seg.subLabel, radius - 28, 16);
+        ctx.fillText(seg.subLabel, radius - 20, 13);
       }
 
       ctx.restore();
@@ -227,35 +227,35 @@ export function SpinWheel({
     // 2. Ring Emas Dalam (Inner Gold Ring)
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 5;
     ctx.strokeStyle = "#fbbf24"; // Gold
     ctx.stroke();
 
     // 3. Ring Luar Biru Pekat (Outer Rim)
     ctx.beginPath();
-    ctx.arc(0, 0, radius + 8, 0, Math.PI * 2);
-    ctx.lineWidth = 14;
+    ctx.arc(0, 0, radius + 6, 0, Math.PI * 2);
+    ctx.lineWidth = 10;
     ctx.strokeStyle = "#1d4ed8"; // Royal Blue
     ctx.stroke();
 
     // Shadow pada Rim Luar
     ctx.beginPath();
-    ctx.arc(0, 0, radius + 14, 0, Math.PI * 2);
-    ctx.lineWidth = 3;
+    ctx.arc(0, 0, radius + 11, 0, Math.PI * 2);
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = "#f59e0b"; // Accent Gold outer border
     ctx.stroke();
 
     // 4. Pin Tengah (Center Hub Cap)
     ctx.beginPath();
-    ctx.arc(0, 0, 28, 0, Math.PI * 2);
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
     ctx.fillStyle = "#1d4ed8";
     ctx.fill();
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3;
     ctx.strokeStyle = "#fbbf24";
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+    ctx.arc(0, 0, 9, 0, Math.PI * 2);
     ctx.fillStyle = "#fbbf24";
     ctx.fill();
 
@@ -342,21 +342,21 @@ export function SpinWheel({
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-6">
+    <div className="flex flex-col items-center justify-center gap-3 sm:gap-4">
       {/* Container Spin Wheel */}
-      <div className="relative flex items-center justify-center p-2">
+      <div className="relative flex items-center justify-center p-1.5">
         {/* Glow halo Effect */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 via-primary to-pink-500 opacity-30 blur-2xl animate-pulse pointer-events-none" />
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 via-primary to-pink-500 opacity-25 blur-xl animate-pulse pointer-events-none" />
 
         {/* Top Pointer Flag (Penunjuk Atas Emas) */}
         <div
           className={cn(
-            "absolute -top-3 z-30 transition-transform duration-75 origin-top",
+            "absolute -top-2.5 z-30 transition-transform duration-75 origin-top",
             pointerWiggle ? "-rotate-12 scale-110" : "rotate-0"
           )}
-          style={{ filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.4))" }}
+          style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.35))" }}
         >
-          <svg width="44" height="52" viewBox="0 0 44 52" fill="none">
+          <svg width="34" height="42" viewBox="0 0 44 52" fill="none">
             <path
               d="M22 52L2 12C0 8 3 0 8 0H36C41 0 44 8 42 12L22 52Z"
               fill="url(#gold-grad)"
@@ -374,12 +374,12 @@ export function SpinWheel({
           </svg>
         </div>
 
-        {/* Canvas Roda */}
+        {/* Canvas Roda (Responsive Max Dimensions) */}
         <canvas
           ref={canvasRef}
-          width={440}
-          height={440}
-          className="relative z-10 max-w-full h-auto drop-shadow-2xl rounded-full"
+          width={340}
+          height={340}
+          className="relative z-10 max-w-[260px] sm:max-w-[300px] max-h-[38vh] w-auto h-auto drop-shadow-xl rounded-full"
         />
       </div>
 
@@ -388,18 +388,18 @@ export function SpinWheel({
         onClick={spin}
         disabled={spinning || disabled}
         className={cn(
-          "relative flex h-14 min-w-[240px] items-center justify-center gap-3 rounded-full px-10 text-lg font-black uppercase tracking-wider text-white transition-all duration-200 cursor-pointer",
+          "relative flex h-11 min-w-[200px] items-center justify-center gap-2.5 rounded-full px-8 text-base font-black uppercase tracking-wider text-white transition-all duration-200 cursor-pointer",
           "bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500",
-          "shadow-[0_8px_0_-2px_rgb(190,24,93),0_18px_30px_-10px_rgba(236,72,153,0.6)]",
-          "hover:brightness-105 active:translate-y-1 active:shadow-[0_4px_0_-2px_rgb(190,24,93)]",
-          "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-[0_4px_0_-2px_rgb(190,24,93)]"
+          "shadow-[0_6px_0_-2px_rgb(190,24,93),0_12px_20px_-8px_rgba(236,72,153,0.5)]",
+          "hover:brightness-105 active:translate-y-1 active:shadow-[0_3px_0_-2px_rgb(190,24,93)]",
+          "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-[0_3px_0_-2px_rgb(190,24,93)]"
         )}
       >
-        <span className="pointer-events-none absolute inset-x-3 top-1 h-4 rounded-full bg-white/35 blur-[2px]" />
+        <span className="pointer-events-none absolute inset-x-3 top-0.5 h-3 rounded-full bg-white/35 blur-[2px]" />
         {spinning ? (
-          <Sparkles className="h-6 w-6 animate-spin" />
+          <Sparkles className="h-5 w-5 animate-spin" />
         ) : (
-          <Trophy className="h-6 w-6" />
+          <Trophy className="h-5 w-5" />
         )}
         <span>{spinning ? "Memutar Roda..." : "Putar Roda Hadiah"}</span>
       </button>
