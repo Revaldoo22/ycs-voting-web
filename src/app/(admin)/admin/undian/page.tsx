@@ -8,6 +8,8 @@ import {
   Minimize,
   Radio,
   Smartphone,
+  Sparkles,
+  Star,
   Ticket,
   Undo2,
   X,
@@ -512,6 +514,151 @@ function SlotCabinet({
   );
 }
 
+/**
+ * Latar panggung bertema Bali, murni CSS/SVG (tanpa file gambar): gradasi
+ * langit ke laut, siluet perbukitan, daun palem di dua sudut, dan taburan
+ * kilau. Semua statis supaya ringan (tidak ada animasi per frame).
+ */
+function BaliBackdrop() {
+  const sparkles = React.useMemo(
+    () =>
+      [
+        { x: 12, y: 18, s: 14 },
+        { x: 32, y: 9, s: 9 },
+        { x: 68, y: 13, s: 11 },
+        { x: 88, y: 26, s: 8 },
+        { x: 22, y: 62, s: 10 },
+        { x: 79, y: 58, s: 12 },
+      ] as const,
+    [],
+  );
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* Langit ke laut */}
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-200 via-cyan-100 to-cyan-200" />
+      {/* Cahaya matahari dari atas */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(900px circle at 50% -10%, rgba(255,255,255,0.85), transparent 60%), radial-gradient(700px circle at 88% 92%, rgba(249,115,22,0.16), transparent 60%)",
+        }}
+      />
+      {/* Perbukitan / garis pantai */}
+      <svg
+        className="absolute inset-x-0 bottom-0 h-[38%] w-full"
+        viewBox="0 0 1440 320"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M0 220 C 180 150 300 250 480 210 C 660 170 780 250 960 205 C 1140 160 1300 235 1440 195 L1440 320 L0 320 Z"
+          fill="rgba(8,145,178,0.16)"
+        />
+        <path
+          d="M0 265 C 200 215 340 285 520 255 C 720 220 860 290 1040 260 C 1220 230 1340 285 1440 258 L1440 320 L0 320 Z"
+          fill="rgba(14,116,144,0.14)"
+        />
+      </svg>
+
+      {/* Daun palem kiri atas */}
+      <svg
+        className="absolute -left-10 -top-8 h-56 w-56 opacity-60 sm:h-72 sm:w-72"
+        viewBox="0 0 200 200"
+        fill="none"
+      >
+        {[0, 26, 52, 78, 104].map((rot, i) => (
+          <ellipse
+            key={i}
+            cx="100"
+            cy="34"
+            rx="13"
+            ry="78"
+            fill="rgba(16,132,110,0.42)"
+            transform={`rotate(${rot - 40} 100 20)`}
+          />
+        ))}
+      </svg>
+      {/* Daun palem kanan atas (dicerminkan) */}
+      <svg
+        className="absolute -right-12 -top-10 h-52 w-52 opacity-50 sm:h-64 sm:w-64"
+        viewBox="0 0 200 200"
+        fill="none"
+      >
+        {[0, 24, 48, 72].map((rot, i) => (
+          <ellipse
+            key={i}
+            cx="100"
+            cy="34"
+            rx="12"
+            ry="72"
+            fill="rgba(16,132,110,0.38)"
+            transform={`rotate(${190 + rot} 100 20)`}
+          />
+        ))}
+      </svg>
+
+      {/* Kilau kecil bertabur */}
+      {sparkles.map((sp, i) => (
+        <svg
+          key={i}
+          className="absolute text-amber-300/70"
+          style={{ left: `${sp.x}%`, top: `${sp.y}%`, width: sp.s, height: sp.s }}
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M12 0 L14.5 9.5 L24 12 L14.5 14.5 L12 24 L9.5 14.5 L0 12 L9.5 9.5 Z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+/** Judul bergaya stiker: teks gradasi dengan garis tepi putih tebal. */
+function StickerTitle({ prize }: { prize: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="rounded-full bg-gradient-to-b from-primary to-cyan-700 px-4 py-1 text-[11px] font-extrabold uppercase tracking-[0.28em] text-white shadow-md sm:text-xs">
+        Youth Character Summit
+      </span>
+      <h2 className="relative -mt-0.5 text-center">
+        <span
+          className="block text-4xl font-black uppercase italic leading-[0.95] tracking-tight text-transparent sm:text-6xl lg:text-7xl"
+          style={{
+            backgroundImage:
+              "linear-gradient(180deg, #fff 0%, #fff 45%, #e0f2fe 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            WebkitTextStroke: "3px #1e3a5f",
+            paintOrder: "stroke fill",
+            filter: "drop-shadow(0 4px 8px rgba(15,23,42,0.30))",
+          }}
+        >
+          Undian
+        </span>
+        <span
+          className="mt-0.5 block text-4xl font-black uppercase italic leading-[0.95] tracking-tight text-transparent sm:text-6xl lg:text-7xl"
+          style={{
+            backgroundImage:
+              "linear-gradient(180deg, #fde047 0%, #fb923c 55%, #f97316 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            WebkitTextStroke: "3px #ffffff",
+            paintOrder: "stroke fill",
+            filter: "drop-shadow(0 5px 10px rgba(249,115,22,0.45))",
+          }}
+        >
+          {prize}
+        </span>
+      </h2>
+      <p className="rounded-full bg-[#1e3a5f]/90 px-4 py-1 text-[11px] font-extrabold uppercase italic tracking-wide text-white shadow-md sm:text-sm">
+        Spin &amp; menangkan{" "}
+        <span className="text-amber-300">hadiahnya!</span>
+      </p>
+    </div>
+  );
+}
+
 type Stage = "idle" | "count" | "shuffle" | "slot" | "reveal";
 type LiveStyle = "shuffle" | "slot";
 
@@ -755,22 +902,15 @@ function LiveDraw({
   return (
     <div
       ref={stageRef}
-      className="fixed inset-0 z-[200] flex flex-col overflow-auto bg-slate-50 text-slate-900"
+      className="fixed inset-0 z-[200] flex flex-col overflow-auto text-slate-900"
     >
-      {/* Aksen latar lembut: biru primary di atas, oranye accent di bawah. */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(700px circle at 50% 0%, rgba(8,145,178,0.12), transparent 60%), radial-gradient(600px circle at 85% 100%, rgba(249,115,22,0.10), transparent 60%)",
-        }}
-      />
+      <BaliBackdrop />
       {stage === "reveal" && <Confetti />}
 
       <div className="absolute right-5 top-5 z-10 flex gap-2">
         <button
           onClick={toggleFullscreen}
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-slate-500 shadow-sm transition-colors hover:text-primary"
+          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-lg backdrop-blur transition-colors hover:text-primary"
           aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
           title={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
         >
@@ -782,37 +922,38 @@ function LiveDraw({
         </button>
         <button
           onClick={handleClose}
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-white text-slate-500 shadow-sm transition-colors hover:text-slate-900"
+          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-lg backdrop-blur transition-colors hover:text-slate-900"
           aria-label="Tutup"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-primary">
-          Youth Character Summit
-        </p>
-        <h2 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
-          Undian {prize}
-        </h2>
+      <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-5 p-5 text-center sm:gap-6 sm:p-6">
+        <StickerTitle prize={prize} />
 
         {stage === "idle" && (
-          <>
-            <p className="max-w-md text-sm text-muted-foreground">
+          <div
+            className="flex w-full max-w-lg flex-col items-center gap-4 rounded-[32px] bg-white/85 p-6 backdrop-blur-md"
+            style={{
+              boxShadow:
+                "0 26px 60px -22px rgba(8,145,178,0.45), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 1px rgba(255,255,255,0.7)",
+            }}
+          >
+            <p className="text-sm text-slate-600">
               Pastikan layar ini yang dibagikan ke penonton. Pilih gaya animasi
               lalu mulai.
             </p>
             {!isFullscreen && (
               <button
                 onClick={toggleFullscreen}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-primary/30 bg-white px-4 py-1.5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/20"
               >
                 <Maximize className="h-4 w-4" /> Layar Penuh
               </button>
             )}
             {/* Pilih gaya animasi */}
-            <div className="inline-flex rounded-2xl border border-white/80 bg-white p-1 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
+            <div className="inline-flex rounded-2xl bg-slate-100 p-1">
               {(
                 [
                   { v: "slot", label: "Slot Digit" },
@@ -823,10 +964,10 @@ function LiveDraw({
                   key={o.v}
                   onClick={() => setStyle(o.v)}
                   className={cn(
-                    "cursor-pointer rounded-xl px-4 py-1.5 text-sm font-semibold transition-all",
+                    "cursor-pointer rounded-xl px-4 py-1.5 text-sm font-bold transition-all",
                     style === o.v
                       ? "bg-gradient-to-b from-cyan-500 to-primary text-white shadow-[0_3px_0_-1px_rgb(14,116,144)]"
-                      : "text-muted-foreground hover:text-foreground",
+                      : "text-slate-500 hover:text-slate-800",
                   )}
                 >
                   {o.label}
@@ -834,56 +975,69 @@ function LiveDraw({
               ))}
             </div>
             {style === "slot" && (
-              <p className="max-w-md text-xs text-muted-foreground">
+              <p className="max-w-sm text-xs text-slate-500">
                 Mode slot: kode pemenang diungkap 8 digit, satu digit per klik.
               </p>
             )}
             <button
               onClick={run}
               className={cn(
-                "relative flex h-14 items-center justify-center gap-3 rounded-full px-10 text-base font-extrabold uppercase tracking-widest text-white transition-all duration-200",
-                "bg-gradient-to-b from-orange-400 via-accent to-orange-600",
-                "shadow-[0_9px_0_-2px_rgb(194,65,12),0_16px_28px_-10px_rgba(249,115,22,0.7)]",
+                "relative flex h-14 items-center justify-center gap-3 rounded-full px-10 text-base font-black uppercase tracking-wide text-white transition-all duration-200",
+                "bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500",
+                "shadow-[0_9px_0_-2px_rgb(190,24,93),0_18px_30px_-10px_rgba(236,72,153,0.6)]",
                 "hover:brightness-105",
-                "active:translate-y-1 active:shadow-[0_4px_0_-2px_rgb(194,65,12),0_10px_18px_-10px_rgba(249,115,22,0.7)]",
+                "active:translate-y-1 active:shadow-[0_4px_0_-2px_rgb(190,24,93),0_10px_18px_-10px_rgba(236,72,153,0.6)]",
               )}
             >
-              <span className="pointer-events-none absolute inset-x-3 top-1 h-4 rounded-full bg-white/30 blur-[2px]" />
+              <span className="pointer-events-none absolute inset-x-3 top-1 h-4 rounded-full bg-white/35 blur-[2px]" />
               <Radio className="h-5 w-5 shrink-0" /> Mulai Undian
             </button>
-          </>
+          </div>
         )}
 
         {stage === "count" && (
           <p
             key={count}
-            className="text-[9rem] font-extrabold leading-none text-accent"
-            style={{ animation: "ping 0.9s ease-out" }}
+            className="text-[9rem] font-black leading-none text-white"
+            style={{
+              animation: "ping 0.9s ease-out",
+              WebkitTextStroke: "5px #f97316",
+              paintOrder: "stroke fill",
+              filter: "drop-shadow(0 8px 16px rgba(249,115,22,0.5))",
+            }}
           >
             {count}
           </p>
         )}
 
         {stage === "shuffle" && (
-          <div className="w-full max-w-2xl rounded-3xl border bg-white px-6 py-14 shadow-sm">
-            <p className="truncate text-4xl font-extrabold sm:text-6xl">
+          <div
+            className="w-full max-w-2xl rounded-[32px] bg-white/85 px-6 py-14 backdrop-blur-md"
+            style={{
+              boxShadow:
+                "0 26px 60px -22px rgba(8,145,178,0.45), 0 0 0 1px rgba(255,255,255,0.7)",
+            }}
+          >
+            <p className="truncate text-4xl font-black text-[#1e3a5f] sm:text-6xl">
               {ticker}
             </p>
           </div>
         )}
 
         {stage === "slot" && (
-          <div className="w-full max-w-4xl space-y-4">
+          <div className="w-full max-w-4xl space-y-3 sm:space-y-4">
             {/* Kabinet reel: baris tengah = digit terpilih. */}
             <div
-              className="rounded-[28px] border border-white/70 bg-white/80 p-4 backdrop-blur sm:p-6"
+              className="rounded-[36px] bg-white/85 p-4 backdrop-blur-md sm:p-6"
               style={{
                 boxShadow:
-                  "0 24px 60px -20px rgba(8,145,178,0.35), 0 2px 0 rgba(255,255,255,0.9) inset",
+                  "0 30px 70px -24px rgba(8,145,178,0.45), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 1px rgba(255,255,255,0.7)",
               }}
             >
-              <p className="mb-3 text-center font-mono text-xs font-bold tracking-[0.35em] text-primary">
-                KODE PEMENANG
+              <p className="mb-3 flex items-center justify-center gap-2 text-sm font-extrabold uppercase tracking-[0.3em] text-[#1e3a5f]">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                Kode Pemenang
+                <Sparkles className="h-4 w-4 text-amber-500" />
               </p>
               <SlotCabinet
                 digits={digits}
@@ -895,59 +1049,63 @@ function LiveDraw({
 
             {/* Panel kontrol bawah, gaya konsol mesin slot. */}
             <div
-              className="rounded-[28px] border border-white/70 bg-gradient-to-b from-accent/15 via-white/60 to-accent/10 p-4 backdrop-blur sm:p-5"
+              className="rounded-[32px] bg-white/85 p-3 backdrop-blur-md sm:p-4"
               style={{
                 boxShadow:
-                  "0 18px 40px -18px rgba(249,115,22,0.35), 0 2px 0 rgba(255,255,255,0.9) inset",
+                  "0 22px 50px -20px rgba(15,23,42,0.30), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 1px rgba(255,255,255,0.7)",
               }}
             >
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4">
                 {/* Info kiri: progres & sisa digit */}
                 <div className="flex gap-2">
-                  <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="rounded-2xl bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                       Terungkap
                     </p>
-                    <p className="font-mono text-lg font-extrabold tabular-nums text-primary">
-                      {revealed}/{digits.length}
+                    <p className="flex items-center gap-1 font-mono text-lg font-extrabold tabular-nums text-[#1e3a5f]">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      {revealed} / {digits.length}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="rounded-2xl bg-white px-3 py-2 text-left shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                       Per Spin
                     </p>
-                    <p className="font-mono text-lg font-extrabold tabular-nums text-accent">
+                    <p className="flex items-center gap-1 font-mono text-lg font-extrabold tabular-nums text-accent">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                       {perSpin} digit
                     </p>
                   </div>
                 </div>
 
-                {/* Tombol SPIN besar di tengah, timbul seperti tombol fisik */}
+                {/* Tombol SPIN besar di tengah, gradasi oranye ke pink */}
                 <button
                   onClick={spinDigit}
                   disabled={spinning || allRevealed}
                   className={cn(
-                    "group relative flex h-16 w-full items-center justify-center gap-3 rounded-full text-lg font-extrabold uppercase tracking-widest text-white transition-all duration-200 sm:w-auto sm:px-12",
-                    "bg-gradient-to-b from-orange-400 via-accent to-orange-600",
-                    "shadow-[0_10px_0_-2px_rgb(194,65,12),0_18px_30px_-10px_rgba(249,115,22,0.7)]",
+                    "relative flex w-full flex-col items-center justify-center rounded-full px-8 py-3 text-white transition-all duration-200 sm:w-auto sm:px-14",
+                    "bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500",
+                    "shadow-[0_10px_0_-2px_rgb(190,24,93),0_20px_34px_-10px_rgba(236,72,153,0.6)]",
                     "enabled:hover:brightness-105",
-                    "enabled:active:translate-y-1 enabled:active:shadow-[0_5px_0_-2px_rgb(194,65,12),0_10px_20px_-10px_rgba(249,115,22,0.7)]",
-                    "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-[0_6px_0_-2px_rgb(194,65,12)]",
+                    "enabled:active:translate-y-1 enabled:active:shadow-[0_5px_0_-2px_rgb(190,24,93),0_12px_22px_-10px_rgba(236,72,153,0.6)]",
+                    "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-[0_6px_0_-2px_rgb(190,24,93)]",
                   )}
                 >
                   {/* Kilau kaca di separuh atas tombol */}
-                  <span className="pointer-events-none absolute inset-x-3 top-1 h-5 rounded-full bg-white/30 blur-[2px]" />
-                  {spinning ? (
-                    <>
+                  <span className="pointer-events-none absolute inset-x-4 top-1 h-4 rounded-full bg-white/35 blur-[2px]" />
+                  <span className="flex items-center gap-2.5 text-lg font-black uppercase tracking-wide sm:text-2xl">
+                    {spinning ? (
                       <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
-                      Mengundi
-                    </>
-                  ) : (
-                    <>
+                    ) : (
                       <Smartphone className="h-6 w-6 shrink-0" />
-                      Spin {nextBatch} Digit
-                    </>
-                  )}
+                    )}
+                    {spinning ? "Mengundi..." : `Spin ${nextBatch} Digit`}
+                  </span>
+                  <span className="text-[11px] font-semibold text-white/85">
+                    {allRevealed
+                      ? "Semua digit terungkap"
+                      : `Gunakan ${nextBatch} kesempatan`}
+                  </span>
                 </button>
 
                 {/* Setelan digit per spin */}
@@ -955,17 +1113,17 @@ function LiveDraw({
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     Digit per spin
                   </p>
-                  <div className="inline-flex rounded-2xl border border-white/80 bg-white p-1 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.25)]">
+                  <div className="inline-flex rounded-2xl bg-white p-1 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.20)] ring-1 ring-slate-100">
                     {[1, 2, 4, 8].map((n) => (
                       <button
                         key={n}
                         onClick={() => setPerSpin(n)}
                         disabled={spinning}
                         className={cn(
-                          "cursor-pointer rounded-xl px-3.5 py-1.5 font-mono text-sm font-bold transition-all disabled:opacity-50",
+                          "h-9 w-9 cursor-pointer rounded-full font-mono text-sm font-extrabold transition-all disabled:opacity-50",
                           perSpin === n
                             ? "bg-gradient-to-b from-cyan-500 to-primary text-white shadow-[0_3px_0_-1px_rgb(14,116,144)]"
-                            : "text-muted-foreground hover:bg-slate-100 hover:text-foreground",
+                            : "text-slate-400 hover:bg-slate-100 hover:text-slate-700",
                         )}
                       >
                         {n}
@@ -975,39 +1133,56 @@ function LiveDraw({
                 </div>
               </div>
             </div>
+
+            <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-[#1e3a5f] drop-shadow-sm">
+              Dukung terus peserta favoritmu dan menangkan {prize} impianmu!
+              <Sparkles className="h-4 w-4 text-amber-500" />
+            </p>
           </div>
         )}
 
         {stage === "reveal" && winner && (
           <div
-            className="w-full max-w-2xl space-y-3 rounded-[28px] border-2 border-accent/60 bg-white px-6 py-10"
+            className="w-full max-w-2xl space-y-3 rounded-[36px] bg-white/90 px-6 py-10 backdrop-blur-md"
             style={{
               boxShadow:
-                "0 28px 70px -24px rgba(249,115,22,0.55), 0 2px 0 rgba(255,255,255,0.9) inset",
+                "0 30px 70px -24px rgba(249,115,22,0.55), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 2px rgba(249,115,22,0.45)",
             }}
           >
-            <p className="text-sm font-bold uppercase tracking-widest text-accent">
-              Selamat kepada
+            <p className="flex items-center justify-center gap-2 text-sm font-extrabold uppercase tracking-[0.28em] text-accent">
+              <Sparkles className="h-4 w-4" /> Selamat kepada
+              <Sparkles className="h-4 w-4" />
             </p>
             <p
-              className="text-4xl font-extrabold sm:text-6xl"
-              style={{ textShadow: "0 2px 10px rgba(15,23,42,0.15)" }}
+              className="text-4xl font-black text-[#1e3a5f] sm:text-6xl"
+              style={{ textShadow: "0 3px 12px rgba(15,23,42,0.18)" }}
             >
               {winner.name}
             </p>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg font-semibold text-slate-500">
               {maskPhone(winner.phone_number)}
             </p>
-            <p className="font-mono text-xl font-bold text-primary">
+            <p className="inline-flex rounded-full bg-primary/10 px-4 py-1 font-mono text-xl font-black tracking-wider text-primary">
               {winner.code}
             </p>
             <div className="flex justify-center gap-3 pt-2">
-              <Button variant="accent" onClick={run}>
+              <button
+                onClick={run}
+                className={cn(
+                  "relative rounded-full px-7 py-2.5 text-sm font-black uppercase tracking-wide text-white transition-all duration-200",
+                  "bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500",
+                  "shadow-[0_7px_0_-2px_rgb(190,24,93),0_14px_24px_-10px_rgba(236,72,153,0.6)]",
+                  "hover:brightness-105 active:translate-y-1 active:shadow-[0_3px_0_-2px_rgb(190,24,93)]",
+                )}
+              >
                 Undi Lagi
-              </Button>
-              <Button variant="outline" onClick={handleClose}>
+              </button>
+              <button
+                onClick={handleClose}
+                className="rounded-full bg-slate-100 px-7 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200"
+              >
                 Selesai
-              </Button>
+              </button>
             </div>
           </div>
         )}
