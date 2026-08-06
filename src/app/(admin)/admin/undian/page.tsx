@@ -624,8 +624,9 @@ function BaliBackdrop() {
 /** Judul bergaya stiker: teks gradasi dengan garis tepi putih tebal. */
 function StickerTitle({ prize }: { prize: string }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="rounded-full bg-gradient-to-b from-primary to-cyan-700 px-4 py-1 text-[11px] font-extrabold uppercase tracking-[0.28em] text-white shadow-md sm:text-xs">
+    <div className="flex flex-col items-center gap-1.5">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-primary to-cyan-700 px-4 py-1 text-[11px] font-extrabold uppercase tracking-[0.28em] text-white shadow-[0_2px_10px_rgba(8,145,178,0.45)] ring-1 ring-white/20 sm:text-xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_6px_rgba(252,211,77,0.9)]" />
         Youth Character Summit
       </span>
       <h2 className="relative -mt-0.5 text-center">
@@ -647,7 +648,7 @@ function StickerTitle({ prize }: { prize: string }) {
           Undian
         </span>
         <span
-          className="mt-0.5 block font-black uppercase italic leading-[0.95] tracking-tight text-transparent"
+          className="relative mt-0.5 block font-black uppercase italic leading-[0.95] tracking-tight text-transparent"
           style={{
             fontSize: "clamp(1.6rem, 5.4vh, 3.8rem)",
             backgroundImage:
@@ -659,12 +660,13 @@ function StickerTitle({ prize }: { prize: string }) {
             filter: "drop-shadow(0 5px 10px rgba(249,115,22,0.45))",
           }}
         >
-          {prize}
+          Berhadiah
         </span>
       </h2>
-      <p className="rounded-full bg-[#1e3a5f]/90 px-4 py-1 text-[11px] font-extrabold uppercase italic tracking-wide text-white shadow-md sm:text-sm">
-        Spin &amp; menangkan{" "}
-        <span className="text-amber-300">hadiahnya!</span>
+      <p className="inline-flex items-center gap-1.5 rounded-full bg-[#1e3a5f]/90 px-4 py-1 text-[11px] font-extrabold uppercase italic tracking-wide text-white shadow-md ring-1 ring-white/10 sm:text-sm">
+        <span aria-hidden>🎁</span>
+        Hadiah utama{" "}
+        <span className="text-amber-300">{prize}</span>
       </p>
     </div>
   );
