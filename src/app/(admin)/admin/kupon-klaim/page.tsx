@@ -74,9 +74,25 @@ export default function AdminCouponClaimsPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
 
+  // Pencarian dikirim ke server (hasil dibatasi 500 baris di backend), jadi
+  // voter di luar 500 terbaru tetap ketemu. Ditunda sesaat agar tidak
+  // menembak request tiap ketikan.
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(id);
+  }, [search]);
+
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["admin-coupon-claims", tab],
-    queryFn: () => api<ClaimRow[]>(`/api/admin/coupon-claims?status=${tab}`),
+    queryKey: ["admin-coupon-claims", tab, debouncedSearch],
+    queryFn: () =>
+      api<ClaimRow[]>(
+        `/api/admin/coupon-claims?status=${tab}` +
+          (debouncedSearch
+            ? `&search=${encodeURIComponent(debouncedSearch)}`
+            : ""),
+      ),
+    placeholderData: (prev) => prev,
   });
   const { data: counts } = useQuery({
     queryKey: ["admin-coupon-claims-counts"],
@@ -120,7 +136,7 @@ export default function AdminCouponClaimsPage() {
   React.useEffect(() => {
     setPage(1);
     setSelected(new Set());
-  }, [tab, search]);
+  }, [tab, debouncedSearch]);
 
   const [processing, setProcessing] = React.useState<Set<string>>(new Set());
   async function act(
@@ -194,16 +210,8 @@ export default function AdminCouponClaimsPage() {
     });
   }
 
-  const filtered = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return data ?? [];
-    return (data ?? []).filter(
-      (v) =>
-        v.voter_name?.toLowerCase().includes(q) ||
-        v.voter_email?.toLowerCase().includes(q) ||
-        v.voter_phone?.toLowerCase().includes(q),
-    );
-  }, [data, search]);
+  // Penyaringan sudah dilakukan server (lihat query di atas).
+  const filtered = data ?? [];
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   // Item berkurang (habis di-approve) → mundur ke halaman valid terakhir.
