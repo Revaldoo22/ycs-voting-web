@@ -659,7 +659,15 @@ function StickerTitle({ prize }: { prize: string }) {
   );
 }
 
-type Stage = "idle" | "count" | "shuffle" | "slot" | "wheel" | "reveal";
+type Stage =
+  | "idle"
+  | "count"
+  | "shuffle"
+  | "slot"
+  /** Nama pemenang diumumkan dulu, sebelum roda hadiah diputar. */
+  | "winnerName"
+  | "wheel"
+  | "reveal";
 type LiveStyle = "shuffle" | "slot";
 
 /** Panggung undian layar penuh: countdown, animasi, reveal pemenang. */
@@ -898,8 +906,9 @@ function LiveDraw({
     if (start + batch >= digits.length) {
       await new Promise((r) => setTimeout(r, 900));
       if (!alive.current) return;
-      // Semua digit terungkap: berpindah ke panggung Spin Wheel
-      setStage("wheel");
+      // Semua digit terungkap: umumkan dulu siapa pemenangnya, baru roda
+      // hadiah diputar untuk menentukan hadiah yang didapat.
+      setStage("winnerName");
     }
   }
 
@@ -1182,6 +1191,54 @@ function LiveDraw({
               <Gift className="h-4 w-4 shrink-0 text-orange-500" aria-hidden />
               Dukung terus peserta favoritmu dan menangkan {prize} impianmu
             </p>
+          </div>
+        )}
+
+        {/* Pengumuman nama pemenang: jeda dramatis antara kode terungkap dan
+            roda hadiah, supaya penonton tahu dulu siapa yang menang. */}
+        {stage === "winnerName" && pendingWinner.current && (
+          <div
+            className="w-full max-w-2xl space-y-3 rounded-[36px] bg-white/90 px-6 py-10 backdrop-blur-md"
+            style={{
+              boxShadow:
+                "0 30px 70px -24px rgba(8,145,178,0.5), 0 2px 0 rgba(255,255,255,0.95) inset, 0 0 0 2px rgba(8,145,178,0.35)",
+            }}
+          >
+            <span className="mx-auto mb-1 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-b from-cyan-400 to-primary shadow-[0_8px_20px_-6px_rgba(8,145,178,0.65)]">
+              <Crown className="h-7 w-7 text-white" aria-hidden />
+            </span>
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary">
+              Pemenangnya adalah
+            </p>
+            <p
+              className="text-4xl font-black text-[#1e3a5f] sm:text-6xl"
+              style={{ textShadow: "0 3px 12px rgba(15,23,42,0.18)" }}
+            >
+              {pendingWinner.current.name}
+            </p>
+            <p className="text-lg font-semibold text-slate-500">
+              {maskPhone(pendingWinner.current.phone_number)}
+            </p>
+            <p className="mx-auto inline-flex rounded-full bg-primary/10 px-4 py-1 font-mono text-xl font-black tracking-wider text-primary">
+              {pendingWinner.current.code}
+            </p>
+            <p className="pt-1 text-sm text-slate-500">
+              Selanjutnya, putar roda untuk menentukan hadiahnya.
+            </p>
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => setStage("wheel")}
+                className={cn(
+                  "relative cursor-pointer rounded-full px-8 py-3 text-base font-extrabold uppercase tracking-wide text-white transition-all duration-200",
+                  "bg-gradient-to-b from-cyan-400 to-primary",
+                  "shadow-[0_7px_0_-1px_rgb(14,116,144),0_16px_26px_-12px_rgba(8,145,178,0.6)]",
+                  "hover:brightness-105 active:translate-y-[3px] active:shadow-[0_4px_0_-1px_rgb(14,116,144)]",
+                  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/60",
+                )}
+              >
+                Lanjut ke Roda Hadiah
+              </button>
+            </div>
           </div>
         )}
 
