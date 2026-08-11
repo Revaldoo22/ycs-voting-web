@@ -68,6 +68,7 @@ const GROUPS: NavGroup[] = [
     label: "Lainnya",
     icon: MoreHorizontal,
     items: [
+      { href: "/admin/kupon", label: "Daftar Kupon", icon: Ticket },
       { href: "/admin/undian", label: "Undian", icon: Gift },
       { href: "/admin/setting", label: "Pengaturan", icon: Settings },
       { href: "/admin/log", label: "Log Aktivitas", icon: ScrollText },
