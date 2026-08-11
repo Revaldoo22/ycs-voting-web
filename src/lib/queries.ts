@@ -188,10 +188,12 @@ export function useParticipantSupporters(participantId?: string) {
 }
 
 export type ActivityLogRow = {
-  kind: "daily5" | "quest";
+  kind: "daily5" | "quest" | "raffle";
+  /** Nama quest, ringkasan vote, atau "KODE-KUPON - Hadiah" untuk undian. */
   source: string;
   voter_name: string;
   voter_phone: string;
+  /** Nama peserta; untuk undian berisi kode kupon. */
   participant_name: string;
   points: number;
   status: string;

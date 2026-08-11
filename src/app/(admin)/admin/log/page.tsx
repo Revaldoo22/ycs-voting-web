@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Trophy } from "lucide-react";
+import { Gift, Heart, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ const KIND_OPTS = [
   { value: "all", label: "Semua jenis" },
   { value: "daily5", label: "Vote" },
   { value: "quest", label: "Quest" },
+  { value: "raffle", label: "Undian" },
 ];
 const QSTATUS_OPTS = [
   { value: "", label: "Semua status" },
@@ -42,6 +43,12 @@ function kindBadge(kind: string) {
     return (
       <Badge variant="secondary" className="gap-1">
         <Trophy className="h-3 w-3" /> Quest
+      </Badge>
+    );
+  if (kind === "raffle")
+    return (
+      <Badge variant="secondary" className="gap-1">
+        <Gift className="h-3 w-3" /> Undian
       </Badge>
     );
   return (
@@ -109,7 +116,7 @@ export default function AdminLogPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Log Aktivitas</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {formatNumber(totalCount)} aktivitas (vote, favorit, quest) -
+          {formatNumber(totalCount)} aktivitas (vote, quest, undian) -
           real-time.
         </p>
       </div>
@@ -196,7 +203,7 @@ export default function AdminLogPage() {
                   <TableRow>
                     <TableHead>Jenis</TableHead>
                     <TableHead>Voter</TableHead>
-                    <TableHead>Peserta</TableHead>
+                    <TableHead>Peserta / Kupon</TableHead>
                     <TableHead className="text-right">Poin</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Tanggal</TableHead>
@@ -208,7 +215,7 @@ export default function AdminLogPage() {
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           {kindBadge(r.kind)}
-                          {r.kind === "quest" && (
+                          {(r.kind === "quest" || r.kind === "raffle") && (
                             <span className="text-xs text-muted-foreground">
                               {r.source}
                             </span>
@@ -225,10 +232,22 @@ export default function AdminLogPage() {
                         {r.participant_name}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        +{r.points}
+                        {r.kind === "raffle" ? (
+                          <span className="text-muted-foreground">-</span>
+                        ) : (
+                          `+${r.points}`
+                        )}
                       </TableCell>
                       <TableCell>
-                        {r.kind === "quest" ? (
+                        {r.kind === "raffle" ? (
+                          <Badge
+                            variant={
+                              r.status === "won" ? "success" : "destructive"
+                            }
+                          >
+                            {r.status === "won" ? "Menang" : "Dibatalkan"}
+                          </Badge>
+                        ) : r.kind === "quest" ? (
                           <Badge
                             variant={
                               r.status === "approved"
