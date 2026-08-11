@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   Check,
+  ChevronDown,
   Gift,
   Globe,
   Loader2,
@@ -71,6 +72,8 @@ const SPIN_MODES = [
 export default function AdminSettingsPage() {
   const qc = useQueryClient();
   const [saving, setSaving] = React.useState(false);
+  // Tertutup dulu: mode aktif sudah terbaca di ringkasan header.
+  const [spinOpen, setSpinOpen] = React.useState(false);
 
   const { data, isLoading } = useQuery<SettingsData>({
     queryKey: ["admin-settings"],
@@ -99,6 +102,8 @@ export default function AdminSettingsPage() {
       });
     }
   }, [data]);
+
+  const activeMode = SPIN_MODES.find((m) => m.id === form.spin_wheel_mode);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -136,15 +141,32 @@ export default function AdminSettingsPage() {
       <form onSubmit={handleSave} className="space-y-6">
         {/* Section 1: Spin Wheel Setting */}
         <Card className="border-primary/20 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold flex items-center gap-2 text-primary">
-              <Gift className="h-5 w-5" /> Mode Hasil Spin Wheel Hadiah
-            </CardTitle>
-            <CardDescription>
-              Tentukan hasil yang akan didapatkan pemenang saat Spin Wheel (Roda 10 Bagian: 1 HP, 4 E-Money, 5 Tumbler) berputar.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setSpinOpen((o) => !o)}
+            aria-expanded={spinOpen}
+            className="flex w-full items-start gap-3 p-6 text-left"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-lg font-bold flex items-center gap-2 text-primary">
+                <Gift className="h-5 w-5 shrink-0" /> Mode Hasil Spin Wheel Hadiah
+              </p>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                {spinOpen
+                  ? "Tentukan hasil yang akan didapatkan pemenang saat Spin Wheel (Roda 10 Bagian: 1 HP, 4 E-Money, 5 Tumbler) berputar."
+                  : `Mode aktif: ${activeMode?.title ?? "-"}.`}
+              </p>
+            </div>
+            <ChevronDown
+              className={cn(
+                "mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200",
+                spinOpen && "rotate-180",
+              )}
+            />
+          </button>
+          <CardContent
+            className={cn("grid gap-3 sm:grid-cols-2", !spinOpen && "hidden")}
+          >
             {SPIN_MODES.map((mode) => {
               const Icon = mode.icon;
               const isSelected = form.spin_wheel_mode === mode.id;
