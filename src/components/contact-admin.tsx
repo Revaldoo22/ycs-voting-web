@@ -3,8 +3,7 @@
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
-
-const ADMIN_WA = "6282257425470"; // 082257425470
+import { csWaLink } from "@/lib/contact";
 
 export function ContactAdminButton({
   className,
@@ -18,7 +17,7 @@ export function ContactAdminButton({
   message?: string;
 }) {
   const t = useTranslation("contactAdmin");
-  const href = `https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(message ?? t.waMessage)}`;
+  const href = csWaLink(message ?? t.waMessage);
   return (
     <Button variant="outline" size={size} className={className} asChild>
       <a href={href} target="_blank" rel="noopener noreferrer">

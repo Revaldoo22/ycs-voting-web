@@ -672,7 +672,7 @@ const id = {
       },
       {
         q: "Bagaimana jika ada orang yang meminta uang untuk pendaftaran?",
-        a: "Abaikan dan segera laporkan ke admin resmi Youth Character Summit lewat WhatsApp +62 888-8555-591. Panitia tidak pernah meminta pembayaran dalam bentuk apa pun.",
+        a: "Abaikan dan segera laporkan ke admin resmi Youth Character Summit lewat WhatsApp +62 878-4877-5292. Panitia tidak pernah meminta pembayaran dalam bentuk apa pun.",
       },
       {
         q: "Apakah beasiswa yang didapat peserta juga gratis tanpa potongan?",

@@ -674,7 +674,7 @@ const en: Dictionary = {
       },
       {
         q: "What if someone asks for money for registration?",
-        a: "Ignore it and immediately report it to the official Youth Character Summit admin via WhatsApp +62 888-8555-591. The committee never asks for payment of any kind.",
+        a: "Ignore it and immediately report it to the official Youth Character Summit admin via WhatsApp +62 878-4877-5292. The committee never asks for payment of any kind.",
       },
       {
         q: "Are the scholarships participants receive also free with no deductions?",

@@ -71,7 +71,7 @@ const FAQ_JSON_LD = {
       name: "Bagaimana jika ada orang yang meminta uang untuk pendaftaran?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Abaikan dan segera laporkan ke admin resmi Youth Character Summit lewat WhatsApp +62 888-8555-591. Panitia tidak pernah meminta pembayaran dalam bentuk apa pun.",
+        text: "Abaikan dan segera laporkan ke admin resmi Youth Character Summit lewat WhatsApp +62 878-4877-5292. Panitia tidak pernah meminta pembayaran dalam bentuk apa pun.",
       },
     },
     {

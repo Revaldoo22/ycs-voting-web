@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/lib/i18n";
+import { csWaLink, CS_WA_DISPLAY } from "@/lib/contact";
 
 /** Ratakan segala bentuk nilai dictionary (string, array, objek) jadi satu
  *  string pencarian, dipakai supaya searchbar bisa memindai isi tiap section
@@ -47,8 +48,6 @@ function flattenToSearchText(value: unknown): string {
 function normalizeSearch(s: string): string {
   return s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
 }
-
-const ADMIN_WA_DISPLAY = "+62 888-8555-591";
 
 /** Satu langkah bernomor di dalam kartu panduan (subpoin di dalam SectionCard). */
 function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
@@ -163,8 +162,7 @@ function TocLink({
 
 export function PanduanBody() {
   const t = useTranslation("panduan");
-  const adminWaLink =
-    "https://wa.me/628888555591?text=" + encodeURIComponent(t.adminWaMessage);
+  const adminWaLink = csWaLink(t.adminWaMessage);
   const mobileTocRef = React.useRef<HTMLDetailsElement>(null);
   const [search, setSearch] = React.useState("");
 
@@ -186,7 +184,7 @@ export function PanduanBody() {
       t.freeDesc,
       t.freeChecklist,
       t.scamWarningBold,
-      t.scamWarning(ADMIN_WA_DISPLAY),
+      t.scamWarning(CS_WA_DISPLAY),
     ]),
     "untuk-pendukung": flattenToSearchText([
       t.supporterCardTitle,
@@ -225,7 +223,7 @@ export function PanduanBody() {
     bantuan: flattenToSearchText([
       t.helpTitle,
       t.helpDesc,
-      t.contactAdmin(ADMIN_WA_DISPLAY),
+      t.contactAdmin(CS_WA_DISPLAY),
     ]),
   } as const;
 
@@ -356,7 +354,7 @@ export function PanduanBody() {
               <p className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>
-                  <b>{t.scamWarningBold}</b> {t.scamWarning(ADMIN_WA_DISPLAY)}
+                  <b>{t.scamWarningBold}</b> {t.scamWarning(CS_WA_DISPLAY)}
                 </span>
               </p>
             </SectionCard>
@@ -509,7 +507,7 @@ export function PanduanBody() {
               >
                 <a href={adminWaLink} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="h-4 w-4 shrink-0" />
-                  {t.contactAdmin(ADMIN_WA_DISPLAY)}
+                  {t.contactAdmin(CS_WA_DISPLAY)}
                 </a>
               </Button>
             </SectionCard>

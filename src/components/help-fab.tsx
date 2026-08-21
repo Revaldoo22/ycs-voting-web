@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { csWaLink } from "@/lib/contact";
 
 /** Logo WhatsApp (glyph resmi, SVG) agar langsung dikenali. */
 function WhatsAppIcon() {
@@ -22,8 +23,7 @@ export function HelpFab() {
   const t = useTranslation("helpFab");
   if (pathname?.startsWith("/admin")) return null;
 
-  const waLink =
-    "https://wa.me/628888555591?text=" + encodeURIComponent(t.waMessage);
+  const waLink = csWaLink(t.waMessage);
 
   return (
     <a
