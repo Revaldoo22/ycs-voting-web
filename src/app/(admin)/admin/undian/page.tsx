@@ -13,6 +13,8 @@ import {
   Smartphone,
   Ticket,
   Undo2,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,6 +28,35 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
 import { cn, formatNumber } from "@/lib/utils";
 import { SpinWheel, WheelSegment } from "@/components/spin-wheel";
+import { raffleSound } from "@/lib/raffle-sound";
+
+/** Tombol bisu/nyalakan suara untuk panggung undian. */
+function SoundToggle({ className }: { className?: string }) {
+  const [muted, setMuted] = React.useState(false);
+  // Setelan tersimpan di localStorage; dibaca setelah mount agar render
+  // server dan klien tetap sama.
+  React.useEffect(() => setMuted(raffleSound.isMuted()), []);
+
+  return (
+    <button
+      onClick={() => {
+        const next = !muted;
+        raffleSound.setMuted(next);
+        setMuted(next);
+        if (!next) raffleSound.quickWin();
+      }}
+      className={className}
+      aria-label={muted ? "Nyalakan suara" : "Matikan suara"}
+      title={muted ? "Nyalakan suara" : "Matikan suara"}
+    >
+      {muted ? (
+        <VolumeX className="h-5 w-5" />
+      ) : (
+        <Volume2 className="h-5 w-5" />
+      )}
+    </button>
+  );
+}
 
 type Winner = {
   code: string;
@@ -55,6 +86,8 @@ export default function AdminRafflePage() {
   async function draw() {
     setDrawing(true);
     setReveal(null);
+    raffleSound.unlock();
+    const spinSound = raffleSound.reelSpin(900);
     try {
       // Jeda kecil biar terasa "diundi"
       await new Promise((r) => setTimeout(r, 900));
@@ -62,6 +95,8 @@ export default function AdminRafflePage() {
         method: "POST",
         body: JSON.stringify({ prize: prize.trim() || "Handphone" }),
       });
+      spinSound.stop();
+      raffleSound.quickWin();
       setReveal(res.winner);
       // Undi cepat langsung mengumumkan pemenang: kunci & beri tahu voter.
       await api(`/api/admin/raffle/confirm/${res.winner.code}`, {
@@ -69,6 +104,8 @@ export default function AdminRafflePage() {
       }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["raffle"] });
     } catch (e) {
+      spinSound.stop();
+      raffleSound.error();
       toast.error(e instanceof Error ? e.message : "Gagal mengundi.");
     } finally {
       setDrawing(false);
@@ -171,6 +208,7 @@ export default function AdminRafflePage() {
             >
               <Radio className="h-5 w-5" /> Mode Live
             </Button>
+            <SoundToggle className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-background text-muted-foreground transition-colors hover:text-primary" />
           </div>
 
           {reveal && (
@@ -795,6 +833,9 @@ function LiveDraw({
   }
 
   async function run() {
+    // Klik tombol ini adalah interaksi pengguna pertama di panggung: momen
+    // yang diizinkan browser untuk membuka AudioContext.
+    raffleSound.unlock();
     try {
       // Ronde baru sementara ronde slot sebelumnya belum tuntas: kemenangan
       // yang belum diumumkan dibatalkan supaya kuponnya tidak hangus.
@@ -815,9 +856,11 @@ function LiveDraw({
       setStage("count");
       for (let i = 3; i >= 1; i--) {
         setCount(i);
+        raffleSound.countdown(i);
         await new Promise((r) => setTimeout(r, 900));
         if (!alive.current) return;
       }
+      raffleSound.countdownGo();
 
       // 2. Ambil hasil draw dari backend
       const res = await drawPromise;
@@ -844,6 +887,7 @@ function LiveDraw({
         refreshPool();
       }
     } catch (e) {
+      raffleSound.error();
       console.error("Raffle draw error:", e);
       toast.error(e instanceof Error ? e.message : "Gagal mengundi.");
       setStage("idle");
@@ -860,6 +904,7 @@ function LiveDraw({
     const start = Date.now();
     while (Date.now() - start < 4600) {
       setTicker(pool[Math.floor(Math.random() * pool.length)].name ?? "?");
+      raffleSound.reelLock(0);
       await new Promise((r) => setTimeout(r, delay));
       if (!alive.current) return;
       delay = Math.min(360, delay * 1.07);
@@ -869,6 +914,7 @@ function LiveDraw({
     await new Promise((r) => setTimeout(r, 650));
     setWinner(res.winner);
     confirmWinner(res.winner.code);
+    raffleSound.reveal();
     setStage("reveal");
   }
 
@@ -888,15 +934,18 @@ function LiveDraw({
     // easing ada di CSS, tak perlu mengatur perlambatan manual di sini.
     setSpinKey((k) => k + 1);
     setSpinningIndexes(idxs);
+    const spinSound = raffleSound.reelSpin(SPIN_MS);
 
     // Tunggu putaran selesai (durasi transisi reel), lalu kunci berurutan dari
     // kiri dengan jeda pendek supaya terasa satu-satu mendarat.
     await new Promise((r) => setTimeout(r, SPIN_MS));
+    spinSound.stop();
     if (!alive.current) return;
 
     for (let k = 0; k < batch; k++) {
       setSpinningIndexes(idxs.slice(k + 1));
       setRevealed(start + k + 1);
+      raffleSound.reelLock(start + k);
       if (k < batch - 1) {
         await new Promise((r) => setTimeout(r, 260));
         if (!alive.current) return;
@@ -908,6 +957,7 @@ function LiveDraw({
       if (!alive.current) return;
       // Semua digit terungkap: umumkan dulu siapa pemenangnya, baru roda
       // hadiah diputar untuk menentukan hadiah yang didapat.
+      raffleSound.winnerName();
       setStage("winnerName");
     }
   }
@@ -926,6 +976,7 @@ function LiveDraw({
     }
     await new Promise((r) => setTimeout(r, 600));
     if (!alive.current) return;
+    raffleSound.reveal();
     setStage("reveal");
     refreshPool();
   }
@@ -943,6 +994,7 @@ function LiveDraw({
       {stage === "reveal" && <Confetti />}
 
       <div className="absolute right-5 top-5 z-10 flex gap-2">
+        <SoundToggle className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-lg backdrop-blur transition-colors hover:text-primary" />
         <button
           onClick={toggleFullscreen}
           className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-lg backdrop-blur transition-colors hover:text-primary"

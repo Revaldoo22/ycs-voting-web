@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Sparkles, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { raffleSound, type RaffleSoundLoop } from "@/lib/raffle-sound";
 
 export type PrizeType = "HP" | "E-Money" | "Tumbler";
 
@@ -117,6 +118,8 @@ export function SpinWheel({
   const [pointerWiggle, setPointerWiggle] = React.useState(false);
   const rotationRef = React.useRef<number>(0);
   const animFrameRef = React.useRef<number | null>(null);
+  // Bunyi klik roda selama berputar; dihentikan saat roda berhenti/unmount.
+  const spinSoundRef = React.useRef<RaffleSoundLoop | null>(null);
 
   // Tentukan segmen target berdasarkan mode setting
   const getTargetSegment = React.useCallback((): WheelSegment => {
@@ -288,6 +291,9 @@ export function SpinWheel({
     const duration = 5200; // 5.2 detik
     const startTime = performance.now();
 
+    spinSoundRef.current?.stop();
+    spinSoundRef.current = raffleSound.wheelSpin(duration);
+
     let lastPassedSeg = -1;
 
     const animate = (now: number) => {
@@ -316,6 +322,9 @@ export function SpinWheel({
         animFrameRef.current = requestAnimationFrame(animate);
       } else {
         setSpinning(false);
+        spinSoundRef.current?.stop();
+        spinSoundRef.current = null;
+        raffleSound.wheelStop();
         if (onSpinEnd) {
           onSpinEnd(targetSeg);
         }
@@ -328,6 +337,7 @@ export function SpinWheel({
   React.useEffect(() => {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      spinSoundRef.current?.stop();
     };
   }, []);
 
