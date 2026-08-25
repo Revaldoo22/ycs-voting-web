@@ -296,6 +296,7 @@ const en: Dictionary = {
   },
   gelombang: {
     schools: "schools",
+    participants: "participants",
     totalPoints: "Total Points",
     student: "Student",
     school: "School",
@@ -317,8 +318,9 @@ const en: Dictionary = {
     passed: "Passed",
     eliminated: "Eliminated",
     regencyChildLabel: "districts",
-    emptySchoolsInBoard: "No schools in this standings yet",
-    levelHintStudent: "This school's student leaderboard. Click a student to support them.",
+    emptySchoolsInBoard: "No participants in this standings yet",
+    levelHintStudent:
+      "This school's student leaderboard. Students qualify for the next round, not schools. Click a student to support them.",
     levelHintSchool:
       "School leaderboard for this district/city. Click a school to see its students.",
     levelHintRegency:
@@ -326,7 +328,7 @@ const en: Dictionary = {
     levelHintProvince:
       "Nationwide province leaderboard. Click a province to drill down.",
     regionPointsNote:
-      "Region points = total points of all participating schools in that region (including carried-over points from previous rounds).",
+      "Region points = total points of all participating students in that region (including carried-over points from previous rounds). Qualification is counted per student, not per school.",
   },
   onboarding: {
     stepAccount: "Account",

@@ -294,6 +294,7 @@ const id = {
   },
   gelombang: {
     schools: "sekolah",
+    participants: "peserta",
     totalPoints: "Total Poin",
     student: "Siswa",
     school: "Sekolah",
@@ -315,8 +316,9 @@ const id = {
     passed: "Lolos",
     eliminated: "Gugur",
     regencyChildLabel: "kabupaten",
-    emptySchoolsInBoard: "Belum ada sekolah di klasemen ini",
-    levelHintStudent: "Leaderboard siswa sekolah ini. Klik siswa untuk mendukung.",
+    emptySchoolsInBoard: "Belum ada peserta di klasemen ini",
+    levelHintStudent:
+      "Peringkat siswa sekolah ini. Yang lolos ke babak berikutnya adalah siswa, bukan sekolah. Klik siswa untuk mendukung.",
     levelHintSchool:
       "Leaderboard sekolah di kabupaten/kota ini. Klik sekolah untuk lihat siswanya.",
     levelHintRegency:
@@ -324,7 +326,7 @@ const id = {
     levelHintProvince:
       "Leaderboard provinsi se-nasional. Klik provinsi untuk menjelajah ke bawah.",
     regionPointsNote:
-      "Poin wilayah = jumlah poin seluruh sekolah peserta di wilayah itu (termasuk poin bawaan dari babak sebelumnya).",
+      "Poin wilayah = jumlah poin seluruh siswa peserta di wilayah itu (termasuk poin bawaan dari babak sebelumnya). Yang lolos dihitung per siswa, bukan per sekolah.",
   },
   onboarding: {
     stepAccount: "Akun",

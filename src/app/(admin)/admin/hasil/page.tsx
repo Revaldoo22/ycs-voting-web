@@ -31,6 +31,8 @@ export default function AdminHasilPage() {
   const belum = rows.filter((r) => r.status === "active");
   const closed = round?.status === "closed";
   const totalPoin = rows.reduce((s, r) => s + r.points, 0);
+  // Satu sekolah bisa mengirim banyak peserta, jadi dihitung distinct.
+  const schoolCount = new Set(rows.map((r) => r.school_id ?? "none")).size;
 
   return (
     <div className="space-y-6">
@@ -39,8 +41,8 @@ export default function AdminHasilPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Hasil Lolos</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Sekolah yang lolos dan tidak lolos per gelombang. Hasil final muncul
-            setelah gelombang ditutup.
+            Peserta yang lolos dan tidak lolos per gelombang. Hasil final
+            muncul setelah gelombang ditutup.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -89,15 +91,15 @@ export default function AdminHasilPage() {
         <>
           {/* Ringkasan */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile label="Sekolah" value={rows.length} />
+            <StatTile label="Peserta" value={rows.length} />
             <StatTile
               label={closed ? "Lolos" : "Kuota lolos"}
               value={closed ? lolos.length : round.top_n}
               tone="emerald"
             />
             <StatTile
-              label={closed ? "Tidak lolos" : "Peserta"}
-              value={closed ? gugur.length : rows.length}
+              label={closed ? "Tidak lolos" : "Sekolah"}
+              value={closed ? gugur.length : schoolCount}
               tone={closed ? "red" : undefined}
             />
             <StatTile label="Total Poin" value={totalPoin} />
@@ -226,12 +228,13 @@ function Row({
       <div className="flex min-w-0 items-center gap-2.5">
         <RankBadge rank={rank} />
         <div className="min-w-0">
-          <p className="truncate font-medium leading-tight">{r.school_name}</p>
-          {showRegion && (
-            <p className="truncate text-xs text-muted-foreground">
-              {r.region_name}
-            </p>
-          )}
+          <p className="truncate font-medium leading-tight">
+            {r.participant_name}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {r.school_name}
+            {showRegion && <> &middot; {r.region_name}</>}
+          </p>
         </div>
         {candidate && (
           <Badge variant="success" className="shrink-0">
@@ -272,7 +275,7 @@ function RankList({
   provisional?: boolean;
 }) {
   if (!rows.length)
-    return <EmptyState title="Belum ada sekolah di gelombang ini" />;
+    return <EmptyState title="Belum ada peserta di gelombang ini" />;
 
   if (view === "nasional") {
     const sorted = [...rows].sort((a, b) => b.points - a.points);
@@ -280,7 +283,7 @@ function RankList({
       <div className="max-h-[65vh] space-y-1.5 overflow-y-auto pr-1">
         {sorted.map((r, i) => (
           <Row
-            key={r.school_id}
+            key={r.participant_id}
             r={r}
             rank={i + 1}
             showRegion
@@ -312,7 +315,7 @@ function RankList({
           <div className="space-y-1.5">
             {list.map((r, i) => (
               <Row
-                key={r.school_id}
+                key={r.participant_id}
                 r={r}
                 rank={i + 1}
                 showRegion={false}
@@ -372,7 +375,7 @@ function ResultCard({
         ) : view === "nasional" ? (
           <div className="max-h-[60vh] space-y-1.5 overflow-y-auto pr-1">
             {flat.map((r, i) => (
-              <Row key={r.school_id} r={r} rank={i + 1} showRegion tone={tone} />
+              <Row key={r.participant_id} r={r} rank={i + 1} showRegion tone={tone} />
             ))}
           </div>
         ) : (
@@ -385,7 +388,7 @@ function ResultCard({
                 <div className="space-y-1.5">
                   {list.map((r, i) => (
                     <Row
-                      key={r.school_id}
+                      key={r.participant_id}
                       r={r}
                       rank={i + 1}
                       showRegion={false}

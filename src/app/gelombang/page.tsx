@@ -23,7 +23,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmptyState, LoadingState } from "@/components/states";
 import {
   useMyProfile,
-  useParticipants,
   usePublicRounds,
   useRoundResults,
   type RoundStanding,
@@ -38,6 +37,8 @@ type DrillGroup = {
   name: string;
   points: number;
   schools: number;
+  /** Jumlah peserta di wilayah ini (unit yang dinilai & lolos). */
+  participants: number;
   /** Jumlah sub-wilayah (kabupaten di level provinsi). */
   children: number;
 };
@@ -85,7 +86,7 @@ function GroupRow({
           </p>
           <p className="text-xs text-muted-foreground">
             {group.children > 0 && <>{group.children} {childLabel} · </>}
-            {group.schools} {t.schools}
+            {group.schools} {t.schools} · {group.participants} {t.participants}
           </p>
         </div>
       </div>
@@ -106,21 +107,36 @@ function groupBy(
   nameOf: (r: RoundStanding) => string,
   childKeyOf?: (r: RoundStanding) => string,
 ): DrillGroup[] {
-  const map = new Map<string, DrillGroup & { childSet: Set<string> }>();
+  type Acc = DrillGroup & { childSet: Set<string>; schoolSet: Set<string> };
+  const map = new Map<string, Acc>();
   for (const r of rows) {
     const key = keyOf(r);
     const g =
       map.get(key) ??
-      ({ key, name: nameOf(r), points: 0, schools: 0, children: 0, childSet: new Set() } as DrillGroup & {
-        childSet: Set<string>;
-      });
+      ({
+        key,
+        name: nameOf(r),
+        points: 0,
+        schools: 0,
+        participants: 0,
+        children: 0,
+        childSet: new Set<string>(),
+        schoolSet: new Set<string>(),
+      } as Acc);
+    // Satu baris = satu PESERTA. Sekolah dihitung distinct karena satu
+    // sekolah bisa mengirim banyak peserta.
     g.points += r.points;
-    g.schools += 1;
+    g.participants += 1;
+    g.schoolSet.add(r.school_id ?? "none");
     if (childKeyOf) g.childSet.add(childKeyOf(r));
     map.set(key, g);
   }
   return Array.from(map.values())
-    .map(({ childSet, ...g }) => ({ ...g, children: childSet.size }))
+    .map(({ childSet, schoolSet, ...g }) => ({
+      ...g,
+      children: childSet.size,
+      schools: schoolSet.size,
+    }))
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
 }
 
@@ -138,31 +154,28 @@ function ListHeader({ label }: { label: string }) {
   );
 }
 
-/** Leaderboard siswa satu sekolah (level terdalam drill-down). */
-function StudentBoard({ schoolId }: { schoolId: string }) {
+/**
+ * Leaderboard peserta satu sekolah (level terdalam drill-down). Datanya dari
+ * standings gelombang, jadi poin & status lolos/gugur sesuai gelombang yang
+ * sedang dilihat, bukan poin global peserta.
+ */
+function StudentBoard({ rows }: { rows: RoundStanding[] }) {
   const t = useTranslation("gelombang");
-  const { data: participants, isLoading } = useParticipants(schoolId);
-  const list = (participants ?? []).filter((p) => p.status === "active");
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-  if (list.length === 0) {
+  if (rows.length === 0) {
     return <EmptyState title={t.emptyActiveParticipants} />;
   }
   return (
     <div className="space-y-2">
       <ListHeader label={t.student} />
-      {list.map((p, i) => (
+      {rows.map((p, i) => (
         <Link
-          key={p.id}
-          href={`/peserta/${p.id}`}
+          key={p.participant_id}
+          href={`/peserta/${p.participant_id}`}
           className={cn(
             "flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5",
+            p.status === "lolos" && "border-emerald-500/40 bg-emerald-500/5",
+            p.status === "gugur" && "opacity-60",
             podiumRowClass(i + 1),
           )}
         >
@@ -180,15 +193,19 @@ function StudentBoard({ schoolId }: { schoolId: string }) {
             ) : (
               <Avatar className="h-9 w-9 shrink-0">
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-                  {p.name.slice(0, 2).toUpperCase()}
+                  {p.participant_name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             )}
-            <p className="truncate font-semibold">{p.name}</p>
+            <p className="truncate font-semibold">{p.participant_name}</p>
+            {p.status === "lolos" && <Badge variant="success">{t.passed}</Badge>}
+            {p.status === "gugur" && (
+              <Badge variant="secondary">{t.eliminated}</Badge>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="font-semibold tabular-nums text-primary">
-              {formatNumber(p.total_points)}
+              {formatNumber(p.points)}
             </span>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -258,17 +275,60 @@ export default function PublicRoundsPage() {
     );
   }, [results, province]);
 
-  // Level kabupaten: leaderboard sekolah dalam kabupaten terpilih.
+  // Level kabupaten: leaderboard SEKOLAH dalam kabupaten terpilih. Baris
+  // standings adalah peserta, jadi digabung dulu per sekolah. Poin sekolah =
+  // jumlah poin pesertanya; sekolah dianggap "lolos" bila punya minimal satu
+  // peserta yang lolos.
   const schools = React.useMemo(() => {
     if (!region) return [];
-    return [...(results ?? [])]
-      .filter(
-        (r) =>
-          regKey(r) === region.key &&
-          (!province || provKey(r) === province.key),
-      )
-      .sort((a, b) => b.points - a.points || a.school_name.localeCompare(b.school_name));
+    const rows = (results ?? []).filter(
+      (r) =>
+        regKey(r) === region.key && (!province || provKey(r) === province.key),
+    );
+    const map = new Map<
+      string,
+      {
+        school_id: string | null;
+        school_name: string;
+        points: number;
+        participants: number;
+        lolos: number;
+      }
+    >();
+    for (const r of rows) {
+      const key = r.school_id ?? "none";
+      const g =
+        map.get(key) ??
+        {
+          school_id: r.school_id,
+          school_name: r.school_name,
+          points: 0,
+          participants: 0,
+          lolos: 0,
+        };
+      g.points += r.points;
+      g.participants += 1;
+      if (r.status === "lolos") g.lolos += 1;
+      map.set(key, g);
+    }
+    return Array.from(map.values()).sort(
+      (a, b) =>
+        b.points - a.points || a.school_name.localeCompare(b.school_name),
+    );
   }, [results, region, province]);
+
+  // Level sekolah: peserta sekolah terpilih, diambil dari standings gelombang
+  // ini (bukan poin global) agar status lolos/gugur ikut tampil.
+  const students = React.useMemo(() => {
+    if (!school) return [];
+    return (results ?? [])
+      .filter((r) => (r.school_id ?? "none") === school.key)
+      .sort(
+        (a, b) =>
+          b.points - a.points ||
+          a.participant_name.localeCompare(b.participant_name),
+      );
+  }, [results, school]);
 
   function selectRound(id: string) {
     setSelected(id);
@@ -419,23 +479,25 @@ export default function PublicRoundsPage() {
                 ) : (results ?? []).length === 0 ? (
                   <EmptyState title={t.emptySchoolsInBoard} />
                 ) : school ? (
-                  /* Level 4: siswa */
-                  <StudentBoard schoolId={school.key} />
+                  /* Level 4: peserta */
+                  <StudentBoard rows={students} />
                 ) : region ? (
                   /* Level 3: sekolah */
                   <div className="space-y-2">
                     <ListHeader label={t.school} />
                     {schools.map((row, i) => (
                       <button
-                        key={row.school_id}
+                        key={row.school_id ?? "none"}
                         onClick={() =>
-                          setSchool({ key: row.school_id, name: row.school_name })
+                          setSchool({
+                            key: row.school_id ?? "none",
+                            name: row.school_name,
+                          })
                         }
                         className={cn(
                           "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary/5",
-                          row.status === "lolos" &&
+                          row.lolos > 0 &&
                             "border-emerald-500/40 bg-emerald-500/5",
-                          row.status === "gugur" && "opacity-60",
                           podiumRowClass(i + 1),
                           row.school_id === mine.schoolId &&
                             "border-primary/50 bg-primary/5 ring-1 ring-inset ring-primary/30",
@@ -443,18 +505,22 @@ export default function PublicRoundsPage() {
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <RankMedal rank={i + 1} />
-                          <span className="truncate font-semibold">
-                            {row.school_name}
-                          </span>
-                          {row.school_id === mine.schoolId && (
-                            <MineBadge label={t.yourSchool} />
-                          )}
-                          {row.status === "lolos" && (
-                            <Badge variant="success">{t.passed}</Badge>
-                          )}
-                          {row.status === "gugur" && (
-                            <Badge variant="secondary">{t.eliminated}</Badge>
-                          )}
+                          <div className="min-w-0">
+                            <p className="flex items-center gap-1.5 truncate font-semibold">
+                              <span className="truncate">{row.school_name}</span>
+                              {row.school_id === mine.schoolId && (
+                                <MineBadge label={t.yourSchool} />
+                              )}
+                              {row.lolos > 0 && (
+                                <Badge variant="success">
+                                  {row.lolos} {t.passed}
+                                </Badge>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {row.participants} {t.participants}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="font-semibold tabular-nums text-primary">

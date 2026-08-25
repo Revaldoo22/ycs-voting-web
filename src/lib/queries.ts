@@ -570,15 +570,23 @@ export type Round = {
   sequence: number;
   top_n: number;
   created_at: string;
+  participant_count?: number;
   school_count?: number;
   lolos_count?: number;
   total_points?: number;
 };
 
+/**
+ * Satu baris klasemen gelombang. Unit yang dinilai dan lolos adalah PESERTA;
+ * sekolah/kabupaten hanya label asal peserta untuk tampilan & filter.
+ */
 export type RoundStanding = {
-  school_id: string;
-  school_name: string;
+  participant_id: string;
+  participant_name: string;
+  photo_url: string | null;
   status: "active" | "lolos" | "gugur";
+  school_id: string | null;
+  school_name: string;
   region_id: string | null;
   region_name: string;
   province_id: string | null;
@@ -587,6 +595,7 @@ export type RoundStanding = {
   round_points: number;
   points: number;
   votes: number;
+  rank: number;
 };
 
 export type HeatmapRow = {

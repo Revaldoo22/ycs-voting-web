@@ -120,7 +120,7 @@ export default function AdminRoundsPage() {
   function remove(r: Round) {
     confirm({
       title: `Hapus ${r.name}?`,
-      description: "Daftar sekolah gelombang ini ikut terhapus.",
+      description: "Daftar peserta gelombang ini ikut terhapus.",
       confirmText: "Hapus",
       variant: "destructive",
       onConfirm: async () => {
@@ -140,9 +140,10 @@ export default function AdminRoundsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Gelombang</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Adu voting antar sekolah per kabupaten. Sekolah yang punya peserta
-          otomatis ikut gelombang aktif. Saat ditutup, yang gugur otomatis
-          lanjut ke gelombang berikutnya dengan poin dipotong 50%.
+          Adu voting antar peserta. Peserta aktif otomatis ikut gelombang
+          berjalan. Saat ditutup, peserta peringkat teratas lolos dan yang
+          gugur otomatis lanjut ke gelombang berikutnya dengan poin dipotong
+          50%.
         </p>
       </div>
 
@@ -175,7 +176,7 @@ export default function AdminRoundsPage() {
       ) : !rounds || rounds.length === 0 ? (
         <EmptyState
           title="Belum ada gelombang"
-          description="Buat gelombang, isi sekolahnya, lalu aktifkan."
+          description="Buat gelombang, isi pesertanya, lalu aktifkan."
         />
       ) : (
         <Card className="overflow-hidden">
@@ -185,6 +186,7 @@ export default function AdminRoundsPage() {
                 <TableRow>
                   <TableHead>Gelombang</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Peserta</TableHead>
                   <TableHead className="text-right">Sekolah</TableHead>
                   <TableHead className="text-right">Lolos</TableHead>
                   <TableHead className="text-right">Total Poin</TableHead>
@@ -211,12 +213,15 @@ export default function AdminRoundsPage() {
                             { day: "numeric", month: "short", year: "numeric" },
                           )}
                           {r.select_mode === "global"
-                            ? ` · top ${r.top_n} nasional`
-                            : ` · top ${r.top_n}/kab`}
+                            ? ` · top ${r.top_n} peserta nasional`
+                            : ` · top ${r.top_n} peserta/kab`}
                         </p>
                       )}
                     </TableCell>
                     <TableCell>{statusBadge(r.status)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {r.participant_count ?? 0}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {r.school_count ?? 0}
                     </TableCell>
@@ -252,7 +257,7 @@ export default function AdminRoundsPage() {
                               <DropdownMenuItem
                                 onClick={() => setPopulateTarget(r)}
                               >
-                                <Users /> Isi Sekolah
+                                <Users /> Isi Peserta
                               </DropdownMenuItem>
                             )}
                             {r.status === "active" && (
@@ -372,11 +377,11 @@ function PopulateDialog({
           }),
         },
       );
-      toast.success(`${res.added} sekolah dimasukkan.`);
+      toast.success(`${res.added} peserta dimasukkan.`);
       onDone();
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal mengisi sekolah.");
+      toast.error(e instanceof Error ? e.message : "Gagal mengisi peserta.");
     } finally {
       setBusy(false);
     }
@@ -386,10 +391,10 @@ function PopulateDialog({
     <Dialog open={!!round} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Isi Sekolah: {round?.name}</DialogTitle>
+          <DialogTitle>Isi Peserta: {round?.name}</DialogTitle>
           <DialogDescription>
-            Opsional, sekolah yang punya peserta sudah otomatis ikut. Pakai ini
-            hanya untuk menarik manual sekolah gugur dari gelombang lain.
+            Opsional, peserta aktif sudah otomatis ikut. Pakai ini hanya untuk
+            menarik manual peserta gugur dari gelombang lain.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -403,7 +408,7 @@ function PopulateDialog({
               checked={source === "all"}
               onChange={() => setSource("all")}
             />
-            Semua sekolah yang punya peserta aktif
+            Semua peserta aktif
           </label>
           <label
             className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm ${
@@ -415,7 +420,7 @@ function PopulateDialog({
               checked={source === "gugur"}
               onChange={() => setSource("gugur")}
             />
-            Sekolah yang gugur dari gelombang sebelumnya
+            Peserta yang gugur dari gelombang sebelumnya
           </label>
           {source === "gugur" && (
             <div className="space-y-1.5">
@@ -433,7 +438,7 @@ function PopulateDialog({
           )}
           <Button className="w-full" onClick={submit} disabled={busy}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Masukkan Sekolah
+            Masukkan Peserta
           </Button>
         </div>
       </DialogContent>
@@ -452,6 +457,7 @@ function CloseDialog({
 }) {
   const [topN, setTopN] = React.useState(1);
   const [busy, setBusy] = React.useState(false);
+  const global = round?.select_mode !== "per_region";
 
   React.useEffect(() => {
     if (round) setTopN((round as Round & { top_n?: number }).top_n ?? 1);
@@ -469,7 +475,9 @@ function CloseDialog({
         },
       );
       toast.success(
-        `${round.name} ditutup. Top ${topN}/kabupaten lolos. Gelombang lanjutan otomatis dibuat & diaktifkan (sekolah gugur + poin 50%).`,
+        `${round.name} ditutup. Top ${topN} peserta${
+          global ? "" : " per kabupaten"
+        } lolos. Gelombang lanjutan otomatis dibuat & diaktifkan (peserta gugur + poin 50%).`,
       );
       onDone();
       onClose();
@@ -486,19 +494,22 @@ function CloseDialog({
         <DialogHeader>
           <DialogTitle>Tutup {round?.name}</DialogTitle>
           <DialogDescription>
-            Sekolah dengan poin terbanyak per kabupaten dinyatakan lolos.
+            <b>Peserta</b> dengan poin terbanyak
+            {global ? " se-Indonesia" : " di tiap kabupaten"} dinyatakan lolos.
             Sisanya gugur dan <b>otomatis masuk gelombang lanjutan</b> (dibuat
-            &amp; diaktifkan langsung) dengan poin dipotong 50%. Sekolah lolos
+            &amp; diaktifkan langsung) dengan poin dipotong 50%. Peserta lolos
             tidak ikut. Tidak bisa dibatalkan.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label>Berapa sekolah lolos per kabupaten?</Label>
+            <Label>
+              Berapa peserta lolos{global ? " (total)" : " per kabupaten"}?
+            </Label>
             <Input
               type="number"
               min={1}
-              max={100}
+              max={5000}
               value={topN}
               onChange={(e) => setTopN(Number(e.target.value) || 1)}
             />
@@ -531,7 +542,12 @@ function StandingRow({
         <span className="w-6 shrink-0 text-center text-xs font-bold text-muted-foreground">
           {rank}
         </span>
-        <span className="truncate font-medium">{row.school_name}</span>
+        <span className="min-w-0 truncate">
+          <span className="font-medium">{row.participant_name}</span>
+          <span className="ml-1.5 text-xs text-muted-foreground">
+            {row.school_name}
+          </span>
+        </span>
         {row.status === "lolos" && <Badge variant="success">Lolos</Badge>}
         {row.status === "gugur" && <Badge variant="destructive">Gugur</Badge>}
       </div>
@@ -584,7 +600,7 @@ function StandingsDialog({
         <DialogHeader>
           <DialogTitle>Klasemen: {round?.name}</DialogTitle>
           <DialogDescription>
-            Poin per sekolah dalam gelombang ini.
+            Poin per peserta dalam gelombang ini.
           </DialogDescription>
         </DialogHeader>
 
@@ -611,11 +627,11 @@ function StandingsDialog({
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (data ?? []).length === 0 ? (
-          <EmptyState title="Belum ada sekolah di gelombang ini" />
+          <EmptyState title="Belum ada peserta di gelombang ini" />
         ) : view === "nasional" ? (
           <div className="max-h-[60vh] space-y-1.5 overflow-y-auto">
             {nasional.map((row, i) => (
-              <StandingRow key={row.school_id} row={row} rank={i + 1} />
+              <StandingRow key={row.participant_id} row={row} rank={i + 1} />
             ))}
           </div>
         ) : (
@@ -625,7 +641,7 @@ function StandingsDialog({
                 <p className="mb-1.5 text-sm font-semibold">{region}</p>
                 <div className="space-y-1.5">
                   {rows.map((row, i) => (
-                    <StandingRow key={row.school_id} row={row} rank={i + 1} />
+                    <StandingRow key={row.participant_id} row={row} rank={i + 1} />
                   ))}
                 </div>
               </div>
@@ -637,15 +653,18 @@ function StandingsDialog({
   );
 }
 
-type RoundSchoolRow = {
-  school_id: string;
+/** Satu peserta yang terdaftar di gelombang (unit yang lolos/gugur). */
+type RoundParticipantRow = {
+  participant_id: string;
+  participant_name: string;
+  photo_url: string | null;
+  school_id: string | null;
   school_name: string;
   region_name: string;
   status: "active" | "lolos" | "gugur";
   carry_points: number;
   round_points: number;
   points: number;
-  participants: number;
 };
 
 function BoostDialog({
@@ -658,27 +677,29 @@ function BoostDialog({
   onDone: () => void;
 }) {
   const confirm = useConfirm();
-  const [schoolId, setSchoolId] = React.useState("");
+  const [participantId, setParticipantId] = React.useState("");
   const [votes, setVotes] = React.useState(50);
   const [busy, setBusy] = React.useState(false);
 
-  const { data: schools, refetch } = useQuery({
-    queryKey: ["round-schools", round?.id],
+  const { data: members, refetch } = useQuery({
+    queryKey: ["round-participants", round?.id],
     enabled: !!round,
     queryFn: () =>
-      api<RoundSchoolRow[]>(`/api/admin/rounds/${round!.id}/schools`),
+      api<RoundParticipantRow[]>(
+        `/api/admin/rounds/${round!.id}/participants`,
+      ),
   });
 
   React.useEffect(() => {
     if (round) {
-      setSchoolId("");
+      setParticipantId("");
       setVotes(50);
     }
   }, [round]);
 
   async function submit() {
     if (!round) return;
-    if (!schoolId) return void toast.error("Pilih sekolah target.");
+    if (!participantId) return void toast.error("Pilih peserta target.");
     if (votes < 1) return void toast.error("Jumlah vote minimal 1.");
     setBusy(true);
     try {
@@ -686,7 +707,7 @@ function BoostDialog({
         `/api/admin/rounds/${round.id}/bot-boost`,
         {
           method: "POST",
-          body: JSON.stringify({ school_id: schoolId, votes }),
+          body: JSON.stringify({ participant_id: participantId, votes }),
         },
       );
       toast.success(
@@ -731,21 +752,20 @@ function BoostDialog({
         <DialogHeader>
           <DialogTitle>Boost Vote: {round?.name}</DialogTitle>
           <DialogDescription>
-            Tambah vote sintetis ke sekolah target. Tiap vote = +5 poin, dibagi
-            acak ke peserta aktif sekolah itu. Ditandai sebagai bot dan bisa
-            dihapus kapan saja.
+            Tambah vote sintetis ke peserta target. Tiap vote = +1 poin.
+            Ditandai sebagai bot dan bisa dihapus kapan saja.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label>Sekolah target</Label>
+            <Label>Peserta target</Label>
             <SelectBox
-              value={schoolId}
-              onChange={setSchoolId}
-              placeholder="Pilih sekolah"
-              options={(schools ?? []).map((s) => ({
-                value: s.school_id,
-                label: `${s.school_name} (${s.participants} peserta)`,
+              value={participantId}
+              onChange={setParticipantId}
+              placeholder="Pilih peserta"
+              options={(members ?? []).map((m) => ({
+                value: m.participant_id,
+                label: `${m.participant_name} - ${m.school_name}`,
               }))}
             />
           </div>
@@ -759,7 +779,7 @@ function BoostDialog({
               onChange={(e) => setVotes(Number(e.target.value) || 0)}
             />
             <p className="text-xs text-muted-foreground">
-              = {formatNumber((votes || 0) * 5)} poin
+              = {formatNumber(votes || 0)} poin
             </p>
           </div>
           <Button className="w-full" onClick={submit} disabled={busy}>
@@ -800,16 +820,21 @@ function ManageDialog({
   const [addId, setAddId] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
-  const { data: roundSchools, refetch } = useQuery({
-    queryKey: ["round-schools", round?.id],
+  const { data: roundMembers, refetch } = useQuery({
+    queryKey: ["round-participants", round?.id],
     enabled: !!round,
     queryFn: () =>
-      api<RoundSchoolRow[]>(`/api/admin/rounds/${round!.id}/schools`),
+      api<RoundParticipantRow[]>(
+        `/api/admin/rounds/${round!.id}/participants`,
+      ),
   });
-  const { data: allSchools } = useQuery({
-    queryKey: ["schools", "admin"],
+  const { data: allParticipants } = useQuery({
+    queryKey: ["participants", "admin"],
     enabled: !!round,
-    queryFn: () => api<{ id: string; name: string }[]>("/api/admin/schools"),
+    queryFn: () =>
+      api<{ id: string; name: string; schools: { name: string } | null }[]>(
+        "/api/admin/participants",
+      ),
   });
 
   // Prefill saat round berganti.
@@ -832,8 +857,8 @@ function ManageDialog({
     setAddId("");
   }, [round]);
 
-  const memberIds = new Set((roundSchools ?? []).map((r) => r.school_id));
-  const addable = (allSchools ?? []).filter((sc) => !memberIds.has(sc.id));
+  const memberIds = new Set((roundMembers ?? []).map((r) => r.participant_id));
+  const addable = (allParticipants ?? []).filter((p) => !memberIds.has(p.id));
   const closed = round?.status === "closed";
 
   async function saveSettings() {
@@ -862,25 +887,25 @@ function ManageDialog({
     }
   }
 
-  async function addSchool() {
+  async function addParticipant() {
     if (!round || !addId) return;
     try {
-      await api(`/api/admin/rounds/${round.id}/schools`, {
+      await api(`/api/admin/rounds/${round.id}/participants`, {
         method: "POST",
-        body: JSON.stringify({ school_id: addId }),
+        body: JSON.stringify({ participant_id: addId }),
       });
       setAddId("");
       refetch();
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menambah sekolah.");
+      toast.error(e instanceof Error ? e.message : "Gagal menambah peserta.");
     }
   }
 
-  async function removeSchool(schoolId: string) {
+  async function removeParticipant(participantId: string) {
     if (!round) return;
     try {
-      await api(`/api/admin/rounds/${round.id}/schools/${schoolId}`, {
+      await api(`/api/admin/rounds/${round.id}/participants/${participantId}`, {
         method: "DELETE",
       });
       refetch();
@@ -896,7 +921,7 @@ function ManageDialog({
         <DialogHeader>
           <DialogTitle>Kelola: {round?.name}</DialogTitle>
           <DialogDescription>
-            Jadwal, aturan lolos, dan sekolah peserta gelombang ini.
+            Jadwal, aturan lolos, dan peserta gelombang ini.
             {closed && " Gelombang sudah ditutup - hanya bisa dilihat."}
           </DialogDescription>
         </DialogHeader>
@@ -932,21 +957,21 @@ function ManageDialog({
                 onChange={(v) => setSelectMode(v as "per_region" | "global")}
                 disabled={closed}
                 options={[
-                  { value: "per_region", label: "Top per kabupaten" },
-                  { value: "global", label: "Top nasional (mis. 200 semifinalis)" },
+                  { value: "global", label: "Top peserta nasional (mis. 200)" },
+                  { value: "per_region", label: "Top peserta per kabupaten" },
                 ]}
               />
             </div>
             <div className="space-y-1.5">
               <Label>
                 {selectMode === "global"
-                  ? "Jumlah lolos (nasional)"
-                  : "Lolos / kabupaten"}
+                  ? "Jumlah peserta lolos (nasional)"
+                  : "Peserta lolos / kabupaten"}
               </Label>
               <Input
                 type="number"
                 min={1}
-                max={selectMode === "global" ? 5000 : 100}
+                max={5000}
                 value={topN}
                 onChange={(e) => setTopN(Number(e.target.value) || 1)}
                 disabled={closed}
@@ -989,11 +1014,11 @@ function ManageDialog({
           </p>
         </div>
 
-        {/* Sekolah peserta */}
+        {/* Peserta gelombang */}
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold">
-              Sekolah Peserta ({roundSchools?.length ?? 0})
+              Peserta ({roundMembers?.length ?? 0})
             </p>
             {!closed && (
               <div className="flex gap-2">
@@ -1001,34 +1026,36 @@ function ManageDialog({
                   <SelectBox
                     value={addId}
                     onChange={setAddId}
-                    placeholder="Tambah sekolah"
-                    options={addable.map((sc) => ({
-                      value: sc.id,
-                      label: sc.name,
+                    placeholder="Tambah peserta"
+                    options={addable.map((p) => ({
+                      value: p.id,
+                      label: p.schools?.name
+                        ? `${p.name} - ${p.schools.name}`
+                        : p.name,
                     }))}
                   />
                 </div>
-                <Button size="sm" onClick={addSchool} disabled={!addId}>
+                <Button size="sm" onClick={addParticipant} disabled={!addId}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </div>
-          {(roundSchools ?? []).length === 0 ? (
+          {(roundMembers ?? []).length === 0 ? (
             <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-              Belum ada sekolah - pakai &quot;Isi Sekolah&quot; untuk bulk,
+              Belum ada peserta - pakai &quot;Isi Peserta&quot; untuk bulk,
               atau tambah satuan di atas.
             </p>
           ) : (
             <div className="max-h-72 space-y-1.5 overflow-y-auto pr-1">
-              {(roundSchools ?? []).map((r) => (
+              {(roundMembers ?? []).map((r) => (
                 <div
-                  key={r.school_id}
+                  key={r.participant_id}
                   className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-sm"
                 >
                   <div className="min-w-0">
                     <p className="flex items-center gap-2 font-medium">
-                      <span className="truncate">{r.school_name}</span>
+                      <span className="truncate">{r.participant_name}</span>
                       {r.status === "lolos" && (
                         <Badge variant="success">Lolos</Badge>
                       )}
@@ -1037,7 +1064,7 @@ function ManageDialog({
                       )}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {r.region_name} · {r.participants} peserta ·{" "}
+                      {r.school_name} · {r.region_name} ·{" "}
                       {formatNumber(r.points)} poin
                     </p>
                   </div>
@@ -1047,7 +1074,7 @@ function ManageDialog({
                       variant="ghost"
                       className="h-7 w-7 shrink-0 text-destructive"
                       title="Keluarkan dari gelombang"
-                      onClick={() => removeSchool(r.school_id)}
+                      onClick={() => removeParticipant(r.participant_id)}
                     >
                       <X className="h-4 w-4" />
                     </Button>
