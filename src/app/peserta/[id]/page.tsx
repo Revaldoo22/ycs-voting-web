@@ -45,7 +45,7 @@ import {
   useSettings,
   useVoterToday,
 } from "@/lib/queries";
-import { CheckCircle2, ExternalLink } from "lucide-react";
+import { CheckCircle2, ExternalLink, Medal } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { getFingerprint } from "@/lib/fingerprint";
 import { compressImage } from "@/lib/image-compress";
@@ -147,6 +147,10 @@ export default function PublicParticipantPage({
     queryFn: () =>
       api<ParticipantWithSchool | null>(`/api/public/participants/${id}`),
   });
+
+  // Peserta yang sudah lolos gelombang berhenti berkompetisi: vote & quest
+  // ditutup (backend juga menolaknya dengan ALREADY_QUALIFIED).
+  const isQualified = !!participant?.qualified;
 
   return (
     <div className="min-h-screen">
@@ -253,6 +257,13 @@ export default function PublicParticipantPage({
 
                 <ShareButton name={participant.name} />
 
+                {isQualified && (
+                  <div className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                    <Medal className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{t.qualifiedNotice}</span>
+                  </div>
+                )}
+
                 {votedThis ? (
                   <>
                   {votePending ? (
@@ -304,7 +315,8 @@ export default function PublicParticipantPage({
                     locked={locked}
                     waFollowed={waFollowed || isParticipant}
                     gate={gate}
-                    disabled={eventClosed}
+                    disabled={eventClosed || isQualified}
+                    disabledReason={isQualified ? t.qualifiedNoVote : undefined}
                     onVoted={() => {
                       refetch();
                       // Kupon undian sudah otomatis untuk peserta YCS / voter
@@ -367,7 +379,7 @@ export default function PublicParticipantPage({
                       voter={voter}
                       locked={locked}
                       gate={gate}
-                      disabled={eventClosed}
+                      disabled={eventClosed || isQualified}
                     />
                   ))}
                 </div>
@@ -492,6 +504,7 @@ function VoteDialog({
   waFollowed,
   gate,
   disabled,
+  disabledReason,
   onVoted,
 }: {
   participantId: string;
@@ -504,6 +517,8 @@ function VoteDialog({
   /** Belum boleh vote (belum login / belum wizard / bukan voter). */
   gate: (() => void) | null;
   disabled: boolean;
+  /** Teks pengganti saat tombol mati bukan karena event ditutup. */
+  disabledReason?: string;
   /** Vote sukses (terkirim, terlepas pending/approved bukti follow WA). */
   onVoted: () => void;
 }) {
@@ -631,7 +646,7 @@ function VoteDialog({
         onClick={gate}
       >
         <Heart className="h-4 w-4" />
-        {disabled ? t.eventClosed : t.support}
+        {disabled ? (disabledReason ?? t.eventClosed) : t.support}
       </Button>
     );
   }
@@ -735,7 +750,7 @@ function VoteDialog({
         ) : (
           <Heart className="h-4 w-4" />
         )}
-        {disabled ? t.eventClosed : t.support}
+        {disabled ? (disabledReason ?? t.eventClosed) : t.support}
       </Button>
       </>
     );
@@ -750,7 +765,7 @@ function VoteDialog({
           disabled={disabled}
         >
           <Heart className="h-4 w-4" />
-          {disabled ? t.eventClosed : t.support}
+          {disabled ? (disabledReason ?? t.eventClosed) : t.support}
         </Button>
       </DialogTrigger>
       <DialogContent>

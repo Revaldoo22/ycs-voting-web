@@ -570,6 +570,8 @@ export type Round = {
   sequence: number;
   top_n: number;
   created_at: string;
+  /** Gelombang penutup: tak ada lanjutan setelah ini ditutup. */
+  is_final: boolean;
   participant_count?: number;
   school_count?: number;
   lolos_count?: number;
@@ -596,6 +598,25 @@ export type RoundStanding = {
   points: number;
   votes: number;
   rank: number;
+};
+
+/**
+ * Satu peserta yang lolos, beserta gelombang tempat dia lolos. Dipakai admin
+ * (Hasil Lolos + ekspor) dan halaman publik peserta lolos.
+ */
+export type QualifiedParticipant = {
+  participant_id: string;
+  participant_name: string;
+  photo_url: string | null;
+  school_id: string | null;
+  school_name: string;
+  region_name: string;
+  province_name: string;
+  round_id: string;
+  round_name: string;
+  sequence: number;
+  ends_at: string | null;
+  points: number;
 };
 
 export type HeatmapRow = {
@@ -646,6 +667,28 @@ export function useHeatmap(roundId?: string) {
     queryFn: () =>
       api<HeatmapRow[]>(
         `/api/public/heatmap${roundId ? `?round_id=${roundId}` : ""}`,
+      ),
+  });
+}
+
+/** Peserta lolos untuk admin. Kosongkan roundId = semua gelombang. */
+export function useQualified(roundId?: string) {
+  return useQuery({
+    queryKey: ["qualified", roundId ?? "all"],
+    queryFn: () =>
+      api<QualifiedParticipant[]>(
+        `/api/admin/rounds/qualified${qs({ round_id: roundId || undefined })}`,
+      ),
+  });
+}
+
+/** Peserta lolos, versi publik. */
+export function usePublicQualified(roundId?: string) {
+  return useQuery({
+    queryKey: ["public-qualified", roundId ?? "all"],
+    queryFn: () =>
+      api<QualifiedParticipant[]>(
+        `/api/public/qualified${qs({ round_id: roundId || undefined })}`,
       ),
   });
 }

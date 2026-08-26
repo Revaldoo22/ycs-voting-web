@@ -13,6 +13,7 @@ const en: Dictionary = {
     home: "Home",
     ranking: "Ranking",
     gelombang: "Standings",
+    lolos: "Qualified",
     logout: "Log out",
     logoutSuccess: "Logged out successfully.",
     panduan: "Guide",
@@ -89,6 +90,8 @@ const en: Dictionary = {
     emptyRegionScope: "No participants from your district yet",
     points: "points",
     votedBadge: "You Voted",
+    qualifiedBadge: "Qualified",
+    qualifiedLabel: "Qualified",
     pendingBadge: "Vote Pending Review",
     votedLabel: "You already voted",
     pendingLabel: "Awaiting admin review",
@@ -295,6 +298,16 @@ const en: Dictionary = {
     winnerNote: (prize: string) => `Congrats! This coupon won: ${prize}.`,
     winnerNoteGeneric: "Congrats! This coupon was drawn as a winner.",
   },
+  lolos: {
+    title: "Qualified Participants",
+    subtitle:
+      "Participants who qualified in each round. Pick a round to see its list.",
+    emptyTitle: "No qualified participants yet",
+    emptyDescription: "Results appear after the committee closes a round.",
+    searchPlaceholder: "Search participant or school",
+    emptySearch: "Nothing matches your search",
+    count: (n: number) => `${n} qualified`,
+  },
   gelombang: {
     schools: "schools",
     tabTopParticipants: "Participant Ranking",
@@ -454,6 +467,9 @@ const en: Dictionary = {
       "Coupon claim submitted! Your follow proof is being reviewed by the admin.",
     voteSuccess: (points: number, name: string) => `+${points} submitted for ${name}`,
     eventClosed: "Event closed",
+    qualifiedNoVote: "Already Qualified",
+    qualifiedNotice:
+      "This participant has qualified for the next round and no longer accepts support. Their points are final.",
     support: "Support",
     followTaskDialogTitle: "Claim Your Smartphone Raffle Coupon",
     followTaskDialogDescription: (n: number) =>

@@ -148,4 +148,9 @@ export type ParticipantWithSchool = Participant & {
     | null;
   // Only readable by admin (RLS); the participant's login phone number.
   profiles?: { phone_number: string } | null;
+  /**
+   * Sudah lolos di salah satu gelombang. Peserta ini berhenti berkompetisi,
+   * jadi tidak menerima vote lagi (backend menolak dengan ALREADY_QUALIFIED).
+   */
+  qualified?: boolean;
 };

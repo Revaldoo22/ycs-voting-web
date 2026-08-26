@@ -41,6 +41,7 @@ export function Navbar({
     { href: "/", label: t.home, icon: Home },
     { href: "/ranking", label: t.ranking },
     { href: "/gelombang", label: t.gelombang },
+    { href: "/lolos", label: t.lolos },
   ];
   // Tanpa prop links: halaman publik memakai menu standar (konsisten).
   const navLinks = links ?? (showLogout ? [] : publicLinks);

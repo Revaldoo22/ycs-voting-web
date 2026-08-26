@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Globe2,
   MapPin,
+  Medal,
   School as SchoolIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -184,14 +185,21 @@ export function ParticipantGrid() {
             const status = voteStatus.get(p.id);
             const voted = status === "approved";
             const pending = status === "pending";
+            // Sudah lolos gelombang = berhenti berkompetisi, tak bisa di-vote.
+            const qualified = !!p.qualified;
             return (
             <Link key={p.id} href={`/peserta/${p.id}`} className="group">
               <Card
                 className={cn(
                   "card-lift h-full overflow-hidden rounded-2xl border-border/60",
-                  voted &&
+                  qualified &&
+                    "border-emerald-500/70 ring-2 ring-emerald-500/60",
+                  !qualified &&
+                    voted &&
                     "border-amber-400/80 ring-2 ring-amber-400/70 shadow-[0_0_22px_-2px_rgba(251,191,36,0.55)]",
-                  pending && "border-amber-400/50 ring-1 ring-amber-400/40",
+                  !qualified &&
+                    pending &&
+                    "border-amber-400/50 ring-1 ring-amber-400/40",
                 )}
               >
                 <div className="relative aspect-square w-full overflow-hidden bg-muted">
@@ -219,13 +227,19 @@ export function ParticipantGrid() {
                   <span className="absolute right-2 top-2 rounded-full border border-white/30 bg-black/45 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
                     {formatNumber(p.total_points)} {t.points}
                   </span>
-                  {voted && (
+                  {qualified && (
+                    <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-emerald-300/60 bg-emerald-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
+                      <Medal className="h-3.5 w-3.5" />
+                      {t.qualifiedBadge}
+                    </span>
+                  )}
+                  {!qualified && voted && (
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-300 px-2.5 py-0.5 text-xs font-bold text-amber-950 shadow-[0_0_12px_rgba(251,191,36,0.7)]">
                       <BadgeCheck className="h-3.5 w-3.5" />
                       {t.votedBadge}
                     </span>
                   )}
-                  {pending && (
+                  {!qualified && pending && (
                     <span className="absolute left-2 top-2 rounded-full border border-amber-300/50 bg-black/45 px-2.5 py-0.5 text-xs font-bold text-amber-300 backdrop-blur-sm">
                       {t.pendingBadge}
                     </span>
@@ -240,10 +254,19 @@ export function ParticipantGrid() {
                   <div
                     className={cn(
                       "mt-2 flex items-center justify-end text-xs font-semibold",
-                      voted || pending ? "text-amber-500" : "text-primary",
+                      qualified
+                        ? "text-emerald-600"
+                        : voted || pending
+                          ? "text-amber-500"
+                          : "text-primary",
                     )}
                   >
-                    {voted ? (
+                    {qualified ? (
+                      <>
+                        <Medal className="mr-1 h-3.5 w-3.5" />
+                        {t.qualifiedLabel}
+                      </>
+                    ) : voted ? (
                       <>
                         <BadgeCheck className="mr-1 h-3.5 w-3.5" />
                         {t.votedLabel}

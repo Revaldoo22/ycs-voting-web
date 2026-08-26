@@ -1,12 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Trophy, XCircle } from "lucide-react";
+import { CheckCircle2, Download, Medal, Trophy, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { EmptyState, LoadingState } from "@/components/states";
 import { SelectBox } from "@/components/ui/select-box";
-import { useRounds, useRoundStandings, type RoundStanding } from "@/lib/queries";
+import {
+  useQualified,
+  useRounds,
+  useRoundStandings,
+  type RoundStanding,
+} from "@/lib/queries";
 import { cn, formatNumber } from "@/lib/utils";
 
 export default function AdminHasilPage() {
@@ -148,11 +155,176 @@ export default function AdminHasilPage() {
           )}
         </>
       )}
+
+      <QualifiedAllRounds />
     </div>
   );
 }
 
 /* ---------- pieces ---------- */
+
+/**
+ * Rekap peserta lolos LINTAS gelombang, dengan keterangan lolos dari
+ * gelombang mana. Satu peserta hanya bisa lolos sekali (yang sudah lolos tak
+ * ikut gelombang berikutnya), jadi daftar ini = seluruh peserta yang lolos.
+ */
+function QualifiedAllRounds() {
+  const { data, isLoading } = useQualified();
+  // useMemo: `data ?? []` bikin array baru tiap render, memo di bawah ikut
+  // dihitung ulang terus.
+  const rows = React.useMemo(() => data ?? [], [data]);
+  const [q, setQ] = React.useState("");
+  const [roundFilter, setRoundFilter] = React.useState("");
+
+  // Gelombang yang punya peserta lolos, untuk isi dropdown filter.
+  const roundOptions = React.useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const r of rows) seen.set(r.round_id, r.round_name);
+    return Array.from(seen, ([value, label]) => ({ value, label }));
+  }, [rows]);
+
+  const filtered = React.useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return rows.filter(
+      (r) =>
+        (!roundFilter || r.round_id === roundFilter) &&
+        (!needle ||
+          r.participant_name.toLowerCase().includes(needle) ||
+          r.school_name.toLowerCase().includes(needle)),
+    );
+  }, [rows, q, roundFilter]);
+
+  // Peserta unik: satu orang yang lolos di dua gelombang tetap dihitung satu.
+  const uniquePeople = new Set(filtered.map((r) => r.participant_id)).size;
+
+  function exportCsv() {
+    const head = [
+      "Peringkat",
+      "Nama Peserta",
+      "Sekolah",
+      "Kabupaten",
+      "Provinsi",
+      "Lolos dari",
+      "Poin",
+    ];
+    // Escape RFC 4180: bungkus tanda kutip, kutip di dalam digandakan.
+    const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const body = filtered.map((r, i) =>
+      [
+        i + 1,
+        r.participant_name,
+        r.school_name,
+        r.region_name,
+        r.province_name,
+        r.round_name,
+        r.points,
+      ]
+        .map(cell)
+        .join(","),
+    );
+    // BOM agar Excel membaca UTF-8 (nama dengan karakter non-ASCII).
+    const csv =
+      "﻿" + [head.map(cell).join(","), ...body].join("\r\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8;" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `peserta-lolos-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-4 sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
+              <Medal className="h-5 w-5 text-amber-500" />
+              Semua Peserta Lolos
+            </h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Rekap lintas gelombang, lengkap dengan asal gelombangnya.
+              {rows.length > 0 && ` ${uniquePeople} peserta.`}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Ekspor CSV
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <LoadingState />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="Belum ada peserta lolos"
+            description="Hasil muncul setelah gelombang ditutup."
+          />
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Cari nama peserta atau sekolah"
+                className="max-w-xs"
+              />
+              <div className="w-48">
+                <SelectBox
+                  value={roundFilter}
+                  onChange={setRoundFilter}
+                  placeholder="Semua gelombang"
+                  options={[
+                    { value: "", label: "Semua gelombang" },
+                    ...roundOptions,
+                  ]}
+                />
+              </div>
+            </div>
+
+            {filtered.length === 0 ? (
+              <EmptyState title="Tidak ada yang cocok dengan pencarian" />
+            ) : (
+              <div className="max-h-[70vh] space-y-1.5 overflow-y-auto pr-1">
+                {filtered.map((r, i) => (
+                  <div
+                    key={`${r.round_id}-${r.participant_id}`}
+                    className="flex items-center justify-between gap-3 rounded-xl border bg-card p-2.5 pl-2 text-sm"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <RankBadge rank={i + 1} />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium leading-tight">
+                          {r.participant_name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {r.school_name} &middot; {r.region_name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge variant="secondary">{r.round_name}</Badge>
+                      <span className="font-semibold tabular-nums text-primary">
+                        {formatNumber(r.points)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function StatTile({
   label,

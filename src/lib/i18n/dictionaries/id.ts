@@ -11,6 +11,7 @@ const id = {
     home: "Home",
     ranking: "Ranking",
     gelombang: "Klasemen",
+    lolos: "Peserta Lolos",
     logout: "Keluar",
     logoutSuccess: "Berhasil keluar.",
     panduan: "Panduan",
@@ -87,6 +88,8 @@ const id = {
     emptyRegionScope: "Belum ada peserta dari kabupatenmu",
     points: "poin",
     votedBadge: "Sudah Kamu Vote",
+    qualifiedBadge: "Lolos",
+    qualifiedLabel: "Sudah Lolos",
     pendingBadge: "Vote Menunggu Review",
     votedLabel: "Sudah kamu vote",
     pendingLabel: "Menunggu review admin",
@@ -293,6 +296,16 @@ const id = {
     winnerNote: (prize: string) => `Selamat! Kupon ini menang: ${prize}.`,
     winnerNoteGeneric: "Selamat! Kupon ini terpilih sebagai pemenang undian.",
   },
+  lolos: {
+    title: "Peserta Lolos",
+    subtitle:
+      "Peserta yang lolos di tiap gelombang. Pilih gelombang untuk melihat daftarnya.",
+    emptyTitle: "Belum ada peserta lolos",
+    emptyDescription: "Hasil muncul setelah gelombang ditutup panitia.",
+    searchPlaceholder: "Cari nama peserta atau sekolah",
+    emptySearch: "Tidak ada yang cocok dengan pencarian",
+    count: (n: number) => `${n} peserta lolos`,
+  },
   gelombang: {
     schools: "sekolah",
     tabTopParticipants: "Peringkat Peserta",
@@ -452,6 +465,9 @@ const id = {
       "Klaim kupon terkirim! Bukti follow-mu sedang direview admin.",
     voteSuccess: (points: number, name: string) => `+${points} terkirim untuk ${name}`,
     eventClosed: "Event ditutup",
+    qualifiedNoVote: "Sudah Lolos",
+    qualifiedNotice:
+      "Peserta ini sudah lolos ke babak berikutnya, jadi tidak menerima dukungan lagi. Poinnya sudah final.",
     support: "Dukung",
     followTaskDialogTitle: "Klaim Kupon Undian Handphone",
     followTaskDialogDescription: (n: number) =>

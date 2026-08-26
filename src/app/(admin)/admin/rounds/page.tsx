@@ -55,7 +55,7 @@ import {
   type RoundStanding,
 } from "@/lib/queries";
 import { api } from "@/lib/api-client";
-import { formatNumber } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 
 function statusBadge(s: Round["status"]) {
   if (s === "active") return <Badge variant="success">Berjalan</Badge>;
@@ -142,9 +142,10 @@ export default function AdminRoundsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Gelombang</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Adu voting antar peserta. Peserta aktif otomatis ikut gelombang
-          berjalan. Saat ditutup, peserta peringkat teratas lolos dan yang
-          gugur otomatis lanjut ke gelombang berikutnya dengan poin dipotong
-          50%.
+          berjalan. Saat ditutup, peserta peringkat teratas lolos dan berhenti
+          berkompetisi; yang gugur lanjut ke gelombang berikutnya dengan poin
+          dipotong 50%. Kecuali gelombang bertanda Penutup, di situ kompetisi
+          berakhir.
         </p>
       </div>
 
@@ -198,7 +199,14 @@ export default function AdminRoundsPage() {
                 {rounds.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
-                      <p className="font-medium">{r.name}</p>
+                      <p className="flex items-center gap-1.5 font-medium">
+                        {r.name}
+                        {r.is_final && (
+                          <Badge variant="outline" className="font-normal">
+                            Penutup
+                          </Badge>
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {r.starts_at
                           ? new Date(r.starts_at).toLocaleDateString("id-ID")
@@ -459,6 +467,7 @@ function CloseDialog({
   const [topN, setTopN] = React.useState(1);
   const [busy, setBusy] = React.useState(false);
   const global = round?.select_mode !== "per_region";
+  const final = !!round?.is_final;
 
   React.useEffect(() => {
     if (round) setTopN((round as Round & { top_n?: number }).top_n ?? 1);
@@ -476,9 +485,11 @@ function CloseDialog({
         },
       );
       toast.success(
-        `${round.name} ditutup. Top ${topN} peserta${
-          global ? "" : " per kabupaten"
-        } lolos. Gelombang lanjutan otomatis dibuat & diaktifkan (peserta gugur + poin 50%).`,
+        final
+          ? `${round.name} ditutup. Top ${topN} peserta lolos. Ini gelombang penutup, kompetisi berakhir.`
+          : `${round.name} ditutup. Top ${topN} peserta${
+              global ? "" : " per kabupaten"
+            } lolos. Gelombang lanjutan otomatis dibuat & diaktifkan (peserta gugur + poin 50%).`,
       );
       onDone();
       onClose();
@@ -497,9 +508,21 @@ function CloseDialog({
           <DialogDescription>
             <b>Peserta</b> dengan poin terbanyak
             {global ? " se-Indonesia" : " di tiap kabupaten"} dinyatakan lolos.
-            Sisanya gugur dan <b>otomatis masuk gelombang lanjutan</b> (dibuat
-            &amp; diaktifkan langsung) dengan poin dipotong 50%. Peserta lolos
-            tidak ikut. Tidak bisa dibatalkan.
+            {final ? (
+              <>
+                {" "}
+                Ini <b>gelombang penutup</b>: sisanya gugur dan kompetisi
+                berakhir di sini, tak ada gelombang lanjutan.
+              </>
+            ) : (
+              <>
+                {" "}
+                Sisanya gugur dan <b>otomatis masuk gelombang lanjutan</b>
+                (dibuat &amp; diaktifkan langsung) dengan poin dipotong 50%.
+                Peserta lolos tidak ikut.
+              </>
+            )}{" "}
+            Tidak bisa dibatalkan.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -826,6 +849,7 @@ function ManageDialog({
   );
   const [scheduledClose, setScheduledClose] = React.useState("");
   const [sequence, setSequence] = React.useState(0);
+  const [isFinal, setIsFinal] = React.useState(false);
   const [addId, setAddId] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
@@ -856,6 +880,7 @@ function ManageDialog({
     setTopN(round.top_n ?? 1);
     setSelectMode(round.select_mode ?? "per_region");
     setSequence(round.sequence ?? 0);
+    setIsFinal(round.is_final ?? false);
     setScheduledClose(toLocalInput(round.scheduled_close_at));
     setEndsAt(toLocalInput(round.ends_at));
     setAddId("");
@@ -876,6 +901,7 @@ function ManageDialog({
           top_n: topN,
           select_mode: selectMode,
           sequence: sequence,
+          is_final: isFinal,
           scheduled_close_at: scheduledClose
             ? new Date(scheduledClose).toISOString()
             : null,
@@ -1002,6 +1028,29 @@ function ManageDialog({
               />
             </div>
           </div>
+          <label
+            className={cn(
+              "flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm",
+              isFinal && "border-primary bg-primary/5",
+              closed && "cursor-not-allowed opacity-60",
+            )}
+          >
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={isFinal}
+              disabled={closed}
+              onChange={(e) => setIsFinal(e.target.checked)}
+            />
+            <span>
+              <span className="font-medium">Gelombang penutup</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                Kompetisi berakhir di sini. Saat ditutup, tidak ada gelombang
+                lanjutan yang dibuat atau diaktifkan, dan peserta yang gugur
+                tidak digulirkan ke mana pun.
+              </span>
+            </span>
+          </label>
           <Button
             className="w-full"
             onClick={saveSettings}
