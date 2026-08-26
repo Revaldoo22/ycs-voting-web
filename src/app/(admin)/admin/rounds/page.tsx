@@ -574,7 +574,15 @@ function StandingsDialog({
   onClose: () => void;
 }) {
   const { data, isLoading } = useRoundStandings(round?.id);
-  const [view, setView] = React.useState<"kabupaten" | "nasional">("kabupaten");
+  // Default ikut aturan gelombang: mode global = top peserta nasional
+  // langsung, tanpa dipecah per kabupaten.
+  const [view, setView] = React.useState<"kabupaten" | "nasional">("nasional");
+
+  React.useEffect(() => {
+    if (round) {
+      setView(round.select_mode === "per_region" ? "kabupaten" : "nasional");
+    }
+  }, [round]);
 
   // Kabupaten: kelompok per kabupaten, terurut poin di tiap grup.
   const groups = React.useMemo(() => {
@@ -604,9 +612,9 @@ function StandingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Toggle Kabupaten / Nasional */}
+        {/* Toggle Nasional / Kabupaten */}
         <div className="inline-flex w-fit rounded-lg border bg-muted/40 p-0.5 text-sm">
-          {(["kabupaten", "nasional"] as const).map((v) => (
+          {(["nasional", "kabupaten"] as const).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}

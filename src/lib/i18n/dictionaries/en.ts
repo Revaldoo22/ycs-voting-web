@@ -221,7 +221,8 @@ const en: Dictionary = {
   },
   home: {
     badge: "Universitas STEKOM",
-    heroTitle: "Youth Character Summit 2026",
+    heroTitle: "Student Character Program 2026",
+    registerBacklink: "Register as a 2026 Participant",
     heroDescBold: "100% free registration, no fees whatsoever.",
     heroDesc:
       "Support your favorite student! Pick a participant below, give your support, and help them win prizes.",
@@ -296,6 +297,12 @@ const en: Dictionary = {
   },
   gelombang: {
     schools: "schools",
+    tabTopParticipants: "Participant Ranking",
+    tabByRegion: "Explore by Region",
+    topHint: (n: number) =>
+      `Nationwide participant ranking. The top ${n} qualify for the next round.`,
+    topHintNoQuota: "Nationwide participant ranking.",
+    cutoffLine: (n: number) => `Top ${n} cut-off`,
     participants: "participants",
     totalPoints: "Total Points",
     student: "Student",

@@ -159,7 +159,14 @@ function ListHeader({ label }: { label: string }) {
  * standings gelombang, jadi poin & status lolos/gugur sesuai gelombang yang
  * sedang dilihat, bukan poin global peserta.
  */
-function StudentBoard({ rows }: { rows: RoundStanding[] }) {
+function StudentBoard({
+  rows,
+  /** Kuota lolos gelombang. Terisi = tarik garis batas setelah peringkat ini. */
+  quota,
+}: {
+  rows: RoundStanding[];
+  quota?: number;
+}) {
   const t = useTranslation("gelombang");
 
   if (rows.length === 0) {
@@ -167,10 +174,17 @@ function StudentBoard({ rows }: { rows: RoundStanding[] }) {
   }
   return (
     <div className="space-y-2">
-      <ListHeader label={t.student} />
+      {!quota && <ListHeader label={t.student} />}
       {rows.map((p, i) => (
+        <React.Fragment key={p.participant_id}>
+          {quota != null && i === quota && (
+            <div className="flex items-center gap-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              {t.cutoffLine(quota)}
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          )}
         <Link
-          key={p.participant_id}
           href={`/peserta/${p.participant_id}`}
           className={cn(
             "flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5",
@@ -210,6 +224,7 @@ function StudentBoard({ rows }: { rows: RoundStanding[] }) {
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
         </Link>
+        </React.Fragment>
       ))}
     </div>
   );
@@ -239,8 +254,24 @@ export default function PublicRoundsPage() {
   const { data: results, isLoading: loadingResults } = useRoundResults(selected);
   const { data: me } = useMyProfile();
 
+  // Tab utama: "top" = daftar peserta terbaik langsung (yang menentukan
+  // lolos), "wilayah" = jelajah provinsi → kabupaten → sekolah → siswa.
+  const [tab, setTab] = React.useState<"top" | "wilayah">("top");
+
   const provKey = (r: RoundStanding) => r.province_id ?? "none";
   const regKey = (r: RoundStanding) => r.region_id ?? "none";
+
+  // Peringkat peserta se-Indonesia. Inilah yang dipakai menentukan lolos:
+  // top_n peserta teratas, tanpa dipecah per sekolah/kabupaten.
+  const topPeserta = React.useMemo(
+    () =>
+      [...(results ?? [])].sort(
+        (a, b) =>
+          b.points - a.points ||
+          a.participant_name.localeCompare(b.participant_name),
+      ),
+    [results],
+  );
 
   // Wilayah si voter (untuk highlight "Provinsimu/Kabupatenmu/Sekolahmu").
   // Provinsi tak ada di profil, diturunkan dari baris standings sekolah /
@@ -423,7 +454,51 @@ export default function PublicRoundsPage() {
               </div>
             )}
 
-            {/* Breadcrumb drill-down */}
+            {/* Tab: peringkat peserta (utama) vs jelajah wilayah */}
+            <div className="inline-flex w-full rounded-xl border bg-muted/40 p-0.5 text-sm sm:w-fit">
+              {(
+                [
+                  ["top", t.tabTopParticipants],
+                  ["wilayah", t.tabByRegion],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  onClick={() => setTab(v)}
+                  className={cn(
+                    "flex-1 cursor-pointer rounded-lg px-4 py-1.5 font-medium transition-colors sm:flex-none",
+                    tab === v
+                      ? "bg-background text-foreground shadow-sm ring-1 ring-inset ring-border/60"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "top" ? (
+              <Card>
+                <CardContent className="space-y-4 p-4">
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Trophy className="h-3.5 w-3.5 text-accent" />
+                    {round?.top_n
+                      ? t.topHint(round.top_n)
+                      : t.topHintNoQuota}
+                  </p>
+                  {loadingResults ? (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : topPeserta.length === 0 ? (
+                    <EmptyState title={t.emptySchoolsInBoard} />
+                  ) : (
+                    <StudentBoard rows={topPeserta} quota={round?.top_n} />
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+            /* Breadcrumb drill-down */
             <Card>
               <CardContent className="space-y-4 p-4">
                 <div className="flex flex-wrap items-center gap-2">
@@ -568,8 +643,9 @@ export default function PublicRoundsPage() {
                 )}
               </CardContent>
             </Card>
+            )}
 
-            {!school && !region && (
+            {tab === "wilayah" && !school && !region && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Trophy className="h-3.5 w-3.5 text-accent" />
                 {t.regionPointsNote}

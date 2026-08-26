@@ -180,6 +180,18 @@ export function HomeBody() {
               </a>
             </Button>
           </div>
+
+          {/* Backlink pendaftaran (bio.stekom.ac.id). */}
+          <p className="pt-1 text-sm text-muted-foreground">
+            <a
+              href="https://bio.stekom.ac.id/daftarycs2026"
+              target="_blank"
+              rel="noopener"
+              className="font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
+            >
+              {t.registerBacklink}
+            </a>
+          </p>
         </div>
       </section>
 

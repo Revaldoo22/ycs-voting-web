@@ -18,7 +18,7 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
 // "localhost" akan ditolak Google Search Console.
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://idola.stekom.ac.id";
-const title = "Youth Character Summit - Universitas STEKOM";
+const title = "Voting Peserta - Universitas STEKOM";
 const description =
   "Platform kompetisi karakter pelajar SMA/SMK. Dukung peserta favoritmu dan menangkan smartphone, sertifikat, & jadi Duta Teladan Universitas STEKOM!";
 
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    siteName: "Youth Character Summit Universitas STEKOM",
+    siteName: "Voting Peserta Universitas STEKOM",
     type: "website",
     locale: "id_ID",
     url: siteUrl,

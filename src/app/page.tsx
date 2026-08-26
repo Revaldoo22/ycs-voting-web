@@ -5,7 +5,7 @@ const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://idola.stekom.ac.id";
 
 const homeTitle =
-  "Youth Character Summit 2026 | Pendaftaran Gratis | Universitas STEKOM";
+  "Voting & Peringkat Peserta 2026 | Universitas STEKOM";
 const homeDescription =
   "Pendaftaran Youth Character Summit 2026 100% GRATIS, tidak ada biaya dan tidak ada transfer dalam bentuk apa pun. Kompetisi karakter pelajar SMA/SMK dengan beasiswa hingga Rp5.000.000.";
 

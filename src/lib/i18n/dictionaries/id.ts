@@ -219,7 +219,8 @@ const id = {
   },
   home: {
     badge: "Universitas STEKOM",
-    heroTitle: "Youth Character Summit 2026",
+    heroTitle: "Ajang Karakter Pelajar SMA/SMK 2026",
+    registerBacklink: "Daftar Peserta 2026",
     heroDescBold: "Pendaftaran 100% gratis, tanpa biaya apa pun.",
     heroDesc:
       "Dukung pelajar favoritmu! Pilih peserta di bawah, beri dukungan, dan bantu mereka memenangkan hadiah.",
@@ -294,6 +295,12 @@ const id = {
   },
   gelombang: {
     schools: "sekolah",
+    tabTopParticipants: "Peringkat Peserta",
+    tabByRegion: "Jelajah Wilayah",
+    topHint: (n: number) =>
+      `Peringkat peserta se-Indonesia. ${n} peserta teratas lolos ke babak berikutnya.`,
+    topHintNoQuota: "Peringkat peserta se-Indonesia.",
+    cutoffLine: (n: number) => `Batas ${n} besar`,
     participants: "peserta",
     totalPoints: "Total Poin",
     student: "Siswa",
