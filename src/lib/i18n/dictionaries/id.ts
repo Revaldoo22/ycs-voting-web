@@ -219,11 +219,11 @@ const id = {
   },
   home: {
     badge: "Universitas STEKOM",
-    heroTitle: "Ajang Karakter Pelajar SMA/SMK 2026",
-    registerBacklink: "Daftar Peserta 2026",
+    heroTitle: "Dukung Pelajar Favoritmu di Voting 2026",
+    registerBacklink: "Info & Tautan Resmi",
     heroDescBold: "Pendaftaran 100% gratis, tanpa biaya apa pun.",
     heroDesc:
-      "Dukung pelajar favoritmu! Pilih peserta di bawah, beri dukungan, dan bantu mereka memenangkan hadiah.",
+      "Pilih peserta di bawah, beri dukungan, dan bantu mereka memenangkan hadiah.",
     freeBadge: "Gratis - Rp0 biaya pendaftaran",
     prizeBannerTag: "Hadiah Undian",
     prizeBannerTitle: "Menangkan Handphone dari Kupon Undian!",
@@ -236,7 +236,7 @@ const id = {
     prizeDialogStep3: "Selesai! Kupon undian masuk ke akunmu setelah bukti disetujui admin, cek di menu Kupon Saya.",
     prizeDialogCta: "Vote Sekarang",
     rankingCta: "Peringkat Sementara",
-    joinCta: "Jadi Peserta YCS",
+    joinCta: "Daftar Jadi Peserta",
     participantsTitle: "Daftar Peserta",
     participantsSubtitle: "Klik peserta untuk memberi dukungan & mengerjakan quest.",
     faqTitle: "Apakah YCS 2026 Berbayar?",

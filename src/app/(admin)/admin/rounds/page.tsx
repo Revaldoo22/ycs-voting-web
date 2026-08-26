@@ -48,6 +48,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { useQuery } from "@tanstack/react-query";
 import {
+  useAdminParticipants,
   useRounds,
   useRoundStandings,
   type Round,
@@ -836,14 +837,9 @@ function ManageDialog({
         `/api/admin/rounds/${round!.id}/participants`,
       ),
   });
-  const { data: allParticipants } = useQuery({
-    queryKey: ["participants", "admin"],
-    enabled: !!round,
-    queryFn: () =>
-      api<{ id: string; name: string; schools: { name: string } | null }[]>(
-        "/api/admin/participants",
-      ),
-  });
+  // Pakai hook bersama agar tidak bentrok queryKey dengan halaman peserta
+  // (key sama + tipe beda = data saling menimpa di cache).
+  const { data: allParticipants } = useAdminParticipants();
 
   // Prefill saat round berganti.
   React.useEffect(() => {

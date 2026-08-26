@@ -221,11 +221,11 @@ const en: Dictionary = {
   },
   home: {
     badge: "Universitas STEKOM",
-    heroTitle: "Student Character Program 2026",
-    registerBacklink: "Register as a 2026 Participant",
+    heroTitle: "Support Your Favorite Student in the 2026 Vote",
+    registerBacklink: "Info & Official Links",
     heroDescBold: "100% free registration, no fees whatsoever.",
     heroDesc:
-      "Support your favorite student! Pick a participant below, give your support, and help them win prizes.",
+      "Pick a participant below, give your support, and help them win prizes.",
     freeBadge: "Free - Rp0 registration fee",
     prizeBannerTag: "Raffle Prize",
     prizeBannerTitle: "Win a Smartphone from the Raffle Coupon!",
@@ -238,7 +238,7 @@ const en: Dictionary = {
     prizeDialogStep3: "Done! Your raffle coupon is added to your account once your proof is approved by admin, check it in the My Coupons menu.",
     prizeDialogCta: "Vote Now",
     rankingCta: "Current Standings",
-    joinCta: "Become a YCS Participant",
+    joinCta: "Register as a Participant",
     participantsTitle: "Participant List",
     participantsSubtitle: "Click a participant to give support & complete quests.",
     faqTitle: "Is YCS 2026 Paid?",

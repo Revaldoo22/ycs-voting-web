@@ -181,7 +181,9 @@ export function HomeBody() {
             </Button>
           </div>
 
-          {/* Backlink pendaftaran (bio.stekom.ac.id). */}
+          {/* Tautan ke bio.stekom.ac.id: kumpulan tautan resmi (events, CS,
+              dll). Sengaja dibedakan dari tombol "Daftar Jadi Peserta" di atas
+              yang langsung ke formulir, agar dua CTA ini tak rancu. */}
           <p className="pt-1 text-sm text-muted-foreground">
             <a
               href="https://bio.stekom.ac.id/daftarycs2026"
