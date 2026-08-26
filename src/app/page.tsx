@@ -41,11 +41,16 @@ export const metadata: Metadata = {
 /**
  * Event structured data dengan offers.price "0", inilah yang memungkinkan
  * Google menampilkan label "Free" pada rich result.
+ *
+ * name sengaja TIDAK memakai nama resmi acara: Google memperlakukan
+ * Event.name sebagai nama entitas dan sering memakainya menimpa <title>,
+ * sehingga halaman voting ini tampil seolah halaman acaranya. Nama resmi
+ * tetap ada di description & FAQ (teks biasa) untuk kueri soal biaya.
  */
 const EVENT_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Event",
-  name: "Youth Character Summit 2026",
+  name: "Voting & Peringkat Peserta 2026",
   description: homeDescription,
   startDate: "2026-12-23T08:00:00+08:00",
   endDate: "2026-12-23T17:00:00+08:00",
@@ -69,12 +74,14 @@ const EVENT_JSON_LD = {
   isAccessibleForFree: true,
   offers: {
     "@type": "Offer",
-    name: "Pendaftaran Peserta Youth Character Summit 2026",
+    name: "Pendaftaran Peserta 2026",
     price: "0",
     priceCurrency: "IDR",
     availability: "https://schema.org/InStock",
     validFrom: "2026-07-21T00:00:00+07:00",
-    url: siteUrl,
+    // Pendaftaran dilakukan di web events, bukan di sini. Menunjuk ke sana
+    // agar Google tak menganggap halaman ini halaman pendaftarannya.
+    url: "https://events.stekom.ac.id/ycs2026",
   },
 };
 
