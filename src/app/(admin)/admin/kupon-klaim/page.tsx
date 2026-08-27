@@ -43,7 +43,7 @@ const formatDateTime = (iso: string) =>
 
 type ClaimRow = {
   id: string;
-  status: "pending" | "approved";
+  status: "pending" | "approved" | "rejected";
   proofs: string[];
   created_at: string;
   reviewed_at: string | null;
@@ -51,6 +51,9 @@ type ClaimRow = {
   voter_name: string | null;
   voter_email: string | null;
   voter_phone: string | null;
+  /** Hanya pada tab "ditolak" (arsip): alasan & waktu penolakan. */
+  reason?: string | null;
+  rejected_at?: string | null;
 };
 
 /**
@@ -83,21 +86,31 @@ export default function AdminCouponClaimsPage() {
     return () => clearTimeout(id);
   }, [search]);
 
+  // Tab "ditolak" membaca ARSIP: baris klaim sudah dihapus saat ditolak
+  // (supaya voter bisa klaim ulang), jadi datanya dari tabel riwayat.
+  const rejectedTab = tab === "rejected";
+  const searchQs = debouncedSearch
+    ? `search=${encodeURIComponent(debouncedSearch)}`
+    : "";
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-coupon-claims", tab, debouncedSearch],
     queryFn: () =>
       api<ClaimRow[]>(
-        `/api/admin/coupon-claims?status=${tab}` +
-          (debouncedSearch
-            ? `&search=${encodeURIComponent(debouncedSearch)}`
-            : ""),
+        rejectedTab
+          ? `/api/admin/coupon-claims/rejections${
+              searchQs ? `?${searchQs}` : ""
+            }`
+          : `/api/admin/coupon-claims?status=${tab}${
+              searchQs ? `&${searchQs}` : ""
+            }`,
       ),
     placeholderData: (prev) => prev,
   });
   const { data: counts } = useQuery({
     queryKey: ["admin-coupon-claims-counts"],
     queryFn: () =>
-      api<{ pending: number; approved: number }>(
+      api<{ pending: number; approved: number; rejected: number }>(
         "/api/admin/coupon-claims/counts",
       ),
   });
@@ -275,6 +288,12 @@ export default function AdminCouponClaimsPage() {
                 <Badge variant="success">{counts.approved}</Badge>
               ) : null}
             </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Ditolak{" "}
+              {counts ? (
+                <Badge variant="destructive">{counts.rejected}</Badge>
+              ) : null}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <Input
@@ -345,7 +364,9 @@ export default function AdminCouponClaimsPage() {
           title={
             tab === "pending"
               ? "Tidak ada klaim menunggu review"
-              : "Belum ada klaim disetujui"
+              : tab === "rejected"
+                ? "Belum ada klaim yang ditolak"
+                : "Belum ada klaim disetujui"
           }
         />
       ) : (
@@ -383,6 +404,8 @@ export default function AdminCouponClaimsPage() {
                       </div>
                       {v.status === "pending" ? (
                         <Badge variant="warning">Menunggu</Badge>
+                      ) : v.status === "rejected" ? (
+                        <Badge variant="destructive">Ditolak</Badge>
                       ) : (
                         <Badge variant="success">Disetujui</Badge>
                       )}
@@ -414,6 +437,20 @@ export default function AdminCouponClaimsPage() {
                     <p className="text-xs text-muted-foreground">
                       {formatDateTime(v.created_at)}
                     </p>
+
+                    {v.status === "rejected" && (
+                      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs">
+                        <p className="font-semibold text-destructive">
+                          Ditolak
+                          {v.rejected_at
+                            ? ` ${formatDateTime(v.rejected_at)}`
+                            : ""}
+                        </p>
+                        <p className="mt-0.5 text-muted-foreground">
+                          {v.reason?.trim() || "Tanpa alasan tertulis."}
+                        </p>
+                      </div>
+                    )}
 
                     {v.status === "pending" && (
                       <div className="flex gap-2">

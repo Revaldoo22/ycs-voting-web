@@ -49,7 +49,7 @@ const PROOF_LABELS: Record<string, string> = {
 
 type VoteRow = {
   id: string;
-  status: "pending" | "approved";
+  status: "pending" | "approved" | "rejected";
   points: number;
   created_at: string;
   voter_name: string | null;
@@ -60,6 +60,9 @@ type VoteRow = {
   voter_class: string | null;
   follow_proofs: string[] | Record<string, string> | null;
   participants: { id: string; name: string; schools: { name: string } | null };
+  /** Hanya pada tab "ditolak" (arsip): alasan & waktu penolakan. */
+  reason?: string | null;
+  rejected_at?: string | null;
 };
 
 /**
@@ -92,21 +95,29 @@ export default function AdminVotesPage() {
     return () => clearTimeout(id);
   }, [search]);
 
+  // Tab "ditolak" membaca ARSIP: baris vote-nya sudah dihapus saat ditolak
+  // (supaya voter bisa vote ulang), jadi datanya dari tabel riwayat.
+  const rejectedTab = tab === "rejected";
+  const searchQs = debouncedSearch
+    ? `search=${encodeURIComponent(debouncedSearch)}`
+    : "";
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-votes", tab, debouncedSearch],
     queryFn: () =>
       api<VoteRow[]>(
-        `/api/admin/votes?status=${tab}` +
-          (debouncedSearch
-            ? `&search=${encodeURIComponent(debouncedSearch)}`
-            : ""),
+        rejectedTab
+          ? `/api/admin/votes/rejections${searchQs ? `?${searchQs}` : ""}`
+          : `/api/admin/votes?status=${tab}${searchQs ? `&${searchQs}` : ""}`,
       ),
     placeholderData: (prev) => prev,
   });
   const { data: counts } = useQuery({
     queryKey: ["admin-votes-counts"],
     queryFn: () =>
-      api<{ pending: number; approved: number }>("/api/admin/votes/counts"),
+      api<{ pending: number; approved: number; rejected: number }>(
+        "/api/admin/votes/counts",
+      ),
   });
 
   function invalidate() {
@@ -282,6 +293,12 @@ export default function AdminVotesPage() {
                 <Badge variant="success">{counts.approved}</Badge>
               ) : null}
             </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Ditolak{" "}
+              {counts ? (
+                <Badge variant="destructive">{counts.rejected}</Badge>
+              ) : null}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <Input
@@ -352,7 +369,9 @@ export default function AdminVotesPage() {
           title={
             tab === "pending"
               ? "Tidak ada vote menunggu review"
-              : "Belum ada vote disetujui"
+              : tab === "rejected"
+                ? "Belum ada vote yang ditolak"
+                : "Belum ada vote disetujui"
           }
         />
       ) : (
@@ -453,6 +472,20 @@ export default function AdminVotesPage() {
                     <p className="text-xs text-muted-foreground">
                       {formatDateTime(v.created_at)}
                     </p>
+
+                    {v.status === "rejected" && (
+                      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs">
+                        <p className="font-semibold text-destructive">
+                          Ditolak
+                          {v.rejected_at
+                            ? ` ${formatDateTime(v.rejected_at)}`
+                            : ""}
+                        </p>
+                        <p className="mt-0.5 text-muted-foreground">
+                          {v.reason?.trim() || "Tanpa alasan tertulis."}
+                        </p>
+                      </div>
+                    )}
 
                     {v.status === "pending" && (
                       <div className="flex gap-2">
