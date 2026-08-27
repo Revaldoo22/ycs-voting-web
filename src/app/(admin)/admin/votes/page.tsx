@@ -428,6 +428,8 @@ export default function AdminVotesPage() {
                       </div>
                       {v.status === "pending" ? (
                         <Badge variant="warning">Menunggu</Badge>
+                      ) : v.status === "rejected" ? (
+                        <Badge variant="destructive">Ditolak</Badge>
                       ) : (
                         <Badge variant="success">Disetujui</Badge>
                       )}
@@ -469,9 +471,13 @@ export default function AdminVotesPage() {
                       ))}
                     </div>
 
-                    <p className="text-xs text-muted-foreground">
-                      {formatDateTime(v.created_at)}
-                    </p>
+                    {/* Data arsip lama tak punya waktu pengajuan asli
+                        (ikut terhapus), jadi jangan tampilkan epoch. */}
+                    {v.created_at && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatDateTime(v.created_at)}
+                      </p>
+                    )}
 
                     {v.status === "rejected" && (
                       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs">
