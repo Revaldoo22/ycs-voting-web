@@ -14,6 +14,7 @@ const en: Dictionary = {
     ranking: "Ranking",
     gelombang: "Standings",
     lolos: "Qualified",
+    goldenBuzzer: "Golden Buzzer",
     logout: "Log out",
     logoutSuccess: "Logged out successfully.",
     panduan: "Guide",
@@ -91,6 +92,8 @@ const en: Dictionary = {
     points: "points",
     votedBadge: "You Voted",
     qualifiedBadge: "Qualified",
+    goldenBadge: "Golden Buzzer",
+    goldenLabel: "Golden Buzzer",
     qualifiedLabel: "Qualified",
     pendingBadge: "Vote Pending Review",
     votedLabel: "You already voted",
@@ -308,6 +311,16 @@ const en: Dictionary = {
     emptySearch: "Nothing matches your search",
     count: (n: number) => `${n} qualified`,
   },
+  goldenBuzzer: {
+    title: "Golden Buzzer",
+    subtitle:
+      "Participants chosen by the committee who qualify instantly, without waiting for round results.",
+    badge: "Golden",
+    count: (n: number) => `${n} Golden Buzzer participants`,
+    note: "Golden Buzzer participants have already qualified, so they no longer need your support.",
+    emptyTitle: "No Golden Buzzer yet",
+    emptyDescription: "Stay tuned for the committee's announcement.",
+  },
   gelombang: {
     schools: "schools",
     tabTopParticipants: "Participant Ranking",
@@ -468,6 +481,9 @@ const en: Dictionary = {
     voteSuccess: (points: number, name: string) => `+${points} submitted for ${name}`,
     eventClosed: "Event closed",
     qualifiedNoVote: "Already Qualified",
+    goldenNoVote: "Golden Buzzer",
+    goldenNotice:
+      "This participant was chosen as a Golden Buzzer and qualifies instantly, so they no longer accept support.",
     qualifiedNotice:
       "This participant has qualified for the next round and no longer accepts support. Their points are final.",
     support: "Support",

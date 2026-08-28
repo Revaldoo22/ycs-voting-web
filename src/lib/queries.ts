@@ -619,6 +619,41 @@ export type QualifiedParticipant = {
   points: number;
 };
 
+/** Peserta yang dipilih panitia sebagai Golden Buzzer (langsung lolos). */
+export type GoldenBuzzer = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  description: string | null;
+  total_points: number;
+  golden_buzzer_at: string | null;
+  school_id: string | null;
+  school_name: string;
+  region_name: string;
+  province_name: string;
+};
+
+/**
+ * Peserta yang sudah aman, lewat Golden Buzzer atau lolos gelombang.
+ * Dipakai endpoint gabungan /winners.
+ */
+export type Winner = {
+  via: "golden_buzzer" | "round";
+  participant_id: string;
+  participant_name: string;
+  photo_url: string | null;
+  description: string | null;
+  school_id: string | null;
+  school_name: string;
+  region_name: string;
+  province_name: string;
+  round_id: string | null;
+  round_name: string | null;
+  sequence: number | null;
+  points: number;
+  decided_at: string | null;
+};
+
 export type HeatmapRow = {
   region_id: string;
   region_name: string;
@@ -690,6 +725,36 @@ export function usePublicQualified(roundId?: string) {
       api<QualifiedParticipant[]>(
         `/api/public/qualified${qs({ round_id: roundId || undefined })}`,
       ),
+  });
+}
+
+/** Golden Buzzer untuk admin. */
+export function useGoldenBuzzers() {
+  return useQuery({
+    queryKey: ["golden-buzzer", "admin"],
+    queryFn: () =>
+      api<GoldenBuzzer[]>("/api/admin/participants/golden-buzzer"),
+  });
+}
+
+/** Golden Buzzer, versi publik. */
+export function usePublicGoldenBuzzers() {
+  return useQuery({
+    queryKey: ["golden-buzzer", "public"],
+    queryFn: () => api<GoldenBuzzer[]>("/api/public/golden-buzzer"),
+  });
+}
+
+/**
+ * Peserta yang sudah aman (Golden Buzzer + lolos gelombang).
+ * source: "all" | "golden_buzzer" | "round"; round: nama gelombang atau UUID.
+ */
+export function useWinners(opts: { source?: string; round?: string } = {}) {
+  const { source, round } = opts;
+  return useQuery({
+    queryKey: ["winners", source ?? "all", round ?? "all"],
+    queryFn: () =>
+      api<Winner[]>(`/api/admin/rounds/winners${qs({ source, round })}`),
   });
 }
 

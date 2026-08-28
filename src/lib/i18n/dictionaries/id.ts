@@ -12,6 +12,7 @@ const id = {
     ranking: "Ranking",
     gelombang: "Klasemen",
     lolos: "Peserta Lolos",
+    goldenBuzzer: "Golden Buzzer",
     logout: "Keluar",
     logoutSuccess: "Berhasil keluar.",
     panduan: "Panduan",
@@ -89,6 +90,8 @@ const id = {
     points: "poin",
     votedBadge: "Sudah Kamu Vote",
     qualifiedBadge: "Lolos",
+    goldenBadge: "Golden Buzzer",
+    goldenLabel: "Golden Buzzer",
     qualifiedLabel: "Sudah Lolos",
     pendingBadge: "Vote Menunggu Review",
     votedLabel: "Sudah kamu vote",
@@ -306,6 +309,16 @@ const id = {
     emptySearch: "Tidak ada yang cocok dengan pencarian",
     count: (n: number) => `${n} peserta lolos`,
   },
+  goldenBuzzer: {
+    title: "Golden Buzzer",
+    subtitle:
+      "Peserta pilihan panitia yang langsung lolos tanpa menunggu hasil gelombang.",
+    badge: "Golden",
+    count: (n: number) => `${n} peserta Golden Buzzer`,
+    note: "Peserta Golden Buzzer sudah lolos, jadi tidak perlu didukung lagi.",
+    emptyTitle: "Belum ada Golden Buzzer",
+    emptyDescription: "Nantikan pengumuman dari panitia.",
+  },
   gelombang: {
     schools: "sekolah",
     tabTopParticipants: "Peringkat Peserta",
@@ -466,6 +479,9 @@ const id = {
     voteSuccess: (points: number, name: string) => `+${points} terkirim untuk ${name}`,
     eventClosed: "Event ditutup",
     qualifiedNoVote: "Sudah Lolos",
+    goldenNoVote: "Golden Buzzer",
+    goldenNotice:
+      "Peserta ini terpilih sebagai Golden Buzzer dan langsung lolos, jadi tidak menerima dukungan lagi.",
     qualifiedNotice:
       "Peserta ini sudah lolos ke babak berikutnya, jadi tidak menerima dukungan lagi. Poinnya sudah final.",
     support: "Dukung",

@@ -1,13 +1,26 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Download, Medal, Trophy, XCircle } from "lucide-react";
+import {
+  ArrowLeftRight,
+  CheckCircle2,
+  Download,
+  Loader2,
+  Medal,
+  Trophy,
+  XCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { EmptyState, LoadingState } from "@/components/states";
 import { SelectBox } from "@/components/ui/select-box";
+import { useConfirm } from "@/components/confirm-dialog";
+import { api } from "@/lib/api-client";
 import {
   useQualified,
   useRounds,
@@ -156,12 +169,295 @@ export default function AdminHasilPage() {
         </>
       )}
 
+      {round && (
+        <SwapPanel
+          roundId={round.id}
+          roundName={round.name}
+          closed={closed}
+          lolos={lolos}
+          gugur={gugur.length ? gugur : belum}
+        />
+      )}
+
       <QualifiedAllRounds />
     </div>
   );
 }
 
 /* ---------- pieces ---------- */
+
+/**
+ * Tukar peserta lolos dengan peserta yang lanjut ke gelombang berikutnya.
+ * Bisa banyak pasang sekaligus: pilih N yang diturunkan dan N pengganti,
+ * jumlahnya harus sama supaya kuota lolos gelombang tidak berubah.
+ *
+ * Poin menyesuaikan otomatis: yang diturunkan masuk gelombang lanjut dengan
+ * carry 50% poin akhirnya, sama seperti penutupan normal.
+ */
+function SwapPanel({
+  roundId,
+  roundName,
+  closed,
+  lolos,
+  gugur,
+}: {
+  roundId: string;
+  roundName: string;
+  closed: boolean;
+  lolos: RoundStanding[];
+  gugur: RoundStanding[];
+}) {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+  const [demoteIds, setDemoteIds] = React.useState<string[]>([]);
+  const [promoteIds, setPromoteIds] = React.useState<string[]>([]);
+  const [busy, setBusy] = React.useState(false);
+
+  const balanced =
+    demoteIds.length > 0 && demoteIds.length === promoteIds.length;
+
+  // Total poin bawaan yang akan dibawa peserta turun ke gelombang berikutnya.
+  const carryTotal = React.useMemo(
+    () =>
+      lolos
+        .filter((r) => demoteIds.includes(r.participant_id))
+        .reduce((sum, r) => sum + Math.floor(r.points * 0.5), 0),
+    [lolos, demoteIds],
+  );
+
+  function submit() {
+    if (!balanced) return;
+    const demoted = lolos.filter((r) => demoteIds.includes(r.participant_id));
+    const promoted = gugur.filter((r) => promoteIds.includes(r.participant_id));
+    confirm({
+      title: `Tukar ${demoteIds.length} peserta lolos?`,
+      description:
+        `Naik jadi lolos: ${promoted.map((r) => r.participant_name).join(", ")}. ` +
+        `Turun jadi gugur: ${demoted.map((r) => r.participant_name).join(", ")}, ` +
+        `masuk gelombang berikutnya dengan poin dipotong 50%.` +
+        (closed
+          ? ` Perhatian: ${roundName} sudah ditutup dan hasilnya mungkin sudah diumumkan ke publik.`
+          : ""),
+      confirmText: "Tukar",
+      variant: closed ? "destructive" : "default",
+      onConfirm: async () => {
+        setBusy(true);
+        try {
+          const res = await api<{ swapped: number }>(
+            `/api/admin/rounds/${roundId}/swap-qualified`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                promote_ids: promoteIds,
+                demote_ids: demoteIds,
+              }),
+            },
+          );
+          toast.success(`${res.swapped} peserta berhasil ditukar.`);
+          setDemoteIds([]);
+          setPromoteIds([]);
+          qc.invalidateQueries({ queryKey: ["round-standings"] });
+          qc.invalidateQueries({ queryKey: ["qualified"] });
+          qc.invalidateQueries({ queryKey: ["winners"] });
+          qc.invalidateQueries({ queryKey: ["rounds"] });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Gagal menukar.");
+        } finally {
+          setBusy(false);
+        }
+      },
+    });
+  }
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-4 sm:p-6">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
+            <ArrowLeftRight className="h-5 w-5 text-primary" />
+            Tukar Peserta Lolos
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Ganti siapa yang lolos di {roundName}. Bisa beberapa sekaligus,
+            asal jumlah kedua sisi sama. Peserta yang diturunkan otomatis masuk
+            gelombang berikutnya dengan poin dipotong 50%.
+          </p>
+        </div>
+
+        {lolos.length === 0 ? (
+          <EmptyState
+            title="Belum ada peserta lolos di gelombang ini"
+            description="Tutup gelombang dulu untuk menetapkan yang lolos."
+          />
+        ) : (
+          <>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <PickList
+                label="Turunkan (sekarang lolos)"
+                tone="red"
+                rows={lolos}
+                selected={demoteIds}
+                onChange={setDemoteIds}
+              />
+              <PickList
+                label="Naikkan (belum lolos)"
+                tone="emerald"
+                rows={gugur}
+                selected={promoteIds}
+                onChange={setPromoteIds}
+              />
+            </div>
+
+            {(demoteIds.length > 0 || promoteIds.length > 0) && (
+              <div
+                className={cn(
+                  "rounded-xl border p-3 text-sm",
+                  balanced
+                    ? "border-primary/40 bg-primary/5"
+                    : "border-amber-400/50 bg-amber-50 text-amber-800",
+                )}
+              >
+                {balanced ? (
+                  <p>
+                    Siap menukar <b>{demoteIds.length}</b> peserta. Total poin
+                    bawaan yang dibawa ke gelombang berikutnya:{" "}
+                    <b>{formatNumber(carryTotal)}</b> poin.
+                  </p>
+                ) : (
+                  <p>
+                    Jumlah harus sama: <b>{promoteIds.length}</b> dinaikkan vs{" "}
+                    <b>{demoteIds.length}</b> diturunkan.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              variant={closed ? "destructive" : "default"}
+              onClick={submit}
+              disabled={busy || !balanced}
+            >
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              <ArrowLeftRight className="h-4 w-4" />
+              {balanced ? `Tukar ${demoteIds.length} Peserta` : "Tukar Sekarang"}
+            </Button>
+
+            {closed && (
+              <p className="text-xs text-amber-600">
+                {roundName} sudah ditutup. Perubahan langsung terlihat di
+                halaman publik.
+              </p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Daftar peserta dengan pencarian + centang banyak. */
+function PickList({
+  label,
+  tone,
+  rows,
+  selected,
+  onChange,
+}: {
+  label: string;
+  tone: "red" | "emerald";
+  rows: RoundStanding[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [q, setQ] = React.useState("");
+
+  const filtered = React.useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return rows;
+    return rows.filter(
+      (r) =>
+        r.participant_name.toLowerCase().includes(needle) ||
+        r.school_name.toLowerCase().includes(needle),
+    );
+  }, [rows, q]);
+
+  function toggle(id: string) {
+    onChange(
+      selected.includes(id)
+        ? selected.filter((x) => x !== id)
+        : [...selected, id],
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label>{label}</Label>
+        {selected.length > 0 && (
+          <button
+            onClick={() => onChange([])}
+            className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            Kosongkan ({selected.length})
+          </button>
+        )}
+      </div>
+      <Input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Cari nama peserta atau sekolah"
+      />
+      {filtered.length === 0 ? (
+        <p className="rounded-lg border border-dashed p-3 text-center text-sm text-muted-foreground">
+          Tidak ada yang cocok.
+        </p>
+      ) : (
+        <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+          {filtered.map((r) => {
+            const on = selected.includes(r.participant_id);
+            return (
+              <label
+                key={r.participant_id}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2.5 rounded-lg border p-2 text-sm transition-colors",
+                  on
+                    ? tone === "red"
+                      ? "border-red-300 bg-red-50/70"
+                      : "border-emerald-300 bg-emerald-50/70"
+                    : "hover:bg-muted/50",
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={on}
+                  onChange={() => toggle(r.participant_id)}
+                  className="h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium leading-tight">
+                    {r.participant_name}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {r.school_name}
+                  </span>
+                </span>
+                <span className="shrink-0 font-semibold tabular-nums text-primary">
+                  {formatNumber(r.points)}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        {rows.length} peserta
+        {q.trim() && ` · ${filtered.length} cocok`}
+        {selected.length > 0 && ` · ${selected.length} dipilih`}
+      </p>
+    </div>
+  );
+}
 
 /**
  * Rekap peserta lolos LINTAS gelombang, dengan keterangan lolos dari

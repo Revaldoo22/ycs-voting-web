@@ -153,4 +153,9 @@ export type ParticipantWithSchool = Participant & {
    * jadi tidak menerima vote lagi (backend menolak dengan ALREADY_QUALIFIED).
    */
   qualified?: boolean;
+  /**
+   * Dipilih panitia sebagai Golden Buzzer: langsung lolos, jadi tidak
+   * menerima vote lagi (backend menolak dengan GOLDEN_BUZZER).
+   */
+  golden_buzzer?: boolean;
 };

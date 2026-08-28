@@ -45,7 +45,7 @@ import {
   useSettings,
   useVoterToday,
 } from "@/lib/queries";
-import { CheckCircle2, ExternalLink, Medal } from "lucide-react";
+import { CheckCircle2, ExternalLink, Medal, Zap } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { getFingerprint } from "@/lib/fingerprint";
 import { compressImage } from "@/lib/image-compress";
@@ -148,9 +148,11 @@ export default function PublicParticipantPage({
       api<ParticipantWithSchool | null>(`/api/public/participants/${id}`),
   });
 
-  // Peserta yang sudah lolos gelombang berhenti berkompetisi: vote & quest
-  // ditutup (backend juga menolaknya dengan ALREADY_QUALIFIED).
-  const isQualified = !!participant?.qualified;
+  // Peserta yang sudah lolos gelombang atau Golden Buzzer berhenti
+  // berkompetisi: vote & quest ditutup (backend juga menolaknya dengan
+  // ALREADY_QUALIFIED / GOLDEN_BUZZER).
+  const isGolden = !!participant?.golden_buzzer;
+  const isQualified = !!participant?.qualified || isGolden;
 
   return (
     <div className="min-h-screen">
@@ -257,12 +259,17 @@ export default function PublicParticipantPage({
 
                 <ShareButton name={participant.name} />
 
-                {isQualified && (
+                {isGolden ? (
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm font-medium text-amber-700 dark:text-amber-400">
+                    <Zap className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{t.goldenNotice}</span>
+                  </div>
+                ) : isQualified ? (
                   <div className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                     <Medal className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{t.qualifiedNotice}</span>
                   </div>
-                )}
+                ) : null}
 
                 {votedThis ? (
                   <>
@@ -316,7 +323,13 @@ export default function PublicParticipantPage({
                     waFollowed={waFollowed || isParticipant}
                     gate={gate}
                     disabled={eventClosed || isQualified}
-                    disabledReason={isQualified ? t.qualifiedNoVote : undefined}
+                    disabledReason={
+                      isGolden
+                        ? t.goldenNoVote
+                        : isQualified
+                          ? t.qualifiedNoVote
+                          : undefined
+                    }
                     onVoted={() => {
                       refetch();
                       // Kupon undian sudah otomatis untuk peserta YCS / voter
