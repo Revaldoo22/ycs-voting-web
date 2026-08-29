@@ -187,9 +187,9 @@ export default function AdminHasilPage() {
 /* ---------- pieces ---------- */
 
 /**
- * Tukar peserta lolos dengan peserta yang lanjut ke gelombang berikutnya.
- * Bisa banyak pasang sekaligus: pilih N yang diturunkan dan N pengganti,
- * jumlahnya harus sama supaya kuota lolos gelombang tidak berubah.
+ * Ubah daftar peserta lolos satu gelombang: turunkan, naikkan, atau
+ * dua-duanya. Jumlah kedua sisi TIDAK harus sama, jadi panitia bisa sekadar
+ * mengurangi jumlah lolos (mis. 200 jadi 190) atau menambah.
  *
  * Poin menyesuaikan otomatis: yang diturunkan masuk gelombang lanjut dengan
  * carry 50% poin akhirnya, sama seperti penutupan normal.
@@ -213,8 +213,10 @@ function SwapPanel({
   const [promoteIds, setPromoteIds] = React.useState<string[]>([]);
   const [busy, setBusy] = React.useState(false);
 
-  const balanced =
-    demoteIds.length > 0 && demoteIds.length === promoteIds.length;
+  // Jumlah kedua sisi tak harus sama: boleh hanya menurunkan (mengurangi
+  // jumlah lolos) atau hanya menaikkan.
+  const hasPick = demoteIds.length > 0 || promoteIds.length > 0;
+  const lolosAfter = lolos.length - demoteIds.length + promoteIds.length;
 
   // Total poin bawaan yang akan dibawa peserta turun ke gelombang berikutnya.
   const carryTotal = React.useMemo(
@@ -226,24 +228,40 @@ function SwapPanel({
   );
 
   function submit() {
-    if (!balanced) return;
+    if (!hasPick) return;
     const demoted = lolos.filter((r) => demoteIds.includes(r.participant_id));
     const promoted = gugur.filter((r) => promoteIds.includes(r.participant_id));
-    confirm({
-      title: `Tukar ${demoteIds.length} peserta lolos?`,
-      description:
-        `Naik jadi lolos: ${promoted.map((r) => r.participant_name).join(", ")}. ` +
+    const parts: string[] = [];
+    if (promoted.length) {
+      parts.push(
+        `Naik jadi lolos: ${promoted.map((r) => r.participant_name).join(", ")}.`,
+      );
+    }
+    if (demoted.length) {
+      parts.push(
         `Turun jadi gugur: ${demoted.map((r) => r.participant_name).join(", ")}, ` +
-        `masuk gelombang berikutnya dengan poin dipotong 50%.` +
-        (closed
-          ? ` Perhatian: ${roundName} sudah ditutup dan hasilnya mungkin sudah diumumkan ke publik.`
-          : ""),
+          `masuk gelombang berikutnya dengan poin dipotong 50%.`,
+      );
+    }
+    parts.push(`Jumlah lolos jadi ${lolosAfter} peserta.`);
+    if (closed) {
+      parts.push(
+        `Perhatian: ${roundName} sudah ditutup dan hasilnya mungkin sudah diumumkan ke publik.`,
+      );
+    }
+    confirm({
+      title: "Ubah peserta lolos?",
+      description: parts.join(" "),
       confirmText: "Tukar",
       variant: closed ? "destructive" : "default",
       onConfirm: async () => {
         setBusy(true);
         try {
-          const res = await api<{ swapped: number }>(
+          const res = await api<{
+            promoted_count: number;
+            demoted_count: number;
+            lolos_total: number;
+          }>(
             `/api/admin/rounds/${roundId}/swap-qualified`,
             {
               method: "POST",
@@ -253,7 +271,10 @@ function SwapPanel({
               }),
             },
           );
-          toast.success(`${res.swapped} peserta berhasil ditukar.`);
+          toast.success(
+            `Selesai: ${res.promoted_count} naik, ${res.demoted_count} turun. ` +
+              `Jumlah lolos sekarang ${res.lolos_total}.`,
+          );
           setDemoteIds([]);
           setPromoteIds([]);
           qc.invalidateQueries({ queryKey: ["round-standings"] });
@@ -275,12 +296,12 @@ function SwapPanel({
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
             <ArrowLeftRight className="h-5 w-5 text-primary" />
-            Tukar Peserta Lolos
+            Atur Peserta Lolos
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Ganti siapa yang lolos di {roundName}. Bisa beberapa sekaligus,
-            asal jumlah kedua sisi sama. Peserta yang diturunkan otomatis masuk
-            gelombang berikutnya dengan poin dipotong 50%.
+            Ubah siapa yang lolos di {roundName}. Boleh menukar, atau hanya
+            menurunkan untuk mengurangi jumlah lolos. Peserta yang diturunkan
+            otomatis masuk gelombang berikutnya dengan poin dipotong 50%.
           </p>
         </div>
 
@@ -308,25 +329,27 @@ function SwapPanel({
               />
             </div>
 
-            {(demoteIds.length > 0 || promoteIds.length > 0) && (
-              <div
-                className={cn(
-                  "rounded-xl border p-3 text-sm",
-                  balanced
-                    ? "border-primary/40 bg-primary/5"
-                    : "border-amber-400/50 bg-amber-50 text-amber-800",
-                )}
-              >
-                {balanced ? (
-                  <p>
-                    Siap menukar <b>{demoteIds.length}</b> peserta. Total poin
-                    bawaan yang dibawa ke gelombang berikutnya:{" "}
-                    <b>{formatNumber(carryTotal)}</b> poin.
-                  </p>
-                ) : (
-                  <p>
-                    Jumlah harus sama: <b>{promoteIds.length}</b> dinaikkan vs{" "}
-                    <b>{demoteIds.length}</b> diturunkan.
+            {hasPick && (
+              <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm">
+                <p>
+                  {promoteIds.length > 0 && (
+                    <>
+                      <b>{promoteIds.length}</b> naik jadi lolos
+                      {demoteIds.length > 0 && ", "}
+                    </>
+                  )}
+                  {demoteIds.length > 0 && (
+                    <>
+                      <b>{demoteIds.length}</b> turun jadi gugur
+                    </>
+                  )}
+                  . Jumlah lolos: <b>{lolos.length}</b> &rarr;{" "}
+                  <b>{lolosAfter}</b> peserta.
+                </p>
+                {demoteIds.length > 0 && (
+                  <p className="mt-0.5 text-muted-foreground">
+                    Poin bawaan yang dibawa ke gelombang berikutnya:{" "}
+                    {formatNumber(carryTotal)} poin.
                   </p>
                 )}
               </div>
@@ -336,11 +359,13 @@ function SwapPanel({
               className="w-full"
               variant={closed ? "destructive" : "default"}
               onClick={submit}
-              disabled={busy || !balanced}
+              disabled={busy || !hasPick}
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               <ArrowLeftRight className="h-4 w-4" />
-              {balanced ? `Tukar ${demoteIds.length} Peserta` : "Tukar Sekarang"}
+              {hasPick
+                ? `Terapkan (lolos jadi ${lolosAfter})`
+                : "Pilih peserta dulu"}
             </Button>
 
             {closed && (
