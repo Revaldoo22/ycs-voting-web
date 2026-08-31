@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Heart,
   Info,
+  Layers,
   MessageCircle,
   Search,
   SearchX,
@@ -171,6 +172,7 @@ export function PanduanBody() {
     { href: "#untuk-pendukung", label: t.tocSupporter },
     { href: "#untuk-peserta", label: t.tocParticipant },
     { href: "#timeline", label: t.tocTimeline },
+    { href: "#akumulasi-slot", label: t.tocSlot },
     { href: "#faq-biaya", label: t.tocFaq },
     { href: "#bantuan", label: t.tocHelp },
   ];
@@ -218,6 +220,20 @@ export function PanduanBody() {
       t.scholarshipRuleDesc,
       t.groupRuleBold,
       t.groupRuleDesc,
+    ]),
+    "akumulasi-slot": flattenToSearchText([
+      t.slotTitle,
+      t.slotSubtitle,
+      t.slotIntro,
+      t.slotRuleTitle,
+      t.slotRuleDesc,
+      t.slotNotBurnedBold,
+      t.slotNotBurnedDesc,
+      t.slotExampleTitle,
+      t.slotExampleRows,
+      t.slotExampleResult,
+      t.slotNoteTitle,
+      t.slotNotes,
     ]),
     "faq-biaya": flattenToSearchText([t.faqTitle, t.faqSubtitle, t.faq]),
     bantuan: flattenToSearchText([
@@ -471,10 +487,66 @@ export function PanduanBody() {
               </div>
             </SectionCard>
 
-            {/* -------- 5. FAQ biaya: teks jawaban sinkron dengan FAQ_JSON_LD -------- */}
+            {/* ------------- 5. Akumulasi slot antar gelombang ------------- */}
+            <SectionCard
+              id="akumulasi-slot"
+              n={5}
+              icon={<Layers className="h-5 w-5 shrink-0 text-primary" />}
+              title={t.slotTitle}
+              desc={t.slotSubtitle}
+              hidden={!matches("akumulasi-slot")}
+            >
+              <p className="text-sm">{t.slotIntro}</p>
+
+              <div className="space-y-3 rounded-xl border bg-muted/40 p-4 text-sm">
+                <p className="font-semibold">{t.slotRuleTitle}</p>
+                <p className="text-muted-foreground">{t.slotRuleDesc}</p>
+                <p className="flex items-start gap-2">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>
+                    <b>{t.slotNotBurnedBold}</b> {t.slotNotBurnedDesc}
+                  </span>
+                </p>
+              </div>
+
+              {/* Contoh perhitungan */}
+              <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <p className="text-sm font-semibold text-primary">
+                  {t.slotExampleTitle}
+                </p>
+                <div className="space-y-2">
+                  {t.slotExampleRows.map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between gap-3 rounded-lg bg-background/70 px-3 py-2 text-sm"
+                    >
+                      <span className="text-muted-foreground">{row.label}</span>
+                      <span className="shrink-0 font-bold tabular-nums text-primary">
+                        {row.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm font-semibold">{t.slotExampleResult}</p>
+              </div>
+
+              <div className="space-y-2 rounded-xl border border-amber-400/40 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="flex items-center gap-2 font-bold">
+                  <Info className="h-4 w-4 shrink-0" />
+                  {t.slotNoteTitle}
+                </p>
+                {t.slotNotes.map((n) => (
+                  <p key={n} className="text-amber-900/90">
+                    {n}
+                  </p>
+                ))}
+              </div>
+            </SectionCard>
+
+            {/* -------- 6. FAQ biaya: teks jawaban sinkron dengan FAQ_JSON_LD -------- */}
             <SectionCard
               id="faq-biaya"
-              n={5}
+              n={6}
               icon={<Wallet className="h-5 w-5 shrink-0 text-emerald-600" />}
               title={t.faqTitle}
               desc={t.faqSubtitle}
@@ -491,10 +563,10 @@ export function PanduanBody() {
               </dl>
             </SectionCard>
 
-            {/* ------------------------- 6. Bantuan ------------------------- */}
+            {/* ------------------------- 7. Bantuan ------------------------- */}
             <SectionCard
               id="bantuan"
-              n={6}
+              n={7}
               icon={<Heart className="h-5 w-5 shrink-0 text-emerald-600" />}
               title={t.helpTitle}
               desc={t.helpDesc}

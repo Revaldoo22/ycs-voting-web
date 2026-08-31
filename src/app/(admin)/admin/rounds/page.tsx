@@ -221,9 +221,14 @@ export default function AdminRoundsPage() {
                             "id-ID",
                             { day: "numeric", month: "short", year: "numeric" },
                           )}
-                          {r.select_mode === "global"
-                            ? ` · top ${r.top_n} peserta nasional`
-                            : ` · top ${r.top_n} peserta/kab`}
+                          {` · top ${r.effective_quota ?? r.top_n} peserta`}
+                          {r.select_mode === "global" ? " nasional" : "/kab"}
+                          {!!r.carried_slots && r.carried_slots > 0 && (
+                            <span className="text-primary">
+                              {" "}
+                              ({r.top_n} + {r.carried_slots} akumulasi)
+                            </span>
+                          )}
                         </p>
                       )}
                     </TableCell>
@@ -470,7 +475,7 @@ function CloseDialog({
   const final = !!round?.is_final;
 
   React.useEffect(() => {
-    if (round) setTopN((round as Round & { top_n?: number }).top_n ?? 1);
+    if (round) setTopN(round.effective_quota ?? round.top_n ?? 1);
   }, [round]);
 
   async function submit() {
@@ -994,9 +999,7 @@ function ManageDialog({
             </div>
             <div className="space-y-1.5">
               <Label>
-                {selectMode === "global"
-                  ? "Jumlah peserta lolos (nasional)"
-                  : "Peserta lolos / kabupaten"}
+                Kuota dasar{selectMode === "global" ? "" : " / kabupaten"}
               </Label>
               <Input
                 type="number"
@@ -1006,6 +1009,17 @@ function ManageDialog({
                 onChange={(e) => setTopN(Number(e.target.value) || 1)}
                 disabled={closed}
               />
+              {!!round?.carried_slots && round.carried_slots > 0 ? (
+                <p className="text-xs text-primary">
+                  + {round.carried_slots} slot akumulasi dari gelombang
+                  sebelumnya, jadi kuota efektif{" "}
+                  <b>{round.effective_quota} peserta</b>.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Sisa slot gelombang sebelumnya otomatis ditambahkan ke sini.
+                </p>
+              )}
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

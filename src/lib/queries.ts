@@ -568,7 +568,16 @@ export type Round = {
   scheduled_close_at: string | null;
   select_mode: "per_region" | "global";
   sequence: number;
+  /** Kuota dasar yang diatur admin. */
   top_n: number;
+  /**
+   * Kuota efektif = top_n + sisa slot gelombang sebelumnya yang sudah
+   * ditutup. Dihitung ulang server tiap kali dibaca, jadi ikut menyesuaikan
+   * kalau panitia merevisi daftar lolos.
+   */
+  effective_quota?: number;
+  /** Sisa slot yang digulirkan dari gelombang sebelumnya. */
+  carried_slots?: number;
   created_at: string;
   /** Gelombang penutup: tak ada lanjutan setelah ini ditutup. */
   is_final: boolean;

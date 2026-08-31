@@ -158,4 +158,6 @@ export type ParticipantWithSchool = Participant & {
    * menerima vote lagi (backend menolak dengan GOLDEN_BUZZER).
    */
   golden_buzzer?: boolean;
+  /** Nama gelombang tempat dia lolos. Null untuk Golden Buzzer. */
+  qualified_round_name?: string | null;
 };

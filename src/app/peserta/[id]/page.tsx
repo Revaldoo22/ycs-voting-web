@@ -49,7 +49,7 @@ import { CheckCircle2, ExternalLink, Medal, Zap } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { getFingerprint } from "@/lib/fingerprint";
 import { compressImage } from "@/lib/image-compress";
-import { formatNumber, trackEvent } from "@/lib/utils";
+import { cn, formatNumber, trackEvent } from "@/lib/utils";
 import { voterInfoSchema } from "@/lib/validations";
 import {
   VoterFormFields,
@@ -259,19 +259,14 @@ export default function PublicParticipantPage({
 
                 <ShareButton name={participant.name} />
 
-                {isGolden ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm font-medium text-amber-700 dark:text-amber-400">
-                    <Zap className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>{t.goldenNotice}</span>
-                  </div>
-                ) : isQualified ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                    <Medal className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>{t.qualifiedNotice}</span>
-                  </div>
-                ) : null}
-
-                {votedThis ? (
+                {/* Peserta yang sudah aman: seluruh area vote diganti panel
+                    perayaan, tak ada tombol dukung sama sekali. */}
+                {isGolden || isQualified ? (
+                  <WinnerBanner
+                    kind={isGolden ? "golden" : "round"}
+                    roundName={participant.qualified_round_name}
+                  />
+                ) : votedThis ? (
                   <>
                   {votePending ? (
                     <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/50 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-600 dark:text-amber-400">
@@ -506,6 +501,90 @@ function ShareButton({ name }: { name: string }) {
     <Button variant="outline" className="w-full" onClick={share}>
       <Share2 className="h-4 w-4" /> {t.shareProfile}
     </Button>
+  );
+}
+
+/**
+ * Panel perayaan untuk peserta yang sudah aman. Menggantikan seluruh area
+ * vote & quest: peserta ini tidak menerima dukungan lagi, jadi menampilkan
+ * tombol yang mati hanya bikin bingung.
+ */
+function WinnerBanner({
+  kind,
+  roundName,
+}: {
+  kind: "golden" | "round";
+  roundName?: string | null;
+}) {
+  const t = useTranslation("peserta");
+  const golden = kind === "golden";
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border-2 p-6 text-center",
+        golden
+          ? "border-amber-400/70 bg-gradient-to-b from-amber-50 to-amber-100/40 dark:from-amber-500/10 dark:to-amber-500/5"
+          : "border-emerald-500/50 bg-gradient-to-b from-emerald-50 to-emerald-100/40 dark:from-emerald-500/10 dark:to-emerald-500/5",
+      )}
+    >
+      {/* Cahaya latar, murni hiasan */}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute -top-16 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full blur-3xl",
+          golden ? "bg-amber-400/30" : "bg-emerald-400/25",
+        )}
+      />
+
+      <div className="relative space-y-3">
+        <span
+          className={cn(
+            "mx-auto flex h-16 w-16 items-center justify-center rounded-full shadow-lg",
+            golden
+              ? "bg-gradient-to-br from-amber-400 to-yellow-300 shadow-amber-400/40"
+              : "bg-gradient-to-br from-emerald-500 to-teal-400 shadow-emerald-500/40",
+          )}
+        >
+          {golden ? (
+            <Zap className="h-8 w-8 text-white" />
+          ) : (
+            <Medal className="h-8 w-8 text-white" />
+          )}
+        </span>
+
+        <div>
+          <p
+            className={cn(
+              "text-xl font-extrabold tracking-tight",
+              golden
+                ? "text-amber-700 dark:text-amber-400"
+                : "text-emerald-700 dark:text-emerald-400",
+            )}
+          >
+            {golden ? t.goldenCelebrateTitle : t.qualifiedCelebrateTitle}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {golden
+              ? t.goldenCelebrateDesc
+              : t.qualifiedCelebrateDesc(roundName ?? "")}
+          </p>
+        </div>
+
+        <p
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold",
+            golden
+              ? "bg-amber-500 text-white"
+              : "bg-emerald-600 text-white",
+          )}
+        >
+          <BadgeCheck className="h-3.5 w-3.5" />
+          {golden ? t.goldenBadgeBig : t.qualifiedBadgeBig}
+        </p>
+
+      </div>
+    </div>
   );
 }
 

@@ -303,6 +303,15 @@ const en: Dictionary = {
   },
   lolos: {
     title: "Qualified Participants",
+    pointsLabel: "pts",
+    slotNote: (
+      lolos: number,
+      quota: number,
+      leftover: number,
+      nextName: string,
+      nextTotal: number,
+    ) =>
+      `${lolos} participants qualified out of ${quota} slots. The remaining ${leftover} slots are not forfeited but carried over to ${nextName}, making its quota ${nextTotal} slots.`,
     subtitle:
       "Participants who qualified in each round. Pick a round to see its list.",
     emptyTitle: "No qualified participants yet",
@@ -314,10 +323,12 @@ const en: Dictionary = {
   goldenBuzzer: {
     title: "Golden Buzzer",
     subtitle:
-      "Participants chosen by the committee who qualify instantly, without waiting for round results.",
+      "Participants chosen by the committee or judges for their unique, inspiring, and special qualities.",
     badge: "Golden",
     count: (n: number) => `${n} Golden Buzzer participants`,
-    note: "Golden Buzzer participants have already qualified, so they no longer need your support.",
+    note:
+      "The Golden Buzzer is awarded to participants chosen directly by the committee or judges for their unique, inspiring, and special qualities, and for being good role models for many people.",
+    congrats: "Congratulations to our Golden Buzzer winners!",
     emptyTitle: "No Golden Buzzer yet",
     emptyDescription: "Stay tuned for the committee's announcement.",
   },
@@ -480,12 +491,18 @@ const en: Dictionary = {
       "Coupon claim submitted! Your follow proof is being reviewed by the admin.",
     voteSuccess: (points: number, name: string) => `+${points} submitted for ${name}`,
     eventClosed: "Event closed",
+    goldenCelebrateTitle: "Golden Buzzer!",
+    goldenCelebrateDesc:
+      "This participant was chosen directly by the committee and advances to the next stage.",
+    goldenBadgeBig: "Golden Buzzer Winner",
+    qualifiedCelebrateTitle: "Congratulations, Qualified!",
+    qualifiedCelebrateDesc: (round: string) =>
+      round
+        ? `This participant qualified in ${round} and advances to the next stage.`
+        : "This participant qualified and advances to the next stage.",
+    qualifiedBadgeBig: "Round Qualifier",
     qualifiedNoVote: "Already Qualified",
     goldenNoVote: "Golden Buzzer",
-    goldenNotice:
-      "This participant was chosen as a Golden Buzzer and qualifies instantly, so they no longer accept support.",
-    qualifiedNotice:
-      "This participant has qualified for the next round and no longer accepts support. Their points are final.",
     support: "Support",
     followTaskDialogTitle: "Claim Your Smartphone Raffle Coupon",
     followTaskDialogDescription: (n: number) =>
@@ -581,6 +598,7 @@ const en: Dictionary = {
     tocSupporter: "For General Supporters",
     tocParticipant: "For YCS Participants",
     tocTimeline: "YCS 2026 Timeline",
+    tocSlot: "Slot Accumulation",
     tocFaq: "Fee FAQ",
     tocHelp: "Help",
     searchPlaceholder: "Search this guide...",
@@ -688,7 +706,7 @@ const en: Dictionary = {
     ],
     goldenBuzzerBold: "Golden Buzzer",
     goldenBuzzerDesc:
-      "is a participant selected directly by the committee or judges for having a unique, inspiring, special quality, and who can be a good role model for many people.",
+      "is a participant selected directly by the committee or judges for having a unique, inspiring, special quality, and who can be a good role model for many people. Golden Buzzer participants qualify immediately, so they no longer receive support and their points are final.",
     semiFinalSelectionBold: "Further semi-finalist selection:",
     semiFinalSelectionDesc:
       "creating a Twibbon and a sample #AksiBaik campaign video at school, followed by a questionnaire test guided via a Zoom online meeting.",
@@ -698,6 +716,33 @@ const en: Dictionary = {
     groupRuleBold: "About Group A, B, and C:",
     groupRuleDesc:
       "these are just names for announcement phases. Participants who pass each phase are chosen from that month's registrants plus earlier registrants who haven't passed yet, so every registrant has an equal chance. Not selected this month? Your data automatically joins next month's selection.",
+    slotTitle: "Selection Results & Slot Accumulation",
+    slotSubtitle:
+      "Unfilled slots in one round are not forfeited, they carry over to the next round.",
+    slotIntro:
+      "To give participants a wider chance, the selection uses a slot accumulation scheme when a period's quota is not fully filled.",
+    slotRuleTitle: "How the scheme works",
+    slotRuleDesc:
+      "Each selection period has a set quota of participants who can qualify. Once selection and validation are complete, the number of participants meeting the requirements is compared against the available quota.",
+    slotNotBurnedBold: "Unfilled slots are not forfeited.",
+    slotNotBurnedDesc:
+      "If slots remain empty because participants are found invalid, cannot be reached, do not attend the selection stages, do not take the test on schedule, or for other reasons under the rules, those slots carry over to the next period's quota.",
+    slotExampleTitle: "Worked example",
+    slotExampleRows: [
+      { label: "August selection quota", value: "200 participants" },
+      { label: "Participants meeting requirements", value: "140 participants" },
+      { label: "Remaining slots (200 - 140)", value: "60 slots" },
+      { label: "Normal September quota", value: "200 participants" },
+      { label: "Slots carried over from August", value: "+60 slots" },
+    ],
+    slotExampleResult:
+      "The September selection quota becomes 260 participants.",
+    slotNoteTitle: "Important notes",
+    slotNotes: [
+      "Slot accumulation does not mean participants who did not qualify in an earlier period automatically qualify in the next one.",
+      "Every participant must still go through the selection process and meet all requirements that apply in that period.",
+      "Participants who did not succeed in one period may still take part in the next period's selection under the applicable rules.",
+    ],
     faqTitle: "Frequently Asked Questions About Registration Fees",
     faqSubtitle: "Quick answers about Youth Character Summit 2026 fees.",
     faq: [

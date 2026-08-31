@@ -114,7 +114,7 @@ export default function AdminHasilPage() {
             <StatTile label="Peserta" value={rows.length} />
             <StatTile
               label={closed ? "Lolos" : "Kuota lolos"}
-              value={closed ? lolos.length : round.top_n}
+              value={closed ? lolos.length : (round.effective_quota ?? round.top_n)}
               tone="emerald"
             />
             <StatTile
@@ -134,14 +134,21 @@ export default function AdminHasilPage() {
                     <b>{round.name}</b> belum ditutup, ini peringkat sementara.
                     Lolos/gugur ditetapkan saat ditutup{" "}
                     {round.select_mode === "global"
-                      ? `(top ${round.top_n} nasional)`
-                      : `(top ${round.top_n} per kabupaten)`}
+                      ? `(top ${round.effective_quota ?? round.top_n} nasional)`
+                      : `(top ${round.effective_quota ?? round.top_n} per kabupaten)`}
+                    {!!round.carried_slots && round.carried_slots > 0 && (
+                      <>
+                        {" "}
+                        — sudah termasuk {round.carried_slots} slot akumulasi
+                        dari gelombang sebelumnya
+                      </>
+                    )}
                     .
                   </p>
                 </div>
                 <RankList
                   rows={belum.length ? belum : rows}
-                  topN={round.top_n}
+                  topN={round.effective_quota ?? round.top_n}
                   mode={round.select_mode}
                   view={view}
                   provisional
