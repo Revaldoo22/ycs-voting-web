@@ -57,9 +57,8 @@ export default function PublicQualifiedPage() {
     const quota = current.effective_quota ?? current.top_n;
     if (!quota) return null;
 
-    // lolos_count dari server sudah termasuk Golden Buzzer yang slotnya
-    // berasal dari gelombang ini, jadi jangan dihitung dari daftar (daftar
-    // sengaja tidak memuat Golden Buzzer).
+    // Golden Buzzer jalur terpisah dan TIDAK memakai slot gelombang, jadi
+    // slot terpakai murni jumlah peserta yang lolos lewat gelombang ini.
     const lolosCount =
       current.lolos_count ?? rows.filter((r) => r.round_id === round).length;
     const leftover = quota - lolosCount;
