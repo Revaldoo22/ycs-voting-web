@@ -578,12 +578,16 @@ export type Round = {
   effective_quota?: number;
   /** Sisa slot yang digulirkan dari gelombang sebelumnya. */
   carried_slots?: number;
+  /**
+   * Slot terpakai: peserta lolos lewat gelombang + Golden Buzzer yang
+   * slotnya berasal dari gelombang ini.
+   */
+  lolos_count?: number;
   created_at: string;
   /** Gelombang penutup: tak ada lanjutan setelah ini ditutup. */
   is_final: boolean;
   participant_count?: number;
   school_count?: number;
-  lolos_count?: number;
   total_points?: number;
 };
 
