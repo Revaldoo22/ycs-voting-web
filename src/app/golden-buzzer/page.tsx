@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/states";
 import { usePublicGoldenBuzzers, type GoldenBuzzer } from "@/lib/queries";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
 export default function PublicGoldenBuzzerPage() {
@@ -128,13 +128,6 @@ function BuzzerCard({ g, label }: { g: GoldenBuzzer; label: string }) {
               {g.region_name}
             </p>
           </div>
-
-          <p className="text-lg font-extrabold text-amber-600">
-            {formatNumber(g.total_points)}
-            <span className="ml-1 text-xs font-medium text-muted-foreground">
-              poin
-            </span>
-          </p>
         </CardContent>
       </Card>
     </Link>
