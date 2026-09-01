@@ -20,7 +20,7 @@ const id = {
   },
   authNav: {
     logoutSuccess: "Berhasil keluar.",
-    login: "Masuk",
+    login: "Vote Sekarang",
     supporterFallback: "Pendukung",
     participantBadge: "Peserta",
     adminDashboard: "Dashboard Admin",
@@ -329,6 +329,21 @@ const id = {
     congrats: "Selamat kepada para Golden Buzzer!",
     emptyTitle: "Belum ada Golden Buzzer",
     emptyDescription: "Nantikan pengumuman dari panitia.",
+  },
+  joinPopup: {
+    title: "Mau Jadi Peserta YCS 2026?",
+    desc: "Pendaftaran masih dibuka. Kumpulkan dukungan, raih beasiswa, dan jadi Duta Teladan Universitas STEKOM.",
+    freeBadge: "Gratis - Rp0 biaya pendaftaran",
+    cta: "Daftar Jadi Peserta",
+    later: "Nanti saja",
+    close: "Tutup",
+    helpToggle: "Apa bedanya peserta dan voter?",
+    roleParticipant: "Peserta",
+    roleParticipantDesc:
+      "yang dinilai dan bersaing di kompetisi. Kamu punya halaman sendiri, dikumpulkan dukungannya, dan berpeluang lolos ke babak berikutnya untuk memperebutkan beasiswa serta hadiah.",
+    roleVoter: "Voter",
+    roleVoterDesc:
+      "yang memberi dukungan ke peserta favorit. Kamu tidak ikut dinilai, tapi tetap dapat kupon undian berhadiah handphone setiap kali mendukung dan memenuhi syaratnya.",
   },
   gelombang: {
     schools: "sekolah",

@@ -22,7 +22,7 @@ const en: Dictionary = {
   },
   authNav: {
     logoutSuccess: "Logged out successfully.",
-    login: "Log in",
+    login: "Vote Now",
     supporterFallback: "Supporter",
     participantBadge: "Participant",
     adminDashboard: "Admin Dashboard",
@@ -331,6 +331,21 @@ const en: Dictionary = {
     congrats: "Congratulations to our Golden Buzzer winners!",
     emptyTitle: "No Golden Buzzer yet",
     emptyDescription: "Stay tuned for the committee's announcement.",
+  },
+  joinPopup: {
+    title: "Want to Join YCS 2026?",
+    desc: "Registration is still open. Collect support, win a scholarship, and become a Universitas STEKOM Role Model.",
+    freeBadge: "Free - Rp0 registration fee",
+    cta: "Register as a Participant",
+    later: "Maybe later",
+    close: "Close",
+    helpToggle: "What is the difference between a participant and a voter?",
+    roleParticipant: "Participant",
+    roleParticipantDesc:
+      "the one being judged and competing. You get your own page, collect support, and can qualify for the next stage to compete for scholarships and prizes.",
+    roleVoter: "Voter",
+    roleVoterDesc:
+      "the one supporting a favorite participant. You are not judged, but you still earn raffle coupons for a smartphone each time you support and meet the requirements.",
   },
   gelombang: {
     schools: "schools",

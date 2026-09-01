@@ -102,8 +102,11 @@ export default function RootLayout({
             </Script>
           </>
         )}
+        {/* id script JANGAN "clarity": browser membuat window.<id> untuk tiap
+            elemen ber-id, sehingga elemen script-nya menimpa window.clarity
+            yang dipakai library, dan tag-nya gagal berjalan. */}
         {CLARITY_ID && (
-          <Script id="clarity" strategy="afterInteractive">
+          <Script id="ms-clarity" strategy="afterInteractive">
             {`
               (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

@@ -39,7 +39,8 @@ export function Navbar({
   // Menu publik standar, SATU sumber, dipakai semua halaman publik.
   const publicLinks: NavLink[] = [
     { href: "/", label: t.home, icon: Home },
-    { href: "/ranking", label: t.ranking },
+    // Ranking disembunyikan dari menu. Halamannya tetap hidup, jadi tautan
+    // lama masih bisa dibuka.
     { href: "/gelombang", label: t.gelombang },
     { href: "/lolos", label: t.lolos },
     { href: "/golden-buzzer", label: t.goldenBuzzer },

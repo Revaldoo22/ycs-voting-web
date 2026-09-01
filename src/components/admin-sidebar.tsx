@@ -16,6 +16,7 @@ import {
   MapPin,
   Medal,
   Menu,
+  Megaphone,
   MoreHorizontal,
   School,
   ScrollText,
@@ -72,6 +73,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/kupon", label: "Daftar Kupon", icon: Ticket },
       { href: "/admin/undian", label: "Undian", icon: Gift },
+      { href: "/admin/pengumuman", label: "Pengumuman", icon: Megaphone },
       { href: "/admin/setting", label: "Pengaturan", icon: Settings },
       { href: "/admin/log", label: "Log Aktivitas", icon: ScrollText },
     ],
