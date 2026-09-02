@@ -125,14 +125,19 @@ export interface AdminStats {
   bot_votes: number;
 
   /**
-   * Corong akun. Tiap tahap adalah himpunan bagian dari tahap sebelumnya
-   * (punya akun > onboarding > pernah vote), jadi jangan dijumlahkan.
+   * Corong VOTER MURNI: akun yang bukan peserta. Tiap tahap himpunan bagian
+   * dari tahap sebelumnya (punya akun > onboarding > pernah vote), jadi
+   * jangan dijumlahkan.
    */
   accounts_total: number;
   accounts_onboarded: number;
   accounts_not_onboarded: number;
   accounts_voted: number;
   accounts_onboarded_no_vote: number;
+  /** Akun peserta, dihitung terpisah dari corong voter. */
+  participant_accounts: number;
+  /** Peserta yang ikut mendukung peserta lain. */
+  participant_accounts_voted: number;
   /** Vote dari nomor yang tak punya akun terdaftar (mis. data lama). */
   voters_without_account: number;
 

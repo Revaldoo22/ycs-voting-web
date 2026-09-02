@@ -71,7 +71,7 @@ function StatCard({
   const t = TONES[tone];
   return (
     <Card className="card-lift relative overflow-hidden">
-      <CardContent className="relative flex items-center gap-3.5 p-5">
+      <CardContent className="relative flex items-start gap-3.5 p-5">
         <div
           className={cn(
             "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
@@ -88,7 +88,7 @@ function StatCard({
             {value}
           </p>
           {detail && (
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
               {detail}
             </p>
           )}
@@ -120,7 +120,7 @@ function FunnelCard({ stats }: { stats?: AdminStats }) {
     {
       label: "Selesai onboarding",
       value: stats?.accounts_onboarded ?? 0,
-      desc: "wizard selesai (peserta bisa vote tanpa ini)",
+      desc: "data diri lengkap, siap vote",
       bar: "bg-sky-500",
     },
     {
@@ -150,12 +150,11 @@ function FunnelCard({ stats }: { stats?: AdminStats }) {
         <div>
           <p className="flex items-center gap-2 font-bold tracking-tight">
             <Filter className="h-4 w-4 text-primary" />
-            Corong Akun
+            Corong Voter
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Angkanya tidak dijumlahkan. Peserta dari web pendaftaran bisa vote
-            tanpa onboarding, jadi tahap pernah vote bisa melebihi tahap di
-            atasnya.
+            Hanya voter murni, di luar akun peserta. Tiap tahap bagian dari
+            tahap sebelumnya, jadi angkanya tidak dijumlahkan.
           </p>
         </div>
 
@@ -219,6 +218,27 @@ function FunnelCard({ stats }: { stats?: AdminStats }) {
               </span>
             </div>
           )}
+        </div>
+
+        {/* Peserta di luar corong: mereka juga bisa mendukung peserta lain,
+            tapi bukan pendukung dari luar jadi tak dicampur. */}
+        <div className="space-y-2 border-t pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Di luar corong: akun peserta
+          </p>
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-indigo-500/25 bg-indigo-500/5 px-3 py-2">
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">
+                Peserta yang ikut mendukung
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                dari {formatNumber(stats?.participant_accounts)} akun peserta
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-bold tabular-nums text-indigo-600">
+              {formatNumber(stats?.participant_accounts_voted)}
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -319,7 +339,7 @@ export default function AdminDashboard() {
             value={formatNumber(stats?.total_voters)}
             tone="violet"
             detail={
-              <>{formatNumber(stats?.onboarded_voters)} punya akun terdaftar</>
+              <>{formatNumber(stats?.onboarded_voters)} punya akun</>
             }
           />
           <StatCard
@@ -341,7 +361,7 @@ export default function AdminDashboard() {
             tone="amber"
             detail={
               stats?.bot_votes ? (
-                <>termasuk {formatNumber(stats.bot_votes)} poin boost admin</>
+                <>termasuk {formatNumber(stats.bot_votes)} dari boost</>
               ) : undefined
             }
           />
@@ -351,20 +371,20 @@ export default function AdminDashboard() {
       {/* Rincian kelolosan & klaim kupon: angka yang sering ditanyakan
           panitia tapi tidak muat di kartu utama. */}
       {!isLoading && !isError && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             icon={Medal}
             label="Lolos Gelombang"
             value={formatNumber(stats?.qualified_participants)}
             tone="emerald"
-            detail={<>tidak termasuk Golden Buzzer</>}
+            detail={<>di luar Golden Buzzer</>}
           />
           <StatCard
             icon={Zap}
             label="Golden Buzzer"
             value={formatNumber(stats?.golden_buzzers)}
             tone="amber"
-            detail={<>dipilih panitia, lepas dari gelombang</>}
+            detail={<>dipilih panitia</>}
           />
           <StatCard
             icon={Ticket}
@@ -377,13 +397,6 @@ export default function AdminDashboard() {
                 {formatNumber(stats?.rejected_claims)} ditolak
               </>
             }
-          />
-          <StatCard
-            icon={School}
-            label="Total Sekolah"
-            value={formatNumber(stats?.total_schools)}
-            tone="violet"
-            detail={<>sekolah yang punya peserta</>}
           />
         </div>
       )}
