@@ -111,7 +111,7 @@ export default function AdminPengumumanPage() {
               {formatNumber(audience?.total_akun ?? 0)}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              sudah menyelesaikan wizard
+              termasuk yang belum onboarding
             </p>
           </CardContent>
         </Card>

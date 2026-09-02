@@ -120,7 +120,7 @@ function FunnelCard({ stats }: { stats?: AdminStats }) {
     {
       label: "Selesai onboarding",
       value: stats?.accounts_onboarded ?? 0,
-      desc: "data diri lengkap, siap vote",
+      desc: "wizard selesai (peserta bisa vote tanpa ini)",
       bar: "bg-sky-500",
     },
     {
@@ -153,8 +153,8 @@ function FunnelCard({ stats }: { stats?: AdminStats }) {
             Corong Akun
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Tiap tahap bagian dari tahap sebelumnya, jadi angkanya tidak
-            dijumlahkan.
+            Angkanya tidak dijumlahkan. Peserta dari web pendaftaran bisa vote
+            tanpa onboarding, jadi "pernah vote" bisa melebihi tahap di atasnya.
           </p>
         </div>
 
