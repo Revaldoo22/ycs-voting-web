@@ -154,7 +154,8 @@ function FunnelCard({ stats }: { stats?: AdminStats }) {
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Angkanya tidak dijumlahkan. Peserta dari web pendaftaran bisa vote
-            tanpa onboarding, jadi "pernah vote" bisa melebihi tahap di atasnya.
+            tanpa onboarding, jadi tahap pernah vote bisa melebihi tahap di
+            atasnya.
           </p>
         </div>
 
