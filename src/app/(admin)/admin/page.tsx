@@ -3,15 +3,19 @@
 import * as React from "react";
 import {
   BarChart3,
+  Filter,
   Flame,
   GraduationCap,
   MapPin,
+  Medal,
   School,
   Target,
   ThumbsUp,
+  Ticket,
   TrendingUp,
   Trophy,
   Users,
+  Zap,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -30,6 +34,7 @@ import {
   useVoterGrowth,
   type SeriesRange,
 } from "@/lib/queries";
+import type { AdminStats } from "@/types/database";
 import { formatNumber } from "@/lib/utils";
 import { EventToggle } from "@/components/event-toggle";
 import { RegionHeatmap } from "@/components/region-heatmap";
@@ -54,11 +59,14 @@ function StatCard({
   label,
   value,
   tone,
+  detail,
 }: {
   icon: React.ElementType;
   label: string;
   value: React.ReactNode;
   tone: Tone;
+  /** Rincian kecil di bawah angka, mis. berapa disetujui vs ditolak. */
+  detail?: React.ReactNode;
 }) {
   const t = TONES[tone];
   return (
@@ -79,6 +87,137 @@ function StatCard({
           <p className="text-2xl font-extrabold tabular-nums tracking-tight">
             {value}
           </p>
+          {detail && (
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+              {detail}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Corong akun: dari punya akun sampai benar-benar vote. Tiap tahap adalah
+ * himpunan bagian dari tahap sebelumnya, jadi ditampilkan sebagai bar yang
+ * mengecil, bukan kartu terpisah yang mengesankan angka berdiri sendiri.
+ *
+ * Baris "berhenti di sini" memakai warna redup supaya panitia langsung
+ * melihat di tahap mana orang paling banyak tersaring.
+ */
+function FunnelCard({ stats }: { stats?: AdminStats }) {
+  const total = stats?.accounts_total ?? 0;
+  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+  const steps = [
+    {
+      label: "Punya akun",
+      value: stats?.accounts_total ?? 0,
+      desc: "login Google atau nomor WA",
+      bar: "bg-violet-500",
+    },
+    {
+      label: "Selesai onboarding",
+      value: stats?.accounts_onboarded ?? 0,
+      desc: "data diri lengkap, siap vote",
+      bar: "bg-sky-500",
+    },
+    {
+      label: "Pernah vote",
+      value: stats?.accounts_voted ?? 0,
+      desc: "benar-benar memberi dukungan",
+      bar: "bg-emerald-500",
+    },
+  ];
+
+  const drops = [
+    {
+      label: "Belum onboarding",
+      value: stats?.accounts_not_onboarded ?? 0,
+      desc: "punya akun tapi wizard belum selesai",
+    },
+    {
+      label: "Onboarding tapi belum vote",
+      value: stats?.accounts_onboarded_no_vote ?? 0,
+      desc: "sudah siap, tinggal diajak vote",
+    },
+  ];
+
+  return (
+    <Card className="card-lift">
+      <CardContent className="space-y-5 p-5 sm:p-6">
+        <div>
+          <p className="flex items-center gap-2 font-bold tracking-tight">
+            <Filter className="h-4 w-4 text-primary" />
+            Corong Akun
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Tiap tahap bagian dari tahap sebelumnya, jadi angkanya tidak
+            dijumlahkan.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {steps.map((s) => (
+            <div key={s.label}>
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-sm font-medium">{s.label}</p>
+                <p className="shrink-0 text-sm font-bold tabular-nums">
+                  {formatNumber(s.value)}
+                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                    {pct(s.value)}%
+                  </span>
+                </p>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={cn("h-full rounded-full transition-all", s.bar)}
+                  style={{ width: `${Math.max(pct(s.value), 1)}%` }}
+                />
+              </div>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {s.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-2 border-t pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Berhenti di tengah jalan
+          </p>
+          {drops.map((d) => (
+            <div
+              key={d.label}
+              className="flex items-start justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2"
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">{d.label}</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {d.desc}
+                </span>
+              </span>
+              <span className="shrink-0 text-sm font-bold tabular-nums text-amber-600">
+                {formatNumber(d.value)}
+              </span>
+            </div>
+          ))}
+          {!!stats?.voters_without_account && (
+            <div className="flex items-start justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">
+                  Vote tanpa akun
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  nomor yang vote tapi tak punya akun terdaftar
+                </span>
+              </span>
+              <span className="shrink-0 text-sm font-bold tabular-nums text-muted-foreground">
+                {formatNumber(stats.voters_without_account)}
+              </span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -161,30 +300,94 @@ export default function AdminDashboard() {
           />
           <StatCard
             icon={GraduationCap}
-            label="Total Peserta"
-            value={formatNumber(stats?.total_participants)}
+            label="Peserta Aktif"
+            value={formatNumber(stats?.active_participants)}
             tone="indigo"
+            detail={
+              <>
+                {formatNumber(stats?.participants_with_points)} punya poin
+                {!!stats?.inactive_participants && (
+                  <> &middot; {formatNumber(stats.inactive_participants)} nonaktif</>
+                )}
+              </>
+            }
           />
           <StatCard
             icon={Users}
             label="Total Voter"
             value={formatNumber(stats?.total_voters)}
             tone="violet"
+            detail={
+              <>{formatNumber(stats?.onboarded_voters)} punya akun terdaftar</>
+            }
           />
           <StatCard
             icon={ThumbsUp}
-            label="Total Vote"
-            value={formatNumber(stats?.total_votes)}
+            label="Vote Disetujui"
+            value={formatNumber(stats?.approved_votes)}
             tone="emerald"
+            detail={
+              <>
+                {formatNumber(stats?.pending_votes)} menunggu &middot;{" "}
+                {formatNumber(stats?.rejected_votes)} ditolak
+              </>
+            }
           />
           <StatCard
             icon={Trophy}
             label="Total Poin"
             value={formatNumber(stats?.total_points)}
             tone="amber"
+            detail={
+              stats?.bot_votes ? (
+                <>termasuk {formatNumber(stats.bot_votes)} poin boost admin</>
+              ) : undefined
+            }
           />
         </div>
       )}
+
+      {/* Rincian kelolosan & klaim kupon: angka yang sering ditanyakan
+          panitia tapi tidak muat di kartu utama. */}
+      {!isLoading && !isError && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            icon={Medal}
+            label="Lolos Gelombang"
+            value={formatNumber(stats?.qualified_participants)}
+            tone="emerald"
+            detail={<>tidak termasuk Golden Buzzer</>}
+          />
+          <StatCard
+            icon={Zap}
+            label="Golden Buzzer"
+            value={formatNumber(stats?.golden_buzzers)}
+            tone="amber"
+            detail={<>dipilih panitia, lepas dari gelombang</>}
+          />
+          <StatCard
+            icon={Ticket}
+            label="Kupon Disetujui"
+            value={formatNumber(stats?.approved_claims)}
+            tone="sky"
+            detail={
+              <>
+                {formatNumber(stats?.pending_claims)} menunggu &middot;{" "}
+                {formatNumber(stats?.rejected_claims)} ditolak
+              </>
+            }
+          />
+          <StatCard
+            icon={School}
+            label="Total Sekolah"
+            value={formatNumber(stats?.total_schools)}
+            tone="violet"
+            detail={<>sekolah yang punya peserta</>}
+          />
+        </div>
+      )}
+
+      {!isLoading && !isError && <FunnelCard stats={stats} />}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard

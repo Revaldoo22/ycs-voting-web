@@ -30,6 +30,43 @@ function timeAgo(iso: string, t: Dictionary["notificationBell"]): string {
 }
 
 /** Lonceng pemberitahuan voter, hanya tampil untuk voter yang sudah login. */
+/**
+ * Ubah URL di dalam teks jadi tautan yang bisa diklik. Isi notifikasi ditulis
+ * admin sebagai teks biasa (bukan HTML) supaya tak ada risiko injeksi, jadi
+ * penautan dilakukan di sisi tampilan.
+ *
+ * Menangkap alamat berawalan http(s):// maupun yang langsung menyebut domain
+ * seperti "events.stekom.ac.id/ycs2026", karena admin lazim menulis tanpa
+ * protokol.
+ */
+const URL_RE =
+  /((?:https?:\/\/|www\.)[^\s<]+|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:id|com|net|org|ac\.id|sch\.id|co\.id)(?:\/[^\s<]*)?)/gi;
+
+function Linkify({ text }: { text: string }) {
+  const parts = text.split(URL_RE);
+  return (
+    <>
+      {parts.map((part, i) => {
+        // split() dengan grup tangkap menaruh URL di indeks ganjil.
+        if (i % 2 === 0 || !part) return part;
+        const href = /^https?:\/\//i.test(part) ? part : `https://${part}`;
+        return (
+          <a
+            key={i}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            {part}
+          </a>
+        );
+      })}
+    </>
+  );
+}
+
 export function NotificationBell() {
   const { data: me } = useMyProfile();
   const enabled = !!me && me.role === "voter";
@@ -91,7 +128,7 @@ export function NotificationBell() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold">{n.title}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {n.body}
+                      <Linkify text={n.body} />
                     </p>
                     <p className="mt-1 text-[11px] text-muted-foreground/70">
                       {timeAgo(n.created_at, t)}

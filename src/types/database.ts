@@ -33,6 +33,8 @@ export interface Profile {
 export interface Participant {
   id: string;
   profile_id: string | null;
+  /** Email dari web pendaftaran. Kunci sinkronisasi & pencocokan voter. */
+  email: string | null;
   name: string;
   school_id: string;
   photo_url: string | null;
@@ -100,9 +102,45 @@ export interface DailyVote {
 // RPC return shapes
 export interface AdminStats {
   total_schools: number;
+
+  // Peserta
   total_participants: number;
+  active_participants: number;
+  inactive_participants: number;
+  golden_buzzers: number;
+  /** Lolos lewat gelombang, tidak termasuk Golden Buzzer. */
+  qualified_participants: number;
+  participants_with_points: number;
+
+  // Voter (identitas unik, bukan jumlah vote)
   total_voters: number;
+  onboarded_voters: number;
+
+  // Vote. Bot (boost admin) tidak pernah ikut selain di bot_votes.
   total_votes: number;
+  approved_votes: number;
+  pending_votes: number;
+  /** Dari arsip: baris vote dihapus saat ditolak agar voter bisa mengulang. */
+  rejected_votes: number;
+  bot_votes: number;
+
+  /**
+   * Corong akun. Tiap tahap adalah himpunan bagian dari tahap sebelumnya
+   * (punya akun > onboarding > pernah vote), jadi jangan dijumlahkan.
+   */
+  accounts_total: number;
+  accounts_onboarded: number;
+  accounts_not_onboarded: number;
+  accounts_voted: number;
+  accounts_onboarded_no_vote: number;
+  /** Vote dari nomor yang tak punya akun terdaftar (mis. data lama). */
+  voters_without_account: number;
+
+  // Klaim kupon
+  pending_claims: number;
+  approved_claims: number;
+  rejected_claims: number;
+
   total_points: number;
 }
 

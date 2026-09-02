@@ -93,7 +93,8 @@ export default function AdminParticipantsPage() {
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.schools?.name?.toLowerCase().includes(q) ||
-          p.profiles?.phone_number?.includes(q)
+          p.profiles?.phone_number?.includes(q) ||
+          p.email?.toLowerCase().includes(q)
       );
     }
     const arr = [...list];
@@ -118,6 +119,7 @@ export default function AdminParticipantsPage() {
     const rows = filtered.map((p) => ({
       Nama: p.name,
       "Nomor WA": p.profiles?.phone_number ?? "",
+      Email: p.email ?? "",
       Sekolah: p.schools?.name ?? "",
       Poin: p.total_points,
       Status: p.status === "active" ? "Aktif" : "Nonaktif",
@@ -380,7 +382,7 @@ export default function AdminParticipantsPage() {
       >
         <FilterField label="Cari" span={2}>
           <Input
-            placeholder="Nama peserta, sekolah, atau nomor WA..."
+            placeholder="Nama, sekolah, nomor WA, atau email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -443,8 +445,15 @@ export default function AdminParticipantsPage() {
                         <span className="font-medium">{p.name}</span>
                       </button>
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-muted-foreground">
-                      {p.profiles?.phone_number ?? "-"}
+                    <TableCell className="text-sm text-muted-foreground">
+                      <span className="font-mono">
+                        {p.profiles?.phone_number ?? "-"}
+                      </span>
+                      {p.email && (
+                        <span className="block truncate text-xs" title={p.email}>
+                          {p.email}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       <span>{p.schools?.name ?? "-"}</span>

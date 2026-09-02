@@ -32,7 +32,11 @@ export default function AdminPengumumanPage() {
   const [onlyNonParticipants, setOnlyNonParticipants] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
 
-  const { data: audience } = useQuery({
+  const {
+    data: audience,
+    isLoading: loadingAudience,
+    isError: audienceError,
+  } = useQuery({
     queryKey: ["notif-audience"],
     queryFn: () =>
       api<{ total_akun: number; belum_peserta: number }>(
@@ -101,10 +105,13 @@ export default function AdminPengumumanPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Total akun voter
+              Akun terdaftar
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums">
               {formatNumber(audience?.total_akun ?? 0)}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              sudah menyelesaikan wizard
             </p>
           </CardContent>
         </Card>
@@ -115,6 +122,9 @@ export default function AdminPengumumanPage() {
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-primary">
               {formatNumber(audience?.belum_peserta ?? 0)}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              sasaran ajakan mendaftar
             </p>
           </CardContent>
         </Card>
@@ -166,14 +176,32 @@ export default function AdminPengumumanPage() {
             </span>
           </label>
 
-          <div className="rounded-xl border bg-muted/40 p-3 text-sm">
-            Akan dikirim ke <b>{formatNumber(target)} akun</b>.
-          </div>
+          {audienceError ? (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              Gagal mengambil jumlah penerima. Pastikan backend sudah ter-deploy
+              dengan endpoint pengumuman, lalu muat ulang halaman ini.
+            </div>
+          ) : loadingAudience ? (
+            <div className="rounded-xl border bg-muted/40 p-3 text-sm text-muted-foreground">
+              Menghitung jumlah penerima...
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-muted/40 p-3 text-sm">
+              Akan dikirim ke <b>{formatNumber(target)} akun</b>.
+              {target === 0 && (
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {onlyNonParticipants
+                    ? "Semua akun voter sudah terdaftar sebagai peserta. Hilangkan centang di atas untuk mengirim ke semuanya."
+                    : "Belum ada akun voter yang bisa dikirimi."}
+                </span>
+              )}
+            </div>
+          )}
 
           <Button
             className="w-full"
             onClick={submit}
-            disabled={busy || target === 0}
+            disabled={busy || target === 0 || loadingAudience || audienceError}
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
