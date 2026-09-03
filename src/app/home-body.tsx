@@ -165,7 +165,7 @@ export function HomeBody() {
 
           <PrizeBanner />
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-1 [&+a]:!mt-3">
             <Button
               size="lg"
               className="h-12 rounded-full px-7 text-base shadow-lg shadow-primary/25"
@@ -188,19 +188,21 @@ export function HomeBody() {
                 {t.joinCta}
               </a>
             </Button>
-            {/* Tautan ke bio.stekom.ac.id: kumpulan tautan resmi (events,
-                CS, dll). Sengaja dibedakan dari tombol "Daftar Jadi Peserta"
-                yang langsung ke formulir, agar dua CTA ini tak rancu. Ikut
-                sebaris dengan tombol supaya hero tidak menambah satu baris. */}
-            <a
-              href="https://bio.stekom.ac.id/daftarycs2026"
-              target="_blank"
-              rel="noopener"
-              className="text-sm font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
-            >
-              {t.registerBacklink}
-            </a>
           </div>
+
+          {/* Tautan ke bio.stekom.ac.id: kumpulan tautan resmi (events, CS,
+              dll). Sengaja dibedakan dari tombol "Daftar Jadi Peserta" yang
+              langsung ke formulir, agar dua CTA ini tak rancu. Diberi baris
+              sendiri: disandingkan dengan tombol besar, tautan teks polos
+              tampak seperti elemen yang tercecer. */}
+          <a
+            href="https://bio.stekom.ac.id/daftarycs2026"
+            target="_blank"
+            rel="noopener"
+            className="mx-auto block w-fit text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary"
+          >
+            {t.registerBacklink}
+          </a>
         </div>
       </section>
 
