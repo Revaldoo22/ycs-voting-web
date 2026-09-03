@@ -331,19 +331,10 @@ const id = {
     emptyDescription: "Nantikan pengumuman dari panitia.",
   },
   joinPopup: {
-    title: "Mau Jadi Peserta YCS 2026?",
-    desc: "Pendaftaran masih dibuka. Kumpulkan dukungan, raih beasiswa, dan jadi Duta Teladan Universitas STEKOM.",
-    freeBadge: "Gratis - Rp0 biaya pendaftaran",
-    cta: "Daftar Jadi Peserta",
-    later: "Nanti saja",
+    title: "Ayo jadi peserta YCS 2026",
+    imageAlt:
+      "Ayo jadi bagian dari 6.000+ pendaftar Youth Character Summit 2026. Liburan gratis ke Bali, kesempatan beasiswa, sertifikat, dan hadiah HP baru. Klik untuk mendaftar.",
     close: "Tutup",
-    helpToggle: "Apa bedanya peserta dan voter?",
-    roleParticipant: "Peserta",
-    roleParticipantDesc:
-      "yang dinilai dan bersaing di kompetisi. Kamu punya halaman sendiri, dikumpulkan dukungannya, dan berpeluang lolos ke babak berikutnya untuk memperebutkan beasiswa serta hadiah.",
-    roleVoter: "Voter",
-    roleVoterDesc:
-      "yang memberi dukungan ke peserta favorit. Kamu tidak ikut dinilai, tapi tetap dapat kupon undian berhadiah handphone setiap kali mendukung dan memenuhi syaratnya.",
   },
   gelombang: {
     schools: "sekolah",
