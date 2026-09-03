@@ -43,21 +43,27 @@ export default function AdminPengumumanPage() {
   } = useQuery({
     queryKey: ["notif-audience"],
     queryFn: () =>
-      api<{ total_akun: number; belum_peserta: number }>(
-        "/api/admin/notifications/audience",
-      ),
+      api<{
+        total_akun: number;
+        belum_peserta: number;
+        dilewati_dedupe: number;
+      }>("/api/admin/notifications/audience"),
   });
 
   const target = onlyNonParticipants
     ? (audience?.belum_peserta ?? 0)
     : (audience?.total_akun ?? 0);
+  // Akun yang sudah menerima dalam 24 jam terakhir akan dilewati, jadi yang
+  // benar-benar terkirim bisa jauh lebih sedikit dari target.
+  const skipped = audience?.dilewati_dedupe ?? 0;
+  const willSend = Math.max(0, target - skipped);
 
   function submit() {
     if (title.trim().length < 3 || body.trim().length < 3) {
       return void toast.error("Judul dan isi pengumuman belum lengkap.");
     }
     confirm({
-      title: `Kirim ke ${formatNumber(target)} akun?`,
+      title: `Kirim ke ${formatNumber(willSend)} akun?`,
       description:
         "Pengumuman masuk ke lonceng notifikasi mereka dan tidak bisa " +
         "ditarik kembali. Akun yang sudah menerima pengumuman dalam 24 jam " +
@@ -195,8 +201,15 @@ export default function AdminPengumumanPage() {
             </div>
           ) : (
             <div className="rounded-xl border bg-muted/40 p-3 text-sm">
-              Akan dikirim ke <b>{formatNumber(target)} akun</b>.
-              {target === 0 && (
+              Akan dikirim ke <b>{formatNumber(willSend)} akun</b>.
+              {skipped > 0 && (
+                <span className="mt-1 block text-xs text-amber-700">
+                  {formatNumber(skipped)} akun dilewati karena sudah menerima
+                  pengumuman dalam 24 jam terakhir. Tunggu besok kalau ingin
+                  mengirim ulang ke semuanya.
+                </span>
+              )}
+              {willSend === 0 && skipped === 0 && (
                 <span className="mt-1 block text-xs text-muted-foreground">
                   {onlyNonParticipants
                     ? "Semua akun voter sudah terdaftar sebagai peserta. Hilangkan centang di atas untuk mengirim ke semuanya."
@@ -209,7 +222,7 @@ export default function AdminPengumumanPage() {
           <Button
             className="w-full"
             onClick={submit}
-            disabled={busy || target === 0 || loadingAudience || audienceError}
+            disabled={busy || willSend === 0 || loadingAudience || audienceError}
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
