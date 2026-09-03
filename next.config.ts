@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Optimasi gambar Vercel berbayar per gambar dan kuotanya sudah habis:
+    // /_next/image membalas 402 sehingga SEMUA gambar gagal dimuat. Dimatikan
+    // supaya gambar dilayani apa adanya. Jangan dinyalakan lagi sebelum kuota
+    // ditambah, dan pastikan file yang diunggah sudah dikompres dari sisi app.
+    unoptimized: true,
     // Uploaded photos are absolute URLs pointing back at this app.
     remotePatterns: [
       { protocol: "http", hostname: "localhost" },

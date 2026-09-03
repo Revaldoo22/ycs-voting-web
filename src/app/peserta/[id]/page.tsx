@@ -1042,6 +1042,7 @@ function QuestCard({
               height={160}
               sizes="400px"
               className="max-h-40 w-full rounded-md border object-cover"
+            unoptimized
             />
           </a>
         )}

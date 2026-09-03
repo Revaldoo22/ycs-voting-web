@@ -136,6 +136,7 @@ export default function AccountPage() {
                   width={48}
                   height={48}
                   className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-primary/20"
+                unoptimized
                 />
               ) : (
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">

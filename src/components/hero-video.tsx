@@ -71,9 +71,19 @@ export function HeroVideo() {
       return Math.round(ratio * 100);
     };
 
+    // Objek player sudah ada sebelum API-nya siap, jadi keberadaan method
+    // diperiksa dulu. Tanpa ini `p.unMute is not a function` memutus handler
+    // scroll dan volume berhenti mengikuti posisi halaman.
+    const isReady = (p: YTPlayer | null): boolean =>
+      !!p &&
+      typeof p.unMute === "function" &&
+      typeof p.mute === "function" &&
+      typeof p.isMuted === "function" &&
+      typeof p.setVolume === "function";
+
     const applyVolume = () => {
       const p = playerRef.current;
-      if (!p || !unmutedRef.current) return;
+      if (!isReady(p) || !p || !unmutedRef.current) return;
       const vol = computeVolume();
       if (vol === lastVolumeRef.current) return;
       lastVolumeRef.current = vol;
@@ -88,7 +98,8 @@ export function HeroVideo() {
     // Interaksi pertama → unmute. (Autoplay bersuara diblokir browser.)
     const unmute = () => {
       const p = playerRef.current;
-      if (!p || unmutedRef.current) return;
+      // Belum siap: jangan tandai sudah unmute, biar dicoba lagi nanti.
+      if (!isReady(p) || !p || unmutedRef.current) return;
       unmutedRef.current = true;
       const vol = computeVolume();
       lastVolumeRef.current = vol;

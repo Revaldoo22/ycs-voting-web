@@ -135,6 +135,7 @@ export function JoinPopup() {
             priority
             onError={() => setFailed(true)}
             className="h-auto w-full"
+          unoptimized
           />
         </a>
       </div>

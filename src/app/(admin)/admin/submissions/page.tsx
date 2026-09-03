@@ -200,6 +200,7 @@ export default function AdminSubmissionsPage() {
                     loading="lazy"
                     className="cursor-zoom-in object-contain"
                     onClick={() => setPreview(main)}
+                  unoptimized
                   />
                 ) : (
                   <video src={main} controls className="h-full w-full" />
@@ -219,6 +220,7 @@ export default function AdminSubmissionsPage() {
                         loading="lazy"
                         className="h-12 w-12 shrink-0 cursor-zoom-in rounded object-cover"
                         onClick={() => setPreview(u)}
+                      unoptimized
                       />
                     ) : (
                       <a

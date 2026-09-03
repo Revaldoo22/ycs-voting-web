@@ -72,6 +72,7 @@ export function AuthNav() {
               width={28}
               height={28}
               className="h-7 w-7 rounded-full object-cover"
+            unoptimized
             />
           ) : (
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
