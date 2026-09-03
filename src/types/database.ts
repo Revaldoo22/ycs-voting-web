@@ -203,4 +203,11 @@ export type ParticipantWithSchool = Participant & {
   golden_buzzer?: boolean;
   /** Nama gelombang tempat dia lolos. Null untuk Golden Buzzer. */
   qualified_round_name?: string | null;
+  /**
+   * Poin di gelombang berjalan (carry + vote gelombang itu), basis yang sama
+   * dengan klasemen. Null bila peserta tak ikut gelombang aktif.
+   */
+  round_points?: number | null;
+  /** Nama gelombang berjalan yang diikuti peserta ini. */
+  round_name?: string | null;
 };

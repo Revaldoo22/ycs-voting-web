@@ -472,6 +472,8 @@ const en: Dictionary = {
     notFound: "Participant not found",
     zoomPhoto: (name: string) => `Zoom in on ${name}'s photo`,
     points: "points",
+    pointsInRound: (round: string) => `points in ${round}`,
+    pointsTotal: (n: string) => `${n} points total`,
     shareProfile: "Share Profile",
     shareMessage: (name: string) =>
       `Support ${name} at the Youth Character Summit, Universitas STEKOM! 🔥`,

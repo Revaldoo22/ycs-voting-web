@@ -470,6 +470,8 @@ const id = {
     notFound: "Peserta tidak ditemukan",
     zoomPhoto: (name: string) => `Perbesar foto ${name}`,
     points: "poin",
+    pointsInRound: (round: string) => `poin di ${round}`,
+    pointsTotal: (n: string) => `total event ${n} poin`,
     shareProfile: "Bagikan Profil",
     shareMessage: (name: string) =>
       `Dukung ${name} di Youth Character Summit Universitas STEKOM! 🔥`,

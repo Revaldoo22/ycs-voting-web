@@ -249,9 +249,29 @@ export default function PublicParticipantPage({
                       </p>
                     )}
                   </div>
-                  <Badge variant="accent" className="shrink-0">
-                    {formatNumber(participant.total_points)} {t.points}
-                  </Badge>
+                  {/* Poin gelombang berjalan diutamakan supaya angkanya sama
+                      dengan klasemen; total poin event tetap ditampilkan
+                      sebagai keterangan. */}
+                  <div className="shrink-0 text-right">
+                    <Badge variant="accent">
+                      {formatNumber(
+                        participant.round_points ?? participant.total_points,
+                      )}{" "}
+                      {t.points}
+                    </Badge>
+                    {participant.round_points != null && (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {participant.round_name
+                          ? t.pointsInRound(participant.round_name)
+                          : null}
+                        <span className="block">
+                          {t.pointsTotal(
+                            formatNumber(participant.total_points),
+                          )}
+                        </span>
+                      </p>
+                    )}
+                  </div>
                 </div>
                 {participant.description && (
                   <p className="text-sm">{participant.description}</p>

@@ -231,7 +231,9 @@ export function ParticipantGrid() {
                     </div>
                   )}
                   <span className="absolute right-2 top-2 rounded-full border border-white/30 bg-black/45 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
-                    {formatNumber(p.total_points)} {t.points}
+                    {/* Poin gelombang berjalan bila ada, supaya angkanya
+                        sama dengan klasemen. */}
+                    {formatNumber(p.round_points ?? p.total_points)} {t.points}
                   </span>
                   {golden && (
                     <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-300 px-2.5 py-0.5 text-xs font-bold text-amber-950 shadow-[0_0_12px_rgba(251,191,36,0.7)]">
