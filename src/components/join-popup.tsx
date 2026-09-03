@@ -5,9 +5,14 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 
-/** Kunci localStorage: sekali ditutup, tak muncul lagi di browser itu. */
-const DISMISS_KEY = "ycs.joinPopup.dismissed";
+/** Waktu terakhir ditutup, disimpan supaya jeda tetap berlaku antar refresh. */
+const DISMISS_AT_KEY = "ycs.joinPopup.dismissedAt";
+/** Jeda muncul lagi setelah ditutup. */
+const SNOOZE_MS = 5 * 60 * 1000;
+/** Jeda tampil setelah halaman dibuka, biar tidak menimpa konten. */
 const SHOW_AFTER_MS = 6000;
+/** Sudah mengklik banner: anggap selesai, jangan diganggu lagi hari itu. */
+const CLICKED_SNOOZE_MS = 24 * 60 * 60 * 1000;
 const REGISTER_URL = "https://events.stekom.ac.id/ycs2026";
 
 /**
@@ -16,8 +21,10 @@ const REGISTER_URL = "https://events.stekom.ac.id/ycs2026";
  * gambar, termasuk instruksi mengklik banner, jadi gambarnya sendiri yang
  * jadi tautan pendaftaran.
  *
- * Muncul sekali per browser: begitu ditutup, penandanya disimpan supaya tidak
- * mengganggu kunjungan berikutnya.
+ * Muncul ulang setelah refresh, dengan jeda 5 menit sejak terakhir ditutup.
+ * Waktu tutup disimpan di localStorage, bukan state, supaya jeda tetap
+ * berlaku walau halaman di-refresh berkali-kali. Selama halaman dibiarkan
+ * terbuka, popup juga muncul kembali tiap 5 menit.
  */
 export function JoinPopup() {
   const t = useTranslation("joinPopup");
@@ -26,24 +33,49 @@ export function JoinPopup() {
   React.useEffect(() => {
     // localStorage bisa melempar di mode privat atau saat site data diblokir,
     // jadi kegagalan baca dianggap "belum pernah ditutup".
-    let dismissed = false;
-    try {
-      dismissed = localStorage.getItem(DISMISS_KEY) === "1";
-    } catch {
-      dismissed = false;
+    function msUntilAllowed() {
+      let last = 0;
+      try {
+        last = Number(localStorage.getItem(DISMISS_AT_KEY)) || 0;
+      } catch {
+        last = 0;
+      }
+      const elapsed = Date.now() - last;
+      return elapsed >= SNOOZE_MS ? 0 : SNOOZE_MS - elapsed;
     }
-    if (dismissed) return;
 
-    const id = setTimeout(() => setOpen(true), SHOW_AFTER_MS);
-    return () => clearTimeout(id);
+    // Tampil pertama: tunggu jeda buka halaman, atau sisa jeda 5 menit kalau
+    // baru saja ditutup, mana yang lebih lama.
+    const first = setTimeout(
+      () => setOpen(true),
+      Math.max(SHOW_AFTER_MS, msUntilAllowed()),
+    );
+
+    // Halaman yang dibiarkan terbuka: cek berkala, muncul lagi tiap 5 menit.
+    const tick = setInterval(() => {
+      if (msUntilAllowed() === 0) setOpen(true);
+    }, 30_000);
+
+    return () => {
+      clearTimeout(first);
+      clearInterval(tick);
+    };
   }, []);
 
-  const close = React.useCallback(() => {
+  /**
+   * `snoozeMs` dipakai untuk menggeser waktu tutup ke depan. Pengunjung yang
+   * mengklik banner sudah menuju pendaftaran, jadi tak perlu dikejar popup
+   * tiap 5 menit; jedanya dibuat sehari.
+   */
+  const close = React.useCallback((snoozeMs = 0) => {
     setOpen(false);
     try {
-      localStorage.setItem(DISMISS_KEY, "1");
+      localStorage.setItem(
+        DISMISS_AT_KEY,
+        String(Date.now() + Math.max(0, snoozeMs - SNOOZE_MS)),
+      );
     } catch {
-      // Tak apa: popup tetap tertutup untuk sesi ini.
+      // Tak apa: popup tetap tertutup sampai pengecekan berkala berikutnya.
     }
   }, []);
 
@@ -69,13 +101,13 @@ export function JoinPopup() {
       {/* Latar gelap, klik untuk menutup */}
       <button
         aria-label={t.close}
-        onClick={close}
+        onClick={() => close()}
         className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
       />
 
       <div className="relative w-full max-w-sm sm:max-w-md">
         <button
-          onClick={close}
+          onClick={() => close()}
           aria-label={t.close}
           className="absolute -top-3 right-0 z-10 cursor-pointer rounded-full bg-white p-2 text-slate-700 shadow-lg transition-transform hover:scale-105 sm:-right-3"
         >
@@ -88,7 +120,7 @@ export function JoinPopup() {
           href={REGISTER_URL}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={close}
+          onClick={() => close(CLICKED_SNOOZE_MS)}
           className="block overflow-hidden rounded-2xl shadow-2xl"
         >
           <Image
