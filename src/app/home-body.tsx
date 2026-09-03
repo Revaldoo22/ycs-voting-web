@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { GraduationCap, ShieldCheck, Ticket, Wallet } from "lucide-react";
+import { GraduationCap, ShieldCheck, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -139,26 +139,33 @@ export function HomeBody() {
 
       {/* Hero */}
       <section id="hero" className="relative scroll-mt-16 overflow-hidden border-b">
-        <div className="container space-y-6 py-16 text-center md:py-24">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
-            <GraduationCap className="h-4 w-4" />
-            {t.badge}
+        <div className="container space-y-5 py-14 text-center md:py-20">
+          {/* Dua penanda sebaris: penyelenggara & gelombang berjalan. Dulu
+              bertumpuk sebagai dua baris pil sendiri-sendiri. */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
+              <GraduationCap className="h-4 w-4" />
+              {t.badge}
+            </span>
+            <RoundCountdown />
           </div>
-          <RoundCountdown />
+
           <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl">
             {t.heroTitle}
           </h1>
+
+          {/* Badge gratis dijadikan bagian kalimat pembuka, bukan pil
+              terpisah, supaya tidak menambah satu baris lagi. */}
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            <b>{t.heroDescBold}</b> {t.heroDesc}
-          </p>
-          <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-            <Wallet className="h-4 w-4" />
-            {t.freeBadge}
+            <b className="text-emerald-700 dark:text-emerald-400">
+              {t.heroDescBold}
+            </b>{" "}
+            {t.heroDesc}
           </p>
 
           <PrizeBanner />
 
-          <div className="flex flex-wrap justify-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
             <Button
               size="lg"
               className="h-12 rounded-full px-7 text-base shadow-lg shadow-primary/25"
@@ -181,21 +188,19 @@ export function HomeBody() {
                 {t.joinCta}
               </a>
             </Button>
-          </div>
-
-          {/* Tautan ke bio.stekom.ac.id: kumpulan tautan resmi (events, CS,
-              dll). Sengaja dibedakan dari tombol "Daftar Jadi Peserta" di atas
-              yang langsung ke formulir, agar dua CTA ini tak rancu. */}
-          <p className="pt-1 text-sm text-muted-foreground">
+            {/* Tautan ke bio.stekom.ac.id: kumpulan tautan resmi (events,
+                CS, dll). Sengaja dibedakan dari tombol "Daftar Jadi Peserta"
+                yang langsung ke formulir, agar dua CTA ini tak rancu. Ikut
+                sebaris dengan tombol supaya hero tidak menambah satu baris. */}
             <a
               href="https://bio.stekom.ac.id/daftarycs2026"
               target="_blank"
               rel="noopener"
-              className="font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
+              className="text-sm font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
             >
               {t.registerBacklink}
             </a>
-          </p>
+          </div>
         </div>
       </section>
 

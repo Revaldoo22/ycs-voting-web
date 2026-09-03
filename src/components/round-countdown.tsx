@@ -35,7 +35,9 @@ export function RoundCountdown() {
   return (
     <Link
       href="/gelombang"
-      className="mx-auto flex w-fit max-w-full cursor-pointer items-center gap-3 rounded-full border border-primary/25 bg-primary/5 py-2 pl-4 pr-5 text-sm font-medium transition-colors hover:bg-primary/10"
+      // Tanpa mx-auto: dipakai di dalam baris flex hero bersama badge
+      // penyelenggara, jadi perataan diatur induknya.
+      className="flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-full border border-primary/25 bg-primary/5 py-1.5 pl-4 pr-5 text-xs font-medium transition-colors hover:bg-primary/10 sm:text-sm"
     >
       <Flag className="h-4 w-4 shrink-0 text-primary" />
       <span className="min-w-0 truncate">
