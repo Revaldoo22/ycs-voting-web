@@ -334,8 +334,7 @@ const en: Dictionary = {
   },
   joinPopup: {
     title: "Join YCS 2026",
-    imageAlt:
-      "Join over 6,000 Youth Character Summit 2026 registrants. Free trip to Bali, scholarship opportunity, certificate, and a new phone prize. Click to register.",
+    imageAlt: "Youth Character Summit 2026 registration banner",
     close: "Close",
   },
   gelombang: {

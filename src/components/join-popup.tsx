@@ -29,6 +29,10 @@ const REGISTER_URL = "https://events.stekom.ac.id/ycs2026";
 export function JoinPopup() {
   const t = useTranslation("joinPopup");
   const [open, setOpen] = React.useState(false);
+  // Banner gagal dimuat: sembunyikan seluruh popup. Menampilkan alt text
+  // sebagai blok besar di tengah layar lebih mengganggu daripada tak ada
+  // popup sama sekali.
+  const [failed, setFailed] = React.useState(false);
 
   React.useEffect(() => {
     // localStorage bisa melempar di mode privat atau saat site data diblokir,
@@ -89,7 +93,7 @@ export function JoinPopup() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
-  if (!open) return null;
+  if (!open || failed) return null;
 
   return (
     <div
@@ -129,6 +133,7 @@ export function JoinPopup() {
             width={1080}
             height={1080}
             priority
+            onError={() => setFailed(true)}
             className="h-auto w-full"
           />
         </a>

@@ -332,8 +332,7 @@ const id = {
   },
   joinPopup: {
     title: "Ayo jadi peserta YCS 2026",
-    imageAlt:
-      "Ayo jadi bagian dari 6.000+ pendaftar Youth Character Summit 2026. Liburan gratis ke Bali, kesempatan beasiswa, sertifikat, dan hadiah HP baru. Klik untuk mendaftar.",
+    imageAlt: "Banner pendaftaran Youth Character Summit 2026",
     close: "Tutup",
   },
   gelombang: {
