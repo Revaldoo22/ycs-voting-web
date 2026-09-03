@@ -1,15 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, Megaphone, Send } from "lucide-react";
+import { History, Loader2, Megaphone, Send } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState, LoadingState } from "@/components/states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
+import { useAnnouncementLog } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
 
 /** Template ajakan daftar peserta, bisa diedit sebelum dikirim. */
@@ -26,6 +29,7 @@ const TEMPLATE = {
  * untuk mengajak voter yang belum jadi peserta ikut mendaftar.
  */
 export default function AdminPengumumanPage() {
+  const qc = useQueryClient();
   const confirm = useConfirm();
   const [title, setTitle] = React.useState(TEMPLATE.title);
   const [body, setBody] = React.useState(TEMPLATE.body);
@@ -73,6 +77,10 @@ export default function AdminPengumumanPage() {
               }),
             },
           );
+          // Riwayat & jumlah penerima ikut disegarkan supaya pengumuman
+          // yang baru langsung tampil di daftar bawah.
+          qc.invalidateQueries({ queryKey: ["announcement-log"] });
+          qc.invalidateQueries({ queryKey: ["notif-audience"] });
           toast.success(
             `Terkirim ke ${formatNumber(res.sent)} akun.` +
               (res.sent < target
@@ -212,6 +220,100 @@ export default function AdminPengumumanPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <AnnouncementLogList />
     </div>
+  );
+}
+
+/**
+ * Riwayat pengiriman + statistik kliknya. Dipisah dari form supaya admin bisa
+ * melihat dampak pengumuman sebelumnya sebelum mengirim yang baru.
+ */
+function AnnouncementLogList() {
+  const { data, isLoading } = useAnnouncementLog();
+  const rows = React.useMemo(() => data ?? [], [data]);
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-4 sm:p-6">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
+            <History className="h-5 w-5 text-primary" />
+            Riwayat Pengiriman
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Pengumuman yang pernah dikirim, beserta jumlah yang membuka dan
+            mengklik tautannya.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <LoadingState />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="Belum ada pengumuman terkirim"
+            description="Riwayat muncul setelah pengumuman pertama dikirim."
+          />
+        ) : (
+          <div className="space-y-2">
+            {rows.map((a) => (
+              <div key={a.id} className="rounded-xl border p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold">{a.title}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                      {a.body}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="shrink-0">
+                    {a.only_non_participants ? "Belum peserta" : "Semua akun"}
+                  </Badge>
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-muted/50 p-2">
+                    <p className="text-lg font-bold tabular-nums">
+                      {formatNumber(a.sent_count)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Terkirim
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-2">
+                    <p className="text-lg font-bold tabular-nums">
+                      {formatNumber(a.read_count)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">Dibuka</p>
+                  </div>
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <p className="text-lg font-bold tabular-nums text-primary">
+                      {formatNumber(a.clicks)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Klik tautan
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  {new Date(a.created_at).toLocaleString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  {a.sent_by ? ` oleh ${a.sent_by}` : ""}
+                  {a.click_accounts > 0
+                    ? ` · ${formatNumber(a.click_accounts)} akun mengklik`
+                    : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

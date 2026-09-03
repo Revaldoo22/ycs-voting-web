@@ -771,6 +771,14 @@ export function useWinners(opts: { source?: string; round?: string } = {}) {
   });
 }
 
+/** Riwayat pengiriman pengumuman untuk admin. */
+export function useAnnouncementLog() {
+  return useQuery({
+    queryKey: ["announcement-log"],
+    queryFn: () => api<AnnouncementLog[]>("/api/admin/notifications/log"),
+  });
+}
+
 export function usePublicRounds() {
   return useQuery({
     queryKey: ["public-rounds"],
@@ -913,6 +921,23 @@ export type NotificationRow = {
   body: string;
   read_at: string | null;
   created_at: string;
+};
+
+/** Satu baris riwayat pengiriman pengumuman + statistik kliknya. */
+export type AnnouncementLog = {
+  id: string;
+  title: string;
+  body: string;
+  sent_count: number;
+  only_non_participants: boolean;
+  sent_by: string | null;
+  created_at: string;
+  /** Total klik tautan (satu akun bisa mengklik berkali-kali). */
+  clicks: number;
+  /** Akun unik yang mengklik. */
+  click_accounts: number;
+  /** Notifikasi yang sudah dibuka penerimanya. */
+  read_count: number;
 };
 
 export type NotificationsResult = {
