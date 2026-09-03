@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { History, Loader2, Megaphone, Send } from "lucide-react";
+import { History, Loader2, Megaphone, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
 import { useAnnouncementLog } from "@/lib/queries";
-import { formatNumber } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 
 /** Template ajakan daftar peserta, bisa diedit sebelum dikirim. */
 const TEMPLATE = {
@@ -244,21 +244,37 @@ export default function AdminPengumumanPage() {
  * melihat dampak pengumuman sebelumnya sebelum mengirim yang baru.
  */
 function AnnouncementLogList() {
-  const { data, isLoading } = useAnnouncementLog();
+  const { data, isLoading, isFetching, refetch } = useAnnouncementLog();
   const rows = React.useMemo(() => data ?? [], [data]);
 
   return (
     <Card>
       <CardContent className="space-y-4 p-4 sm:p-6">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
-            <History className="h-5 w-5 text-primary" />
-            Riwayat Pengiriman
-          </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Pengumuman yang pernah dikirim, beserta jumlah yang membuka dan
-            mengklik tautannya.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
+              <History className="h-5 w-5 text-primary" />
+              Riwayat Pengiriman
+            </h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Pengumuman yang pernah dikirim, beserta jumlah yang membuka dan
+              mengklik tautannya.
+            </p>
+          </div>
+          {/* Angka dibuka & klik bertambah seiring waktu, jadi perlu cara
+              menyegarkan tanpa memuat ulang seluruh halaman. */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw
+              className={cn("h-4 w-4", isFetching && "animate-spin")}
+            />
+            Segarkan
+          </Button>
         </div>
 
         {isLoading ? (
