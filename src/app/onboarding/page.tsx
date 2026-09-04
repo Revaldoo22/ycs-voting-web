@@ -710,6 +710,10 @@ export default function OnboardingPage() {
                       value={classManual}
                       onChange={(e) => setClassManual(e.target.value)}
                       placeholder={t.typeYourClass}
+                      // Sama dengan batas server. Tanpa ini voter bisa
+                      // menyimpan kelas kepanjangan yang lolos di sini tapi
+                      // ditolak saat vote.
+                      maxLength={50}
                     />
                   </div>
                 </>
