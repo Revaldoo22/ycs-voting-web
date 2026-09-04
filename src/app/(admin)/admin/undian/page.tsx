@@ -73,7 +73,9 @@ type Summary = { total: number; remaining: number; winners: Winner[] };
 export default function AdminRafflePage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
-  const [prize, setPrize] = React.useState("Handphone");
+  // Sengaja kosong. Dulu default-nya "Handphone" sehingga undian yang
+  // dijalankan tanpa mengisi kolom ini tercatat menang hadiah utama.
+  const [prize, setPrize] = React.useState("");
   const [drawing, setDrawing] = React.useState(false);
   const [reveal, setReveal] = React.useState<Winner | null>(null);
   const [liveOpen, setLiveOpen] = React.useState(false);
@@ -84,6 +86,9 @@ export default function AdminRafflePage() {
   });
 
   async function draw() {
+    if (!prize.trim()) {
+      return void toast.error("Isi hadiahnya dulu sebelum mengundi.");
+    }
     setDrawing(true);
     setReveal(null);
     raffleSound.unlock();
@@ -93,7 +98,7 @@ export default function AdminRafflePage() {
       await new Promise((r) => setTimeout(r, 900));
       const res = await api<{ winner: Winner }>("/api/admin/raffle/draw", {
         method: "POST",
-        body: JSON.stringify({ prize: prize.trim() || "Handphone" }),
+        body: JSON.stringify({ prize: prize.trim() }),
       });
       spinSound.stop();
       raffleSound.quickWin();
@@ -185,13 +190,13 @@ export default function AdminRafflePage() {
               <Input
                 value={prize}
                 onChange={(e) => setPrize(e.target.value)}
-                placeholder="mis. Handphone"
+                placeholder="mis. Tumbler, Handphone"
               />
             </div>
             <Button
               size="lg"
               onClick={draw}
-              disabled={drawing || (data?.remaining ?? 0) === 0}
+              disabled={drawing || (data?.remaining ?? 0) === 0 || !prize.trim()}
             >
               {drawing ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -285,7 +290,7 @@ export default function AdminRafflePage() {
 
       {liveOpen && (
         <LiveDraw
-          prize={prize.trim() || "Handphone"}
+          prize={prize.trim() || "Hadiah Undian"}
           onClose={() => {
             setLiveOpen(false);
             qc.invalidateQueries({ queryKey: ["raffle"] });
