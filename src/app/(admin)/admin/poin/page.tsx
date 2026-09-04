@@ -1,7 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Coins, Loader2, Plus, Power, PowerOff, Search, Trash2 } from "lucide-react";
+import {
+  Coins,
+  Loader2,
+  Lock,
+  LockOpen,
+  Plus,
+  Power,
+  PowerOff,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +23,23 @@ import { EmptyState, LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
 import { cn, formatNumber } from "@/lib/utils";
+
+type SpinCfg = {
+  spin_enabled: boolean;
+  spin_forced_prize_code: string | null;
+  spin_forced_min_spins: number | null;
+};
+
+type SpinPrize = {
+  id: string;
+  code: string;
+  label: string;
+  weight: number;
+  active: boolean;
+  is_locked: boolean;
+  is_empty: boolean;
+  winner_quota: number | null;
+};
 
 type Balance = {
   email: string;
@@ -34,6 +61,65 @@ type Adjustment = {
   created_by: string | null;
   created_at: string;
 };
+
+/**
+ * Jatah jumlah penerima satu hadiah. Kosong = tanpa batas.
+ *
+ * Penting untuk mode hadiah pasti: Tumbler dari seed dibatasi 8 penerima,
+ * jadi "semua dapat Tumbler" hanya berlaku untuk 8 orang pertama kalau
+ * jatahnya tidak dinaikkan.
+ */
+function QuotaBox({ prize }: { prize: SpinPrize }) {
+  const qc = useQueryClient();
+  const server = prize.winner_quota === null ? "" : String(prize.winner_quota);
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const val = draft ?? server;
+  const [saving, setSaving] = React.useState(false);
+
+  async function save() {
+    if (val === server) return;
+    setSaving(true);
+    try {
+      await api(`/api/admin/rewards/prizes/${prize.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          winner_quota: val.trim() === "" ? null : Number(val),
+        }),
+      });
+      toast.success(
+        val.trim() === ""
+          ? `${prize.label}: jatah dilepas, tanpa batas penerima.`
+          : `${prize.label}: jatah ${val} penerima.`,
+      );
+      setDraft(null);
+      qc.invalidateQueries({ queryKey: ["spin-prizes-admin"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan jatah.");
+      setDraft(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-muted-foreground">Jatah</span>
+      <Input
+        type="number"
+        min={0}
+        value={val}
+        placeholder="∞"
+        disabled={saving}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className="h-8 w-20 text-center"
+      />
+    </div>
+  );
+}
 
 /**
  * Tambah / kurangi saldo poin spin sebuah akun tanpa membuat vote.
@@ -69,10 +155,79 @@ export default function AdminPoinPage() {
   // Status roda spin. Dipakai panitia menutup spin saat hadiah belum siap.
   const { data: spinCfg } = useQuery({
     queryKey: ["spin-options-admin"],
-    queryFn: () =>
-      api<{ spin_enabled: boolean }>("/api/admin/rewards/spin-options"),
+    queryFn: () => api<SpinCfg>("/api/admin/rewards/spin-options"),
+  });
+  const { data: prizes } = useQuery({
+    queryKey: ["spin-prizes-admin"],
+    queryFn: () => api<SpinPrize[]>("/api/admin/rewards/prizes"),
   });
   const [togglingSpin, setTogglingSpin] = React.useState(false);
+  const [savingMode, setSavingMode] = React.useState(false);
+
+  // Hadiah terkunci tak boleh jadi hadiah paksa, jadi tidak ikut ditawarkan.
+  const forceable = React.useMemo(
+    () => (prizes ?? []).filter((p) => !p.is_locked && !p.is_empty),
+    [prizes],
+  );
+  const forcedCode = spinCfg?.spin_forced_prize_code ?? "";
+  const forcedMin = spinCfg?.spin_forced_min_spins ?? 0;
+
+  // Draft form, disemai dari server begitu datanya masuk.
+  const [modeCode, setModeCode] = React.useState<string | null>(null);
+  const [modeMin, setModeMin] = React.useState<string | null>(null);
+  const codeVal = modeCode ?? forcedCode;
+  const minVal = modeMin ?? String(forcedMin);
+  const modeDirty = codeVal !== forcedCode || minVal !== String(forcedMin);
+
+  async function saveMode() {
+    setSavingMode(true);
+    try {
+      await api("/api/admin/rewards/spin-options", {
+        method: "PATCH",
+        body: JSON.stringify({
+          spin_forced_prize_code: codeVal || null,
+          spin_forced_min_spins: codeVal ? Number(minVal || 0) : null,
+        }),
+      });
+      toast.success(
+        codeVal
+          ? "Mode hadiah pasti disimpan."
+          : "Roda kembali acak sesuai bobot.",
+      );
+      setModeCode(null);
+      setModeMin(null);
+      qc.invalidateQueries({ queryKey: ["spin-options-admin"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan.");
+    } finally {
+      setSavingMode(false);
+    }
+  }
+
+  function toggleLock(p: SpinPrize) {
+    const next = !p.is_locked;
+    confirm({
+      title: next ? `Kunci ${p.label}?` : `Buka kunci ${p.label}?`,
+      description: next
+        ? "Hadiah tetap tampil di roda web kedua sebagai pemikat, tapi dijamin tidak ada yang bisa mendapatkannya lewat jalur mana pun."
+        : `${p.label} bisa keluar lagi. Pastikan hadiahnya benar-benar sudah siap dibagikan sebelum membuka kunci.`,
+      confirmText: next ? "Kunci" : "Buka Kunci",
+      variant: next ? "default" : "destructive",
+      onConfirm: async () => {
+        try {
+          await api(`/api/admin/rewards/prizes/${p.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_locked: next }),
+          });
+          toast.success(next ? `${p.label} dikunci.` : `${p.label} dibuka.`);
+          qc.invalidateQueries({ queryKey: ["spin-prizes-admin"] });
+          qc.invalidateQueries({ queryKey: ["spin-options-admin"] });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Gagal mengubah.");
+        }
+      },
+    });
+  }
 
   function toggleSpin(next: boolean) {
     confirm({
@@ -222,6 +377,133 @@ export default function AdminPoinPage() {
             {togglingSpin && <Loader2 className="h-4 w-4 animate-spin" />}
             {spinCfg?.spin_enabled === false ? "Buka Spin" : "Tutup Spin"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Hadiah pasti + kunci hadiah besar */}
+      <Card>
+        <CardContent className="space-y-5 p-4 sm:p-6">
+          <div>
+            <p className="font-bold">Hasil Spin</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Roda berputar di web kedua, tapi hadiahnya ditentukan di sini.
+              Web kedua hanya menampilkan hasil yang kita kirim.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+            <div className="space-y-1.5">
+              <Label>Hadiah yang selalu keluar</Label>
+              <select
+                value={codeVal}
+                onChange={(e) => setModeCode(e.target.value)}
+                className={cn(
+                  "h-9 w-full rounded-md border border-input bg-transparent",
+                  "px-3 text-sm shadow-xs outline-none",
+                  "focus-visible:border-ring focus-visible:ring-[3px]",
+                  "focus-visible:ring-ring/50",
+                )}
+              >
+                <option value="">Acak sesuai bobot (normal)</option>
+                {forceable.map((p) => (
+                  <option key={p.id} value={p.code}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mulai spin ke-</Label>
+              <Input
+                type="number"
+                min={0}
+                value={minVal}
+                onChange={(e) => setModeMin(e.target.value)}
+                disabled={!codeVal}
+                className="sm:w-28"
+              />
+            </div>
+            <Button onClick={saveMode} disabled={savingMode || !modeDirty}>
+              {savingMode && <Loader2 className="h-4 w-4 animate-spin" />}
+              Simpan
+            </Button>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            {codeVal ? (
+              <>
+                Setiap spin dapat{" "}
+                <span className="font-semibold text-foreground">
+                  {forceable.find((p) => p.code === codeVal)?.label ?? codeVal}
+                </span>
+                {Number(minVal || 0) > 1 ? (
+                  <>
+                    {" "}
+                    mulai spin ke-{minVal}. Sebelum itu hasilnya Dash, jadi
+                    voter perlu {minVal} kali spin dulu.
+                  </>
+                ) : (
+                  " sejak spin pertama."
+                )}{" "}
+                Jatah tetap berlaku: hadiah ini dibatasi{" "}
+                {forceable.find((p) => p.code === codeVal)?.winner_quota ===
+                null
+                  ? "tanpa batas jumlah penerima"
+                  : `${forceable.find((p) => p.code === codeVal)?.winner_quota} penerima`}
+                , dan begitu habis sisanya dapat Dash. Naikkan jatahnya di
+                bawah kalau semua peserta memang harus kebagian.
+              </>
+            ) : (
+              "Roda berjalan normal: hadiah diundi sesuai bobot masing-masing."
+            )}
+          </p>
+
+          <div className="space-y-2 border-t pt-4">
+            <p className="text-sm font-semibold">Kunci hadiah</p>
+            <p className="text-sm text-muted-foreground">
+              Hadiah terkunci tetap tampil di roda sebagai pemikat, tapi
+              dijamin tidak ada yang bisa mendapatkannya.
+            </p>
+            <div className="mt-3 space-y-2">
+              {(prizes ?? [])
+                .filter((p) => !p.is_empty)
+                .map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      {p.is_locked ? (
+                        <Lock className="h-4 w-4 shrink-0 text-destructive" />
+                      ) : (
+                        <LockOpen className="h-4 w-4 shrink-0 text-emerald-600" />
+                      )}
+                      <span className="truncate font-medium">{p.label}</span>
+                      {p.is_locked ? (
+                        <Badge variant="destructive">Terkunci</Badge>
+                      ) : p.code === codeVal ? (
+                        <Badge>Hadiah pasti</Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <QuotaBox prize={p} />
+                      <Button
+                        size="sm"
+                        variant={p.is_locked ? "outline" : "ghost"}
+                        onClick={() => toggleLock(p)}
+                      >
+                        {p.is_locked ? "Buka Kunci" : "Kunci"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              {prizes !== undefined && prizes.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Belum ada hadiah spin. Seed dulu lewat menu hadiah.
+                </p>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
