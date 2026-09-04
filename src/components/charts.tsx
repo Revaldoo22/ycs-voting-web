@@ -100,7 +100,16 @@ export function VoterGrowthChart({
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis dataKey="day" tickFormatter={fmtDay} fontSize={12} minTickGap={8} tickMargin={6} />
+        {/* interval={0} memaksa SEMUA tanggal tampil. Rentangnya dikunci
+            7 hari, jadi labelnya pasti muat dan tak ada hari yang
+            terlewat seperti saat recharts menyeleksi sendiri. */}
+        <XAxis
+          dataKey="day"
+          tickFormatter={fmtDay}
+          fontSize={12}
+          interval={0}
+          tickMargin={6}
+        />
         <YAxis fontSize={12} allowDecimals={false} />
         <Tooltip
           contentStyle={tooltipStyle}
@@ -116,19 +125,22 @@ export function VoterGrowthChart({
           formatter={(v) => (v === "accounts" ? "Akun baru" : "Vote hari itu")}
           wrapperStyle={{ fontSize: 12 }}
         />
+        {/* type="linear", bukan monotone: ini data harian, jadi garis
+            melengkung menyiratkan ada nilai di antara tanggal padahal tidak.
+            Titik ditampilkan supaya nilai tiap hari terlihat jelas. */}
         <Line
-          type="monotone"
+          type="linear"
           dataKey="accounts"
           stroke="hsl(192 91% 36%)"
           strokeWidth={2}
-          dot={false}
+          dot={{ r: 3 }}
         />
         <Line
-          type="monotone"
+          type="linear"
           dataKey="voters"
           stroke="hsl(24 95% 53%)"
           strokeWidth={2}
-          dot={false}
+          dot={{ r: 3 }}
         />
       </LineChart>
     </ResponsiveContainer>
