@@ -59,6 +59,7 @@ function StatCard({
   value,
   tone,
   detail,
+  hint,
 }: {
   icon: React.ElementType;
   label: string;
@@ -66,10 +67,13 @@ function StatCard({
   tone: Tone;
   /** Rincian kecil di bawah angka, mis. berapa disetujui vs ditolak. */
   detail?: React.ReactNode;
+  /** Penjelasan lengkap saat kursor menyentuh kartu, untuk angka yang
+   *  definisinya tak terbaca dari labelnya saja. */
+  hint?: string;
 }) {
   const t = TONES[tone];
   return (
-    <Card className="card-lift relative overflow-hidden">
+    <Card className="card-lift relative overflow-hidden" title={hint}>
       <CardContent className="relative flex items-start gap-3.5 p-5">
         <div
           className={cn(
@@ -89,6 +93,11 @@ function StatCard({
           {detail && (
             <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
               {detail}
+            </p>
+          )}
+          {hint && (
+            <p className="mt-1 text-[11px] leading-snug text-muted-foreground/80">
+              {hint}
             </p>
           )}
         </div>
@@ -111,12 +120,15 @@ function BreakdownCard({
   desc,
   total,
   parts,
+  footer,
 }: {
   icon: React.ElementType;
   title: string;
   desc?: string;
   total: number;
   parts: { label: string; value: number; bar: string; text: string }[];
+  /** Catatan di bawah rincian, mis. tindak lanjut setelah penolakan. */
+  footer?: React.ReactNode;
 }) {
   const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
 
@@ -171,6 +183,12 @@ function BreakdownCard({
             </div>
           ))}
         </div>
+
+        {footer && (
+          <div className="border-t pt-3 text-xs leading-snug text-muted-foreground">
+            {footer}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -403,15 +421,34 @@ export default function AdminDashboard() {
               value={formatNumber(stats?.total_schools)}
               tone="sky"
               detail={<>punya peserta terdaftar</>}
+              hint="Sekolah yang punya minimal satu peserta aktif, bukan seluruh master sekolah."
             />
+            {/* "punya akun" dulu menyesatkan: semua voter wajib login, jadi
+                semuanya punya akun. Yang membedakan adalah sudah mengisi
+                wizard atau belum. Peserta yang mendukung peserta lain boleh
+                melewati wizard, jadi mereka masuk selisihnya. */}
             <StatCard
               icon={Users}
               label="Total Voter"
               value={formatNumber(stats?.total_voters)}
               tone="violet"
               detail={
-                <>{formatNumber(stats?.onboarded_voters)} punya akun</>
+                <>
+                  {formatNumber(stats?.onboarded_voters)} isi data lengkap
+                  {typeof stats?.total_voters === "number" &&
+                  typeof stats?.onboarded_voters === "number" &&
+                  stats.total_voters > stats.onboarded_voters ? (
+                    <>
+                      ,{" "}
+                      {formatNumber(
+                        stats.total_voters - stats.onboarded_voters,
+                      )}{" "}
+                      peserta
+                    </>
+                  ) : null}
+                </>
               }
+              hint="Orang yang pernah vote atau mengerjakan quest, dihitung per nomor WA. Semua wajib login; peserta yang mendukung peserta lain boleh melewati wizard, jadi datanya tidak selengkap voter biasa."
             />
             <StatCard
               icon={ThumbsUp}
@@ -419,6 +456,7 @@ export default function AdminDashboard() {
               value={formatNumber(stats?.approved_votes)}
               tone="emerald"
               detail={<>sudah menyumbang poin</>}
+              hint="Vote yang bukti follow-nya sudah disetujui admin. Yang masih menunggu review belum dihitung."
             />
             <StatCard
               icon={Trophy}
@@ -432,6 +470,7 @@ export default function AdminDashboard() {
                   <>dari vote & quest</>
                 )
               }
+              hint="Akumulasi poin seluruh peserta aktif, dari vote yang disetujui dan quest."
             />
           </div>
 
@@ -466,6 +505,23 @@ export default function AdminDashboard() {
                   text: "text-red-600",
                 },
               ]}
+              footer={
+                /* Angka ditolak saja tak bisa membedakan voter yang
+                   benar-benar hilang dari yang sekadar mengulang. */
+                stats?.rejected_votes ? (
+                  <>
+                    Dari yang ditolak,{" "}
+                    <b className="text-emerald-600">
+                      {formatNumber(stats.recovered_voters)} orang
+                    </b>{" "}
+                    mengajukan ulang dan akhirnya disetujui,{" "}
+                    <b className="text-red-600">
+                      {formatNumber(stats.lost_voters)} orang
+                    </b>{" "}
+                    tidak kembali.
+                  </>
+                ) : null
+              }
             />
             <BreakdownCard
               icon={Ticket}

@@ -122,6 +122,10 @@ export interface AdminStats {
   pending_votes: number;
   /** Dari arsip: baris vote dihapus saat ditolak agar voter bisa mengulang. */
   rejected_votes: number;
+  /** Voter unik yang ditolak lalu mengajukan ulang dan akhirnya disetujui. */
+  recovered_voters: number;
+  /** Voter unik yang ditolak dan tak pernah kembali. */
+  lost_voters: number;
   bot_votes: number;
 
   /**

@@ -313,6 +313,9 @@ export function useLeaderboard(limit = 50) {
     queryFn: () =>
       api<ParticipantWithSchool[]>(`/api/public/leaderboard${qs({ limit })}`),
     refetchInterval: 15_000, // papan skor terasa live
+    // Data lama dipertahankan saat menyegarkan supaya kartu tak
+    // berkedip jadi kosong tiap query dijalankan ulang.
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -477,6 +480,10 @@ export function useAdminStats() {
   return useQuery({
     queryKey: ["admin-stats"],
     queryFn: () => api<AdminStats>("/api/admin/stats"),
+    // Pertahankan data lama saat menyegarkan: tanpa ini seluruh blok
+    // statistik hilang dan diganti "Memuat..." tiap kali query dijalankan
+    // ulang, padahal angkanya sudah ada.
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -492,6 +499,9 @@ export function useDailyVoteSeries(range: SeriesRange = { days: 14 }) {
     queryKey: ["daily-vote-series", range],
     queryFn: () =>
       api<DailyVoteSeriesRow[]>(`/api/admin/vote-series${qs({ ...range })}`),
+    // Data lama dipertahankan saat menyegarkan supaya kartu tak
+    // berkedip jadi kosong tiap query dijalankan ulang.
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -500,6 +510,9 @@ export function useVoterGrowth(range: SeriesRange = { days: 14 }) {
     queryKey: ["voter-growth", range],
     queryFn: () =>
       api<VoterGrowthRow[]>(`/api/admin/voter-growth${qs({ ...range })}`),
+    // Data lama dipertahankan saat menyegarkan supaya kartu tak
+    // berkedip jadi kosong tiap query dijalankan ulang.
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -868,6 +881,9 @@ export function usePmbInsight() {
   return useQuery({
     queryKey: ["pmb-insight"],
     queryFn: () => api<PmbInsight>("/api/admin/pmb-insight"),
+    // Data lama dipertahankan saat menyegarkan supaya kartu tak
+    // berkedip jadi kosong tiap query dijalankan ulang.
+    placeholderData: (prev) => prev,
   });
 }
 
