@@ -45,7 +45,7 @@ export function PointGrowthChart({
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis dataKey="day" tickFormatter={fmtDay} fontSize={12} minTickGap={24} tickMargin={6} />
+        <XAxis dataKey="day" tickFormatter={fmtDay} fontSize={12} minTickGap={8} tickMargin={6} />
         <YAxis fontSize={12} allowDecimals={false} />
         <Tooltip
           contentStyle={tooltipStyle}
@@ -73,7 +73,7 @@ export function DailyVotesChart({
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis dataKey="day" tickFormatter={fmtDay} fontSize={12} minTickGap={24} tickMargin={6} />
+        <XAxis dataKey="day" tickFormatter={fmtDay} fontSize={12} minTickGap={8} tickMargin={6} />
         <YAxis fontSize={12} allowDecimals={false} />
         <Tooltip
           contentStyle={tooltipStyle}
@@ -100,7 +100,7 @@ export function VoterGrowthChart({
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis dataKey="day" tickFormatter={fmtDay} fontSize={12} minTickGap={24} tickMargin={6} />
+        <XAxis dataKey="day" tickFormatter={fmtDay} fontSize={12} minTickGap={8} tickMargin={6} />
         <YAxis fontSize={12} allowDecimals={false} />
         <Tooltip
           contentStyle={tooltipStyle}
