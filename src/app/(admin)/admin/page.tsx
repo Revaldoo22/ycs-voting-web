@@ -571,8 +571,8 @@ export default function AdminDashboard() {
 
         <ChartCard
           icon={TrendingUp}
-          title="Pertumbuhan Voter"
-          desc="Akumulasi voter unik per hari"
+          title="Akun vs Voter Aktif"
+          desc="Akun voter baru dibanding yang benar-benar vote, per hari"
         >
           {growth && growth.length > 0 ? (
             <VoterGrowthChart data={growth} />

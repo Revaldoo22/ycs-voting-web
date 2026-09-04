@@ -7,6 +7,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   Pie,
@@ -85,10 +86,15 @@ export function DailyVotesChart({
   );
 }
 
+/**
+ * Dua garis harian: akun voter baru vs orang yang benar-benar vote hari itu.
+ * Bukan akumulasi, supaya naik-turun aktivitas per hari terlihat. Jarak
+ * kedua garis menunjukkan berapa akun yang mendaftar tapi tak ikut vote.
+ */
 export function VoterGrowthChart({
   data,
 }: {
-  data: { day: string; cumulative: number }[];
+  data: { day: string; accounts: number; voters: number }[];
 }) {
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -99,12 +105,28 @@ export function VoterGrowthChart({
         <Tooltip
           contentStyle={tooltipStyle}
           labelFormatter={(l) => fmtDay(l as string)}
-          formatter={(v) => [`${v} voter`, "Kumulatif"]}
+          formatter={(v, name) => [
+            `${v} orang`,
+            name === "accounts" ? "Akun baru" : "Vote hari itu",
+          ]}
+        />
+        <Legend
+          verticalAlign="top"
+          height={28}
+          formatter={(v) => (v === "accounts" ? "Akun baru" : "Vote hari itu")}
+          wrapperStyle={{ fontSize: 12 }}
         />
         <Line
           type="monotone"
-          dataKey="cumulative"
+          dataKey="accounts"
           stroke="hsl(192 91% 36%)"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="voters"
+          stroke="hsl(24 95% 53%)"
           strokeWidth={2}
           dot={false}
         />

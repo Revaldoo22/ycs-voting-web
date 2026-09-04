@@ -177,6 +177,11 @@ export interface DailyVoteSeriesRow {
 
 export interface VoterGrowthRow {
   day: string;
+  /** Akun voter yang dibuat hari itu. */
+  accounts: number;
+  /** Orang yang benar-benar vote hari itu (nomor WA unik, tanpa bot). */
+  voters: number;
+  /** Akumulasi voter unik sampai hari itu. */
   cumulative: number;
 }
 
