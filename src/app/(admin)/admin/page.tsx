@@ -6,6 +6,7 @@ import {
   Filter,
   Flame,
   GraduationCap,
+  HelpCircle,
   MapPin,
   Medal,
   School,
@@ -84,8 +85,11 @@ function StatCard({
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-muted-foreground">
+          {/* Ikon tanya menandai ada penjelasan di tooltip; tanpa penanda,
+              tooltip tak akan pernah ditemukan orang. */}
+          <p className="flex items-center gap-1 truncate text-xs font-medium text-muted-foreground">
             {label}
+            {hint && <HelpCircle className="h-3 w-3 shrink-0 opacity-60" />}
           </p>
           <p className="text-2xl font-extrabold tabular-nums tracking-tight">
             {value}
@@ -95,11 +99,7 @@ function StatCard({
               {detail}
             </p>
           )}
-          {hint && (
-            <p className="mt-1 text-[11px] leading-snug text-muted-foreground/80">
-              {hint}
-            </p>
-          )}
+
         </div>
       </CardContent>
     </Card>
@@ -421,7 +421,7 @@ export default function AdminDashboard() {
               value={formatNumber(stats?.total_schools)}
               tone="sky"
               detail={<>punya peserta terdaftar</>}
-              hint="Sekolah yang punya minimal satu peserta aktif, bukan seluruh master sekolah."
+              hint="Hanya sekolah yang punya peserta aktif, bukan seluruh master sekolah."
             />
             {/* "punya akun" dulu menyesatkan: semua voter wajib login, jadi
                 semuanya punya akun. Yang membedakan adalah sudah mengisi
@@ -448,7 +448,7 @@ export default function AdminDashboard() {
                   ) : null}
                 </>
               }
-              hint="Orang yang pernah vote atau mengerjakan quest, dihitung per nomor WA. Semua wajib login; peserta yang mendukung peserta lain boleh melewati wizard, jadi datanya tidak selengkap voter biasa."
+              hint="Orang yang pernah vote atau mengerjakan quest, dihitung per nomor WA. Semua wajib login. Peserta yang mendukung peserta lain boleh melewati wizard, jadi masuk hitungan tanpa data lengkap."
             />
             <StatCard
               icon={ThumbsUp}
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
               value={formatNumber(stats?.approved_votes)}
               tone="emerald"
               detail={<>sudah menyumbang poin</>}
-              hint="Vote yang bukti follow-nya sudah disetujui admin. Yang masih menunggu review belum dihitung."
+              hint="Vote yang bukti follow-nya sudah disetujui admin. Yang menunggu review belum dihitung."
             />
             <StatCard
               icon={Trophy}
@@ -470,7 +470,7 @@ export default function AdminDashboard() {
                   <>dari vote & quest</>
                 )
               }
-              hint="Akumulasi poin seluruh peserta aktif, dari vote yang disetujui dan quest."
+              hint="Akumulasi poin seluruh peserta aktif, dari vote disetujui dan quest."
             />
           </div>
 
@@ -508,7 +508,11 @@ export default function AdminDashboard() {
               footer={
                 /* Angka ditolak saja tak bisa membedakan voter yang
                    benar-benar hilang dari yang sekadar mengulang. */
-                stats?.rejected_votes ? (
+                /* Hanya tampil kalau datanya benar-benar ada. Backend lama
+                   tak mengirim kolom ini, dan "0 orang" di kedua sisi lebih
+                   menyesatkan daripada tak ada catatan sama sekali. */
+                stats?.rejected_votes &&
+                (stats.recovered_voters ?? 0) + (stats.lost_voters ?? 0) > 0 ? (
                   <>
                     Dari yang ditolak,{" "}
                     <b className="text-emerald-600">
