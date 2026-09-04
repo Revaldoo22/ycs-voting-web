@@ -95,7 +95,7 @@ const id = {
     qualifiedLabel: "Sudah Lolos",
     pendingBadge: "Vote Menunggu Review",
     votedLabel: "Sudah kamu vote",
-    pendingLabel: "Menunggu review admin",
+    pendingLabel: "Direview, cek notifikasi",
     supportCta: "Dukung",
     prev: "Sebelumnya",
     next: "Berikutnya",
@@ -559,7 +559,12 @@ const id = {
       `Wajib follow ${n} saluran WhatsApp di bawah sebelum vote pertamamu diproses. Upload bukti, lalu kirim. Vote masuk setelah bukti di-approve admin.`,
     sendProofAndVoteWa: (n: number) => `Kirim Bukti & Vote (${n} file)`,
     votePendingSuccess:
-      "Vote terkirim! Bukti follow WA-mu sedang direview admin, poin masuk setelah di-approve.",
+      "Vote terkirim! Bukti follow WhatsApp-mu sedang direview admin. Cek notifikasi lonceng dalam 24 jam untuk tahu hasilnya.",
+    pendingNoticeTitle: "Vote kamu sedang direview",
+    pendingNoticeBody:
+      "Admin sedang memeriksa bukti follow WhatsApp-mu. Poin masuk setelah disetujui, biasanya dalam 24 jam. Kembali lagi besok dan cek lonceng notifikasi di pojok atas untuk tahu vote kamu disetujui atau ditolak.",
+    pendingNoticeRejected:
+      "Kalau ditolak, kamu tetap bisa vote lagi dengan bukti yang benar.",
     chooseContentFirst: "Pilih konten peserta dulu.",
     invalidLink: "Masukkan link postingan yang valid (mulai http).",
     chooseAtLeastOneFile: "Pilih minimal 1 file bukti.",

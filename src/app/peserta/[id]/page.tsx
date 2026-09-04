@@ -289,9 +289,21 @@ export default function PublicParticipantPage({
                 ) : votedThis ? (
                   <>
                   {votePending ? (
-                    <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/50 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-600 dark:text-amber-400">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t.votedPendingReview}
+                    /* Panel menetap, bukan bar satu baris: toast sukses cuma
+                       muncul beberapa detik, padahal instruksinya (tunggu 24
+                       jam, cek lonceng) justru perlu terbaca kapan saja voter
+                       membuka halaman ini. */
+                    <div className="w-full space-y-1.5 rounded-xl border border-amber-400/50 bg-amber-500/10 p-4">
+                      <p className="flex items-center gap-2 text-sm font-bold text-amber-700 dark:text-amber-400">
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                        {t.pendingNoticeTitle}
+                      </p>
+                      <p className="text-xs leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+                        {t.pendingNoticeBody}
+                      </p>
+                      <p className="text-xs leading-relaxed text-amber-900/70 dark:text-amber-200/70">
+                        {t.pendingNoticeRejected}
+                      </p>
                     </div>
                   ) : (
                     <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-300 px-4 py-2.5 text-sm font-bold text-amber-950 shadow-[0_0_18px_rgba(251,191,36,0.55)]">

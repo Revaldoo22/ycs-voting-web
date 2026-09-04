@@ -97,7 +97,7 @@ const en: Dictionary = {
     qualifiedLabel: "Qualified",
     pendingBadge: "Vote Pending Review",
     votedLabel: "You already voted",
-    pendingLabel: "Awaiting admin review",
+    pendingLabel: "In review, check notifications",
     supportCta: "Support",
     prev: "Previous",
     next: "Next",
@@ -561,7 +561,12 @@ const en: Dictionary = {
       `You must follow the ${n} WhatsApp channels below before your first vote is processed. Upload proof, then submit. Your vote goes through once proof is approved by admin.`,
     sendProofAndVoteWa: (n: number) => `Submit Proof & Vote (${n} files)`,
     votePendingSuccess:
-      "Vote submitted! Your WhatsApp follow proof is being reviewed by admin, points will be added once approved.",
+      "Vote submitted! Your WhatsApp follow proof is being reviewed. Check the notification bell within 24 hours to see the result.",
+    pendingNoticeTitle: "Your vote is being reviewed",
+    pendingNoticeBody:
+      "An admin is checking your WhatsApp follow proof. Points are added once approved, usually within 24 hours. Come back tomorrow and check the notification bell at the top to see whether your vote was approved or rejected.",
+    pendingNoticeRejected:
+      "If it is rejected, you can still vote again with the correct proof.",
     chooseContentFirst: "Choose a participant's content first.",
     invalidLink: "Enter a valid post link (starting with http).",
     chooseAtLeastOneFile: "Choose at least 1 proof file.",
