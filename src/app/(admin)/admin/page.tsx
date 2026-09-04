@@ -365,7 +365,11 @@ export default function AdminDashboard() {
 
   const { data: stats, isLoading, isError, refetch } = useAdminStats();
   const { data: votes } = useDailyVoteSeries(range);
-  const { data: growth } = useVoterGrowth(range);
+  // Grafik akun vs voter sengaja dikunci 7 hari terakhir, tidak mengikuti
+  // picker: rentang lifetime membuat tanggalnya terlalu rapat untuk dibaca,
+  // sementara yang ingin dilihat di sini justru aktivitas beberapa hari
+  // terakhir.
+  const { data: growth } = useVoterGrowth({ days: 7 });
   const { data: top } = useLeaderboard(8);
   const { data: pmb } = usePmbInsight();
 
@@ -572,7 +576,7 @@ export default function AdminDashboard() {
         <ChartCard
           icon={TrendingUp}
           title="Akun vs Voter Aktif"
-          desc="Akun voter baru dibanding yang benar-benar vote, per hari"
+          desc="Akun voter baru dibanding yang benar-benar vote, 7 hari terakhir"
         >
           {growth && growth.length > 0 ? (
             <VoterGrowthChart data={growth} />
