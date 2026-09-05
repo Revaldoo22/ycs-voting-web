@@ -570,6 +570,14 @@ export default function AdminPoinPage() {
               tanpa batas penerima.
             </p>
             <p className="text-sm text-muted-foreground">
+              Satu akun hanya boleh menerima{" "}
+              <span className="font-medium text-foreground">
+                satu barang seumur hidup
+              </span>
+              . Yang sudah dapat Tumbler tidak bisa dapat Kaos juga, dan
+              seterusnya selalu Dash. Kunci dan Dash tidak ikut dihitung.
+            </p>
+            <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">Otomatis</span>{" "}
               menahan sekaligus menjamin. Diisi 10 kali spin berarti hadiah itu{" "}
               <span className="font-medium text-foreground">
