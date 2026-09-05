@@ -27,8 +27,6 @@ import { cn, formatNumber } from "@/lib/utils";
 
 type SpinCfg = {
   spin_enabled: boolean;
-  spin_forced_prize_code: string | null;
-  spin_forced_min_spins: number | null;
 };
 
 type SpinPrize = {
@@ -356,13 +354,7 @@ export default function AdminPoinPage() {
     queryFn: () => api<SpinPrize[]>("/api/admin/rewards/prizes"),
   });
   const [togglingSpin, setTogglingSpin] = React.useState(false);
-  const [savingMode, setSavingMode] = React.useState(false);
 
-  // Hadiah terkunci tak boleh jadi hadiah paksa, jadi tidak ikut ditawarkan.
-  const forceable = React.useMemo(
-    () => (prizes ?? []).filter((p) => !p.is_locked && !p.is_empty),
-    [prizes],
-  );
   // Total bobot hadiah yang benar-benar ikut diundi. Dipakai menghitung
   // rasio "1 dari sekian" dari bobot asli, bukan dari persen yang sudah
   // dibulatkan.
@@ -373,40 +365,8 @@ export default function AdminPoinPage() {
         .reduce((sum, p) => sum + p.weight, 0),
     [prizes],
   );
-  const forcedCode = spinCfg?.spin_forced_prize_code ?? "";
-  const forcedMin = spinCfg?.spin_forced_min_spins ?? 0;
 
-  // Draft form, disemai dari server begitu datanya masuk.
-  const [modeCode, setModeCode] = React.useState<string | null>(null);
-  const [modeMin, setModeMin] = React.useState<string | null>(null);
-  const codeVal = modeCode ?? forcedCode;
-  const minVal = modeMin ?? String(forcedMin);
-  const modeDirty = codeVal !== forcedCode || minVal !== String(forcedMin);
 
-  async function saveMode() {
-    setSavingMode(true);
-    try {
-      await api("/api/admin/rewards/spin-options", {
-        method: "PATCH",
-        body: JSON.stringify({
-          spin_forced_prize_code: codeVal || null,
-          spin_forced_min_spins: codeVal ? Number(minVal || 0) : null,
-        }),
-      });
-      toast.success(
-        codeVal
-          ? "Mode hadiah pasti disimpan."
-          : "Roda kembali acak sesuai bobot.",
-      );
-      setModeCode(null);
-      setModeMin(null);
-      qc.invalidateQueries({ queryKey: ["spin-options-admin"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal menyimpan.");
-    } finally {
-      setSavingMode(false);
-    }
-  }
 
   function toggleLock(p: SpinPrize) {
     const next = !p.is_locked;
@@ -584,7 +544,7 @@ export default function AdminPoinPage() {
         </CardContent>
       </Card>
 
-      {/* Hadiah pasti + kunci hadiah besar */}
+      {/* Peluang, ambang otomatis, kunci hadiah */}
       <Card>
         <CardContent className="space-y-5 p-4 sm:p-6">
           <div>
@@ -595,80 +555,14 @@ export default function AdminPoinPage() {
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-            <div className="space-y-1.5">
-              <Label>Hadiah yang selalu keluar</Label>
-              <select
-                value={codeVal}
-                onChange={(e) => setModeCode(e.target.value)}
-                className={cn(
-                  "h-9 w-full rounded-md border border-input bg-transparent",
-                  "px-3 text-sm shadow-xs outline-none",
-                  "focus-visible:border-ring focus-visible:ring-[3px]",
-                  "focus-visible:ring-ring/50",
-                )}
-              >
-                <option value="">Acak sesuai bobot (normal)</option>
-                {forceable.map((p) => (
-                  <option key={p.id} value={p.code}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Mulai spin ke-</Label>
-              <Input
-                type="number"
-                min={0}
-                value={minVal}
-                onChange={(e) => setModeMin(e.target.value)}
-                disabled={!codeVal}
-                className="sm:w-28"
-              />
-            </div>
-            <Button onClick={saveMode} disabled={savingMode || !modeDirty}>
-              {savingMode && <Loader2 className="h-4 w-4 animate-spin" />}
-              Simpan
-            </Button>
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            {codeVal ? (
-              <>
-                Setiap spin dapat{" "}
-                <span className="font-semibold text-foreground">
-                  {forceable.find((p) => p.code === codeVal)?.label ?? codeVal}
-                </span>
-                {Number(minVal || 0) > 1 ? (
-                  <>
-                    {" "}
-                    mulai spin ke-{minVal}. Sebelum itu hasilnya Dash, jadi
-                    voter perlu {minVal} kali spin dulu.
-                  </>
-                ) : (
-                  " sejak spin pertama."
-                )}{" "}
-                Jatah tetap berlaku: hadiah ini dibatasi{" "}
-                {forceable.find((p) => p.code === codeVal)?.winner_quota ===
-                null
-                  ? "tanpa batas jumlah penerima"
-                  : `${forceable.find((p) => p.code === codeVal)?.winner_quota} penerima`}
-                , dan begitu habis sisanya dapat Dash. Naikkan jatahnya di
-                bawah kalau semua peserta memang harus kebagian.
-              </>
-            ) : (
-              "Roda berjalan normal: hadiah diundi sesuai bobot masing-masing."
-            )}
-          </p>
-
           <div className="space-y-2 border-t pt-4">
             <p className="text-sm font-semibold">Peluang & kunci per hadiah</p>
             <p className="text-sm text-muted-foreground">
               Bobot menentukan peluang di undian acak, dan sifatnya relatif:
               peluang = bobot dibagi total bobot semua hadiah. Jadi menaikkan
               satu bobot ikut menurunkan peluang hadiah lain. Persen di
-              sebelahnya adalah hasil sebenarnya.
+              sebelahnya adalah hasil sebenarnya, dan tidak berlaku selama
+              hadiahnya masih ditahan ambang otomatis.
             </p>
             <p className="text-sm text-muted-foreground">
               Hadiah terkunci tetap tampil di roda sebagai pemikat, tapi
@@ -677,13 +571,13 @@ export default function AdminPoinPage() {
             </p>
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">Otomatis</span>{" "}
-              memberi hadiah begitu akun mencapai sekian poin atau sekian kali
-              spin, mana yang lebih dulu. Ini jaminan{" "}
-              <span className="font-medium text-foreground">paling lambat</span>
-              : peserta masih bisa dapat lebih awal lewat roda. Kalau justru
-              ingin menahan hadiah sampai titik itu, pakai hadiah pasti di
-              atas, tapi ingat hadiah lain berhenti keluar selama mode itu
-              aktif.
+              menahan sekaligus menjamin. Diisi 10 kali spin berarti hadiah itu{" "}
+              <span className="font-medium text-foreground">
+                tidak bisa didapat sebelum spin ke-10
+              </span>{" "}
+              walau beruntung, lalu diberikan tepat di spin ke-10. Kalau dua
+              kolom diisi, yang lebih dulu tercapai yang berlaku. Kosongkan
+              keduanya supaya hadiah murni diundi lewat bobot.
             </p>
             <div className="mt-3 space-y-2">
               {(prizes ?? []).map((p) => (
@@ -704,8 +598,6 @@ export default function AdminPoinPage() {
                         <Badge variant="secondary">Penyeimbang</Badge>
                       ) : p.is_locked ? (
                         <Badge variant="destructive">Terkunci</Badge>
-                      ) : p.code === codeVal ? (
-                        <Badge>Hadiah pasti</Badge>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
