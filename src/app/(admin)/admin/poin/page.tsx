@@ -73,12 +73,24 @@ type Adjustment = {
  * hadiah lain. Karena itu persen hasilnya ditampilkan di sebelahnya, supaya
  * panitia melihat akibat sebenarnya, bukan menebak dari angka bobot.
  */
-function WeightBox({ prize }: { prize: SpinPrize }) {
+function WeightBox({
+  prize,
+  totalWeight,
+}: {
+  prize: SpinPrize;
+  totalWeight: number;
+}) {
   const qc = useQueryClient();
   const server = String(prize.weight);
   const [draft, setDraft] = React.useState<string | null>(null);
   const val = draft ?? server;
   const [saving, setSaving] = React.useState(false);
+
+  // Dibulatkan hanya untuk tampilan, hitungannya dari bobot asli.
+  const ratio =
+    !prize.is_locked && prize.weight > 0 && totalWeight > 0
+      ? Math.round(totalWeight / prize.weight)
+      : null;
 
   async function save() {
     if (val === server) return;
@@ -129,18 +141,17 @@ function WeightBox({ prize }: { prize: SpinPrize }) {
           "w-24 shrink-0 text-xs tabular-nums",
           prize.chance > 0 ? "text-foreground" : "text-muted-foreground",
         )}
-        // Persen kecil sulit dirasakan, jadi ditemani bentuk "1 dari sekian"
-        // yang lebih mudah dibayangkan panitia.
+        // Rasio dihitung dari bobot mentah, BUKAN dari chance yang sudah
+        // dibulatkan 2 desimal. Lewat chance, 1 dari 600 terbaca 1:588
+        // karena 0.1667 dibulatkan jadi 0.17.
         title={
-          prize.chance > 0
-            ? `Sekitar 1 dari ${Math.round(100 / prize.chance)} putaran`
-            : undefined
+          ratio !== null ? `Sekitar 1 dari ${ratio} putaran` : undefined
         }
       >
         {prize.is_locked
           ? "terkunci"
-          : prize.chance > 0
-            ? `${prize.chance}% (1:${Math.round(100 / prize.chance)})`
+          : ratio !== null
+            ? `${prize.chance}% (1:${ratio})`
             : "0%"}
       </span>
     </div>
@@ -252,6 +263,16 @@ export default function AdminPoinPage() {
   // Hadiah terkunci tak boleh jadi hadiah paksa, jadi tidak ikut ditawarkan.
   const forceable = React.useMemo(
     () => (prizes ?? []).filter((p) => !p.is_locked && !p.is_empty),
+    [prizes],
+  );
+  // Total bobot hadiah yang benar-benar ikut diundi. Dipakai menghitung
+  // rasio "1 dari sekian" dari bobot asli, bukan dari persen yang sudah
+  // dibulatkan.
+  const totalWeight = React.useMemo(
+    () =>
+      (prizes ?? [])
+        .filter((p) => !p.is_locked && p.active && p.weight > 0)
+        .reduce((sum, p) => sum + p.weight, 0),
     [prizes],
   );
   const forcedCode = spinCfg?.spin_forced_prize_code ?? "";
@@ -582,7 +603,7 @@ export default function AdminPoinPage() {
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <WeightBox prize={p} />
+                      <WeightBox prize={p} totalWeight={totalWeight} />
                       {!p.is_empty && <QuotaBox prize={p} />}
                       {!p.is_empty && (
                         <Button
