@@ -11,13 +11,21 @@ export async function compressImage(
 ): Promise<File> {
   const { maxSize = 1000, quality = 0.8, mime = "image/jpeg" } = opts;
 
-  // Skip non-images and tiny files (< 200 KB), not worth it.
   if (!file.type.startsWith("image/")) return file;
-  if (file.size < 200 * 1024) return file;
 
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+
+    // Skip only when the file is BOTH small and already within maxSize.
+    // Checking size alone lets a 3000px PNG through just because it
+    // compresses well, and that is exactly what slows a page down.
+    const longest = Math.max(bitmap.width, bitmap.height);
+    if (file.size < 200 * 1024 && longest <= maxSize) {
+      bitmap.close?.();
+      return file;
+    }
+
+    const scale = Math.min(1, maxSize / longest);
     const w = Math.round(bitmap.width * scale);
     const h = Math.round(bitmap.height * scale);
 

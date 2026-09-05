@@ -107,7 +107,14 @@ function ImageBox({ prize }: { prize: SpinPrize }) {
   async function pilih(file: File) {
     setBusy(true);
     try {
-      const img = await compressImage(file);
+      // Ikon roda ditampilkan kecil, jadi 400px sudah lebih dari cukup.
+      // WebP dipilih karena jauh lebih ringan dari JPEG pada gambar produk
+      // berlatar polos, dan roda memuat semua hadiah sekaligus.
+      const img = await compressImage(file, {
+        maxSize: 400,
+        quality: 0.82,
+        mime: "image/webp",
+      });
       const fd = new FormData();
       fd.append("file", img);
       const up = await api<{ url: string }>("/api/upload", {
