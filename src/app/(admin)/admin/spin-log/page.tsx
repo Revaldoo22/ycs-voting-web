@@ -4,12 +4,18 @@ import * as React from "react";
 import {
   Gift,
   History,
+  Loader2,
+  Plus,
   RefreshCw,
   Search,
   Sparkles,
+  Target,
+  Trash2,
   Wind,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +31,7 @@ type Hasil = {
   prize_code: string;
   is_empty: boolean;
   is_bonus: boolean;
-  source: "random" | "guaranteed" | "auto";
+  source: "random" | "guaranteed" | "auto" | "targeted";
 };
 
 type Baris = {
@@ -59,6 +65,29 @@ type Tally = {
   terakhir: string;
 };
 
+type Target = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  prize_code: string;
+  prize_label: string | null;
+  account_name: string | null;
+  at_spin: number | null;
+  reason: string;
+  created_by: string | null;
+  used_at: string | null;
+  used_by_email: string | null;
+  created_at: string;
+};
+
+type PrizeOpt = {
+  id: string;
+  code: string;
+  label: string;
+  is_locked: boolean;
+  is_empty: boolean;
+};
+
 const PER_HAL = 50;
 
 /** Dari mana hadiah itu datang, supaya panitia bisa menelusuri sengketa. */
@@ -66,6 +95,7 @@ const SUMBER: Record<Hasil["source"], string> = {
   random: "undian",
   guaranteed: "jaminan",
   auto: "ambang otomatis",
+  targeted: "ditandai panitia",
 };
 
 function waktu(iso: string) {
@@ -76,6 +106,227 @@ function waktu(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/**
+ * Penandaan hadiah untuk akun tertentu.
+ *
+ * Dipakai saat pemenang ditetapkan di luar sistem: hadiah panggung,
+ * kompensasi keluhan, atau tamu undangan. Berbeda dari bobot dan ambang yang
+ * berlaku untuk semua orang, ini hanya mengenai satu akun dan sekali pakai.
+ */
+function PanelTarget() {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [prize, setPrize] = React.useState("");
+  const [atSpin, setAtSpin] = React.useState("");
+  const [reason, setReason] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+
+  const { data: targets, isLoading } = useQuery({
+    queryKey: ["spin-targets"],
+    queryFn: () => api<Target[]>("/api/admin/rewards/spin-targets"),
+  });
+  const { data: prizes } = useQuery({
+    queryKey: ["spin-prizes-admin"],
+    queryFn: () => api<PrizeOpt[]>("/api/admin/rewards/prizes?all=1"),
+  });
+
+  // Hadiah terkunci dan Dash tidak masuk pilihan: yang pertama ditolak
+  // server, yang kedua tidak masuk akal ditetapkan sebagai hadiah.
+  const pilihan = React.useMemo(
+    () => (prizes ?? []).filter((p) => !p.is_locked && !p.is_empty),
+    [prizes],
+  );
+
+  async function submit() {
+    if (!email.trim() && !phone.trim()) {
+      return void toast.error("Isi email atau nomor WA akunnya.");
+    }
+    if (!prize) return void toast.error("Pilih hadiahnya dulu.");
+    if (reason.trim().length < 3) {
+      return void toast.error("Alasan minimal 3 karakter.");
+    }
+    setBusy(true);
+    try {
+      await api("/api/admin/rewards/spin-targets", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
+          prize_code: prize,
+          at_spin: atSpin.trim() ? Number(atSpin) : undefined,
+          reason: reason.trim(),
+        }),
+      });
+      toast.success("Penandaan disimpan.");
+      setEmail("");
+      setPhone("");
+      setAtSpin("");
+      setReason("");
+      qc.invalidateQueries({ queryKey: ["spin-targets"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function hapus(t: Target) {
+    confirm({
+      title: "Batalkan penandaan ini?",
+      description: `${t.email ?? t.phone} tidak jadi mendapat ${t.prize_label ?? t.prize_code}.`,
+      confirmText: "Batalkan",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await api(`/api/admin/rewards/spin-targets/${t.id}`, {
+            method: "DELETE",
+          });
+          toast.success("Penandaan dibatalkan.");
+          qc.invalidateQueries({ queryKey: ["spin-targets"] });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Gagal membatalkan.");
+        }
+      },
+    });
+  }
+
+  const rows = targets ?? [];
+
+  return (
+    <Card>
+      <CardContent className="space-y-5 p-4 sm:p-6">
+        <div>
+          <p className="flex items-center gap-2 font-bold">
+            <Target className="h-4 w-4 text-primary" />
+            Tandai Akun Dapat Hadiah
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Untuk pemenang yang sudah ditetapkan panitia. Akun dicocokkan lewat
+            email atau nomor WA, cukup salah satu. Sekali pakai, dan hasilnya
+            tercatat di log sebagai ditandai panitia.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Email akun</Label>
+            <Input
+              value={email}
+              placeholder="budi@sekolah.sch.id"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>atau Nomor WA</Label>
+            <Input
+              value={phone}
+              placeholder="0812xxxxxxx"
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Hadiah</Label>
+            <select
+              value={prize}
+              onChange={(e) => setPrize(e.target.value)}
+              className={cn(
+                "h-9 w-full rounded-md border border-input bg-transparent",
+                "px-3 text-sm shadow-xs outline-none",
+                "focus-visible:border-ring focus-visible:ring-[3px]",
+                "focus-visible:ring-ring/50",
+              )}
+            >
+              <option value="">Pilih hadiah</option>
+              {pilihan.map((p) => (
+                <option key={p.id} value={p.code}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Di spin ke- (kosongkan = berikutnya)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={atSpin}
+              placeholder="mis. 10"
+              onChange={(e) => setAtSpin(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Alasan</Label>
+            <Input
+              value={reason}
+              placeholder="mis. pemenang lomba yel-yel"
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button onClick={submit} disabled={busy}>
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+          <Plus className="h-4 w-4" />
+          Tandai
+        </Button>
+
+        <div className="space-y-2 border-t pt-4">
+          <p className="text-sm font-semibold">
+            Penandaan aktif &amp; riwayat ({rows.length})
+          </p>
+          {isLoading ? (
+            <LoadingState />
+          ) : rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Belum ada akun yang ditandai.
+            </p>
+          ) : (
+            rows.map((t) => (
+              <div
+                key={t.id}
+                className={cn(
+                  "flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5",
+                  t.used_at && "bg-muted/40",
+                )}
+              >
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">
+                      {t.account_name ?? t.email ?? t.phone}
+                    </span>
+                    <Badge variant={t.used_at ? "secondary" : "default"}>
+                      {t.prize_label ?? t.prize_code}
+                    </Badge>
+                    {t.at_spin !== null && (
+                      <Badge variant="outline">spin ke-{t.at_spin}</Badge>
+                    )}
+                    {t.used_at && (
+                      <Badge variant="secondary">
+                        sudah diberikan {waktu(t.used_at)}
+                      </Badge>
+                    )}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {t.email ?? t.phone} &middot; {t.reason}
+                    {t.created_by ? ` oleh ${t.created_by}` : ""}
+                  </p>
+                </div>
+                {!t.used_at && (
+                  <Button size="sm" variant="ghost" onClick={() => hapus(t)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 /**
@@ -199,6 +450,8 @@ export default function AdminSpinLogPage() {
           </CardContent>
         </Card>
       )}
+
+      <PanelTarget />
 
       {/* Pencarian */}
       <Card>
