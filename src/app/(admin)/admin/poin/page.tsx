@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   Coins,
+  Image as ImageIcon,
   Loader2,
   Lock,
   LockOpen,
@@ -12,6 +13,8 @@ import {
   Scale,
   Search,
   Trash2,
+  Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { EmptyState, LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
+import { compressImage } from "@/lib/image-compress";
 import { cn, formatNumber } from "@/lib/utils";
 
 type SpinCfg = {
@@ -43,6 +47,8 @@ type SpinPrize = {
   /** Ambang pemberian otomatis. null = tidak ada jalur otomatis. */
   auto_at_points: number | null;
   auto_at_spins: number | null;
+  /** Gambar hadiah di roda web kedua. null = pakai warna dan label saja. */
+  image_url: string | null;
   /** Peluang di undian acak, persen. Dihitung server dari bobot. */
   chance: number;
 };
@@ -67,6 +73,115 @@ type Adjustment = {
   created_by: string | null;
   created_at: string;
 };
+
+/**
+ * Gambar hadiah yang dipakai roda di web kedua.
+ *
+ * Dikompres dulu sebelum diunggah: gambar dari galeri panitia bisa beberapa
+ * MB, dan itu memperlambat roda yang memuat semua hadiah sekaligus.
+ */
+function ImageBox({ prize }: { prize: SpinPrize }) {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = React.useState(false);
+
+  async function simpan(url: string | null) {
+    setBusy(true);
+    try {
+      await api(`/api/admin/rewards/prizes/${prize.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ image_url: url }),
+      });
+      toast.success(
+        url ? `Gambar ${prize.label} disimpan.` : `Gambar ${prize.label} dihapus.`,
+      );
+      qc.invalidateQueries({ queryKey: ["spin-prizes-admin"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan gambar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function pilih(file: File) {
+    setBusy(true);
+    try {
+      const img = await compressImage(file);
+      const fd = new FormData();
+      fd.append("file", img);
+      const up = await api<{ url: string }>("/api/upload", {
+        method: "POST",
+        body: fd,
+      });
+      await simpan(new URL(up.url, window.location.origin).toString());
+    } catch (e) {
+      toast.error(
+        "Gagal upload: " + (e instanceof Error ? e.message : "coba lagi"),
+      );
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void pilih(f);
+          e.target.value = "";
+        }}
+      />
+      {prize.image_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={prize.image_url}
+          alt={prize.label}
+          className="h-8 w-8 rounded border object-cover"
+        />
+      ) : (
+        <div className="flex h-8 w-8 items-center justify-center rounded border border-dashed text-muted-foreground">
+          <ImageIcon className="h-4 w-4" />
+        </div>
+      )}
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+      >
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Upload className="h-4 w-4" />
+        )}
+        {prize.image_url ? "Ganti" : "Gambar"}
+      </Button>
+      {prize.image_url && !busy && (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            confirm({
+              title: `Hapus gambar ${prize.label}?`,
+              description:
+                "Roda di web kedua kembali menampilkan warna dan label saja.",
+              confirmText: "Hapus",
+              variant: "destructive",
+              onConfirm: () => simpan(null),
+            })
+          }
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
 
 /**
  * Ambang pemberian otomatis satu hadiah: sekian poin ATAU sekian kali spin,
@@ -622,14 +737,22 @@ export default function AdminPoinPage() {
                       )}
                     </div>
                     </div>
-                    {/* Ambang otomatis di baris sendiri: barisnya jadi terlalu
-                        penuh kalau disejajarkan dengan bobot dan jatah. Dash
-                        dan hadiah jaminan tak punya jalur ini. */}
-                    {!p.is_empty && !p.is_guaranteed && (
-                      <div className="mt-2 border-t pt-2">
+                    {/* Baris kedua: ambang otomatis dan gambar. Dipisah dari
+                        baris atas supaya tidak berdesakan dengan bobot dan
+                        jatah. Dash dan hadiah jaminan tak punya ambang, tapi
+                        tetap boleh diberi gambar untuk roda. */}
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+                      {!p.is_empty && !p.is_guaranteed ? (
                         <AutoBox prize={p} />
-                      </div>
-                    )}
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {p.is_empty
+                            ? "Tanpa ambang: Dash selalu tersedia"
+                            : "Tanpa ambang: keluar di titik jaminan"}
+                        </span>
+                      )}
+                      <ImageBox prize={p} />
+                    </div>
                   </div>
                 ))}
               {prizes !== undefined && prizes.length === 0 && (
