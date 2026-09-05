@@ -9,6 +9,7 @@ import {
   Plus,
   Power,
   PowerOff,
+  Scale,
   Search,
   Trash2,
 } from "lucide-react";
@@ -39,6 +40,8 @@ type SpinPrize = {
   is_locked: boolean;
   is_empty: boolean;
   winner_quota: number | null;
+  /** Peluang di undian acak, persen. Dihitung server dari bobot. */
+  chance: number;
 };
 
 type Balance = {
@@ -61,6 +64,88 @@ type Adjustment = {
   created_by: string | null;
   created_at: string;
 };
+
+/**
+ * Bobot peluang satu hadiah di undian acak.
+ *
+ * Bobot bersifat RELATIF: peluang = bobot dibagi total bobot semua hadiah
+ * yang ikut diundi. Jadi menaikkan satu bobot otomatis menurunkan peluang
+ * hadiah lain. Karena itu persen hasilnya ditampilkan di sebelahnya, supaya
+ * panitia melihat akibat sebenarnya, bukan menebak dari angka bobot.
+ */
+function WeightBox({ prize }: { prize: SpinPrize }) {
+  const qc = useQueryClient();
+  const server = String(prize.weight);
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const val = draft ?? server;
+  const [saving, setSaving] = React.useState(false);
+
+  async function save() {
+    if (val === server) return;
+    const n = Number(val);
+    if (!Number.isInteger(n) || n < 0) {
+      toast.error("Bobot harus bilangan bulat 0 atau lebih.");
+      setDraft(null);
+      return;
+    }
+    setSaving(true);
+    try {
+      await api(`/api/admin/rewards/prizes/${prize.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ weight: n }),
+      });
+      toast.success(
+        n === 0
+          ? `${prize.label}: bobot 0, tidak ikut undian acak.`
+          : `${prize.label}: bobot ${n}.`,
+      );
+      setDraft(null);
+      qc.invalidateQueries({ queryKey: ["spin-prizes-admin"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan bobot.");
+      setDraft(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-muted-foreground">Bobot</span>
+      <Input
+        type="number"
+        min={0}
+        value={val}
+        disabled={saving || prize.is_locked}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className="h-8 w-20 text-center"
+      />
+      <span
+        className={cn(
+          "w-24 shrink-0 text-xs tabular-nums",
+          prize.chance > 0 ? "text-foreground" : "text-muted-foreground",
+        )}
+        // Persen kecil sulit dirasakan, jadi ditemani bentuk "1 dari sekian"
+        // yang lebih mudah dibayangkan panitia.
+        title={
+          prize.chance > 0
+            ? `Sekitar 1 dari ${Math.round(100 / prize.chance)} putaran`
+            : undefined
+        }
+      >
+        {prize.is_locked
+          ? "terkunci"
+          : prize.chance > 0
+            ? `${prize.chance}% (1:${Math.round(100 / prize.chance)})`
+            : "0%"}
+      </span>
+    </div>
+  );
+}
 
 /**
  * Jatah jumlah penerima satu hadiah. Kosong = tanpa batas.
@@ -459,41 +544,55 @@ export default function AdminPoinPage() {
           </p>
 
           <div className="space-y-2 border-t pt-4">
-            <p className="text-sm font-semibold">Kunci hadiah</p>
+            <p className="text-sm font-semibold">Peluang & kunci per hadiah</p>
+            <p className="text-sm text-muted-foreground">
+              Bobot menentukan peluang di undian acak, dan sifatnya relatif:
+              peluang = bobot dibagi total bobot semua hadiah. Jadi menaikkan
+              satu bobot ikut menurunkan peluang hadiah lain. Persen di
+              sebelahnya adalah hasil sebenarnya.
+            </p>
             <p className="text-sm text-muted-foreground">
               Hadiah terkunci tetap tampil di roda sebagai pemikat, tapi
-              dijamin tidak ada yang bisa mendapatkannya.
+              dijamin tidak ada yang bisa mendapatkannya. Jatah kosong berarti
+              tanpa batas penerima.
             </p>
             <div className="mt-3 space-y-2">
-              {(prizes ?? [])
-                .filter((p) => !p.is_empty)
-                .map((p) => (
+              {(prizes ?? []).map((p) => (
                   <div
                     key={p.id}
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5"
                   >
                     <div className="flex min-w-0 items-center gap-2">
-                      {p.is_locked ? (
+                      {p.is_empty ? (
+                        <Scale className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      ) : p.is_locked ? (
                         <Lock className="h-4 w-4 shrink-0 text-destructive" />
                       ) : (
                         <LockOpen className="h-4 w-4 shrink-0 text-emerald-600" />
                       )}
-                      <span className="truncate font-medium">{p.label}</span>
-                      {p.is_locked ? (
+                      <span className="truncate font-medium">
+                        {p.is_empty ? "Dash (belum beruntung)" : p.label}
+                      </span>
+                      {p.is_empty ? (
+                        <Badge variant="secondary">Penyeimbang</Badge>
+                      ) : p.is_locked ? (
                         <Badge variant="destructive">Terkunci</Badge>
                       ) : p.code === codeVal ? (
                         <Badge>Hadiah pasti</Badge>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <QuotaBox prize={p} />
-                      <Button
-                        size="sm"
-                        variant={p.is_locked ? "outline" : "ghost"}
-                        onClick={() => toggleLock(p)}
-                      >
-                        {p.is_locked ? "Buka Kunci" : "Kunci"}
-                      </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <WeightBox prize={p} />
+                      {!p.is_empty && <QuotaBox prize={p} />}
+                      {!p.is_empty && (
+                        <Button
+                          size="sm"
+                          variant={p.is_locked ? "outline" : "ghost"}
+                          onClick={() => toggleLock(p)}
+                        >
+                          {p.is_locked ? "Buka Kunci" : "Kunci"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
