@@ -40,6 +40,11 @@ type SpinPrize = {
   is_locked: boolean;
   is_empty: boolean;
   winner_quota: number | null;
+  max_per_account: number | null;
+  is_guaranteed: boolean;
+  /** Ambang pemberian otomatis. null = tidak ada jalur otomatis. */
+  auto_at_points: number | null;
+  auto_at_spins: number | null;
   /** Peluang di undian acak, persen. Dihitung server dari bobot. */
   chance: number;
 };
@@ -64,6 +69,99 @@ type Adjustment = {
   created_by: string | null;
   created_at: string;
 };
+
+/**
+ * Ambang pemberian otomatis satu hadiah: sekian poin ATAU sekian kali spin,
+ * mana yang lebih dulu tercapai. Kosong = jalur otomatis dimatikan.
+ *
+ * Berbeda dari mode hadiah pasti. Ambang ini menjamin peserta rajin PALING
+ * LAMBAT dapat di titik itu, tapi dia masih bisa dapat lebih awal lewat roda.
+ * Mode hadiah pasti sebaliknya: menahan hadiah sampai ambangnya, dan
+ * mematikan semua hadiah lain selama aktif.
+ */
+function AutoBox({ prize }: { prize: SpinPrize }) {
+  const qc = useQueryClient();
+  const sPts = prize.auto_at_points === null ? "" : String(prize.auto_at_points);
+  const sSpn = prize.auto_at_spins === null ? "" : String(prize.auto_at_spins);
+  const [dPts, setDPts] = React.useState<string | null>(null);
+  const [dSpn, setDSpn] = React.useState<string | null>(null);
+  const pts = dPts ?? sPts;
+  const spn = dSpn ?? sSpn;
+  const [saving, setSaving] = React.useState(false);
+
+  async function save(field: "points" | "spins") {
+    const val = field === "points" ? pts : spn;
+    const server = field === "points" ? sPts : sSpn;
+    if (val === server) return;
+    const n = val.trim() === "" ? null : Number(val);
+    if (n !== null && (!Number.isInteger(n) || n < 0)) {
+      toast.error("Ambang harus bilangan bulat 0 atau lebih.");
+      setDPts(null);
+      setDSpn(null);
+      return;
+    }
+    setSaving(true);
+    try {
+      await api(`/api/admin/rewards/prizes/${prize.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(
+          field === "points" ? { auto_at_points: n } : { auto_at_spins: n },
+        ),
+      });
+      toast.success(
+        n === null
+          ? `${prize.label}: jalur otomatis ${field === "points" ? "poin" : "spin"} dimatikan.`
+          : `${prize.label}: otomatis di ${n} ${field === "points" ? "poin" : "kali spin"}.`,
+      );
+      setDPts(null);
+      setDSpn(null);
+      qc.invalidateQueries({ queryKey: ["spin-prizes-admin"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan ambang.");
+      setDPts(null);
+      setDSpn(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const box = "h-8 w-16 text-center";
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-muted-foreground">Otomatis</span>
+      <Input
+        type="number"
+        min={0}
+        value={pts}
+        placeholder="-"
+        disabled={saving || prize.is_locked}
+        onChange={(e) => setDPts(e.target.value)}
+        onBlur={() => save("points")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className={box}
+        title="Diberikan otomatis begitu akun mencapai poin ini"
+      />
+      <span className="text-xs text-muted-foreground">poin atau</span>
+      <Input
+        type="number"
+        min={0}
+        value={spn}
+        placeholder="-"
+        disabled={saving || prize.is_locked}
+        onChange={(e) => setDSpn(e.target.value)}
+        onBlur={() => save("spins")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className={box}
+        title="Diberikan otomatis begitu akun mencapai jumlah spin ini"
+      />
+      <span className="text-xs text-muted-foreground">x spin</span>
+    </div>
+  );
+}
 
 /**
  * Bobot peluang satu hadiah di undian acak.
@@ -577,12 +675,20 @@ export default function AdminPoinPage() {
               dijamin tidak ada yang bisa mendapatkannya. Jatah kosong berarti
               tanpa batas penerima.
             </p>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Otomatis</span>{" "}
+              memberi hadiah begitu akun mencapai sekian poin atau sekian kali
+              spin, mana yang lebih dulu. Ini jaminan{" "}
+              <span className="font-medium text-foreground">paling lambat</span>
+              : peserta masih bisa dapat lebih awal lewat roda. Kalau justru
+              ingin menahan hadiah sampai titik itu, pakai hadiah pasti di
+              atas, tapi ingat hadiah lain berhenti keluar selama mode itu
+              aktif.
+            </p>
             <div className="mt-3 space-y-2">
               {(prizes ?? []).map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5"
-                  >
+                  <div key={p.id} className="rounded-lg border p-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       {p.is_empty ? (
                         <Scale className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -615,6 +721,15 @@ export default function AdminPoinPage() {
                         </Button>
                       )}
                     </div>
+                    </div>
+                    {/* Ambang otomatis di baris sendiri: barisnya jadi terlalu
+                        penuh kalau disejajarkan dengan bobot dan jatah. Dash
+                        dan hadiah jaminan tak punya jalur ini. */}
+                    {!p.is_empty && !p.is_guaranteed && (
+                      <div className="mt-2 border-t pt-2">
+                        <AutoBox prize={p} />
+                      </div>
+                    )}
                   </div>
                 ))}
               {prizes !== undefined && prizes.length === 0 && (
