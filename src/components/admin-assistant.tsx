@@ -4,11 +4,11 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import {
   ArrowUp,
+  BotMessageSquare,
   Clock,
   Loader2,
   MessageCirclePlus,
   RotateCcw,
-  Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -281,7 +281,12 @@ export function AdminAssistant() {
                 // terbaca di atas tabel.
                 "rounded-2xl border bg-card px-4 py-3 text-left",
                 "text-[13px] leading-relaxed shadow-lg shadow-black/10",
-                "transition-colors hover:border-primary/60 hover:bg-primary/5",
+                // Saat disorot yang berubah hanya garis tepi, bayangan, dan
+                // posisi. Latar TIDAK ikut diubah: warna transparan seperti
+                // bg-primary/5 menimpa latar solid, membuat chip jadi
+                // setengah tembus dan teks halaman menembusnya.
+                "transition-all hover:-translate-x-1 hover:border-primary",
+                "hover:shadow-xl hover:shadow-primary/15",
                 "disabled:pointer-events-none disabled:opacity-50",
               )}
             >
@@ -325,7 +330,7 @@ export function AdminAssistant() {
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/20">
-                  <Sparkles className="h-4 w-4" />
+                  <BotMessageSquare className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold">Tanya Fitur</p>
@@ -384,7 +389,7 @@ export function AdminAssistant() {
               ) : (
                 <div key={i} className="flex max-w-[92%] gap-2.5">
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <BotMessageSquare className="h-3.5 w-3.5" />
                   </span>
                   <div className="rounded-2xl rounded-bl-md border bg-card px-3.5 py-2.5 text-sm leading-relaxed">
                     <Jawaban text={t.content} />
@@ -396,7 +401,7 @@ export function AdminAssistant() {
             {busy && (
               <div className="flex items-center gap-2.5">
                 <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
-                  <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                  <BotMessageSquare className="h-3.5 w-3.5 animate-pulse" />
                 </span>
                 <div className="flex items-center gap-1 rounded-2xl rounded-bl-md border bg-card px-3.5 py-3">
                   {[0, 150, 300].map((d) => (
@@ -514,7 +519,7 @@ export function AdminAssistant() {
         {mode === "chat" ? (
           <X className="relative h-6 w-6" />
         ) : (
-          <Sparkles className="relative h-6 w-6" />
+          <BotMessageSquare className="relative h-6 w-6" />
         )}
       </button>
     </>
