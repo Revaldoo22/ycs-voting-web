@@ -33,39 +33,16 @@ type Jawab = {
 /** Ambang sisa token untuk memperingatkan sebelum benar-benar kena 429. */
 const AMBANG_TOKEN = 1500;
 
-/**
- * Jarak vertikal antar chip.
+/*
+ * Catatan tata letak.
  *
- * 68px, bukan setinggi chip satu baris: pertanyaan saran sering membungkus
- * jadi dua baris (~62px), dan jarak yang dihitung dari chip satu baris
- * membuatnya saling menimpa.
+ * Chip saran sebelumnya disebar melengkung mengelilingi tombol, meniru
+ * tombol aksi melayang yang berisi ikon. Itu tidak berhasil di sini: chip
+ * memuat pertanyaan penuh sehingga lebarnya ratusan piksel dan tingginya
+ * berubah mengikuti pembungkusan teks, jadi penempatan absolut manapun
+ * berakhir saling menabrak. Sekarang dipakai tumpukan biasa yang rata
+ * kanan, dan biarkan browser mengatur tingginya sendiri.
  */
-const TINGGI_CHIP = 68;
-
-/**
- * Posisi chip yang melengkung ke KIRI-ATAS tombol.
- *
- * Sengaja hanya ke kiri: chip berisi pertanyaan penuh sehingga lebarnya
- * ratusan piksel, dan tombol berada di pojok kanan bawah. Menyebarkannya
- * mengelilingi tombol seperti FAB berisi ikon membuat separuh chip terpotong
- * tepi layar.
- *
- * Jarak VERTIKAL dihitung sebagai kelipatan tinggi chip, bukan dari sudut
- * busur. Busur murni terlihat rapi di gambar tapi menempatkan chip
- * berdekatan saat sudutnya melandai, dan pengujian menunjukkan 4 sampai 5
- * chip saling menumpuk. Lengkungnya datang dari pergeseran horizontal saja.
- *
- * Chip dijangkarkan dari kanan supaya ujung kanannya rapi sejajar dan tidak
- * pernah menjorok melewati tombol berapa pun panjang teksnya.
- */
-function posisiBusur(i: number, n: number) {
-  const bottom = 8 + i * TINGGI_CHIP;
-  const t = n === 1 ? 0 : i / (n - 1);
-  // Pangkat 1.6 membuat chip terbawah menjorok jauh ke kiri lalu menutup
-  // makin cepat ke atas, jadi lengkungnya terasa tanpa mengorbankan jarak.
-  const right = Math.round(118 - Math.pow(t, 1.6) * 96);
-  return { right, bottom };
-}
 
 /**
  * Render teks jawaban model apa adanya, kecuali penebalan dan daftar.
@@ -265,8 +242,6 @@ export function AdminAssistant() {
   }
 
   const saran = ctx?.suggestions ?? [];
-  // "Tanya sendiri" ikut dihitung sebagai satu chip supaya jaraknya rata.
-  const totalChip = saran.length + 1;
 
   return (
     <>
@@ -280,116 +255,57 @@ export function AdminAssistant() {
         />
       )}
 
-      {/* Kipas pertanyaan saran */}
+      {/* Daftar pertanyaan saran */}
       {mode === "kipas" && (
-        <>
-          {/* Layar sempit: tumpukan lurus rata kanan. Busur melengkung pasti
-              keluar layar di lebar 390px, dan chip terpotong lebih buruk
-              daripada kehilangan efek lengkungnya. */}
-          <div className="fixed inset-x-4 bottom-24 z-40 flex flex-col items-end gap-2 sm:hidden">
-            {saran.map((s, i) => (
-              <button
-                key={s}
-                onClick={() => pilihSaran(s)}
-                disabled={tunggu > 0}
-                style={{ animationDelay: (i * 45) + "ms" }}
-                className={cn(
-                  "max-w-full origin-bottom-right animate-in fade-in zoom-in-95",
-                  "rounded-2xl border bg-card px-3.5 py-2.5 text-left duration-200",
-                  "text-[13px] leading-snug font-medium shadow-lg shadow-black/5",
-                  "active:bg-primary/5 disabled:pointer-events-none disabled:opacity-50",
-                )}
-              >
-                {s}
-              </button>
-            ))}
+        <div
+          onMouseEnter={bukaKipas}
+          onMouseLeave={tundaTutupKipas}
+          className={cn(
+            "fixed z-40 flex flex-col items-end gap-2",
+            // Dibatasi lebarnya, bukan dibiarkan selebar teks: pertanyaan
+            // yang panjang akan mendorong chip melewati tepi layar.
+            "right-5 bottom-24 w-[min(20rem,calc(100vw-2.5rem))]",
+          )}
+        >
+          {saran.map((s, i) => (
             <button
-              onClick={tanyaSendiri}
-              style={{ animationDelay: (saran.length * 45) + "ms" }}
+              key={s}
+              onClick={() => pilihSaran(s)}
+              disabled={tunggu > 0}
+              style={{ animationDelay: `${i * 40}ms` }}
               className={cn(
-                "flex origin-bottom-right animate-in items-center gap-2",
-                "fade-in zoom-in-95 rounded-2xl border border-primary/30 duration-200",
-                "bg-primary/10 px-3.5 py-2.5 text-[13px] font-semibold text-primary",
-                "shadow-lg shadow-primary/10",
+                "w-full origin-bottom-right animate-in fade-in",
+                "slide-in-from-bottom-2 duration-200",
+                // Latar SOLID. Versi sebelumnya memakai bg-card/95 dan
+                // teks halaman di belakangnya tembus, membuat chip tak
+                // terbaca di atas tabel.
+                "rounded-2xl border bg-card px-4 py-3 text-left",
+                "text-[13px] leading-relaxed shadow-lg shadow-black/10",
+                "transition-colors hover:border-primary/60 hover:bg-primary/5",
+                "disabled:pointer-events-none disabled:opacity-50",
               )}
             >
-              <MessageCirclePlus className="h-4 w-4 shrink-0" />
-              Tanya sendiri
+              {s}
             </button>
-          </div>
+          ))}
 
-          {/* Layar lebar: melengkung ke kiri-atas tombol. */}
-          <div
-            onMouseEnter={bukaKipas}
-            onMouseLeave={tundaTutupKipas}
-            className="pointer-events-none fixed right-5 bottom-5 z-40 hidden sm:block"
+          {/* Pilihan terakhir: tanya sendiri. Penuh warna supaya jelas
+              perannya berbeda dari pertanyaan saran. */}
+          <button
+            onClick={tanyaSendiri}
+            style={{ animationDelay: `${saran.length * 40}ms` }}
+            className={cn(
+              "flex origin-bottom-right animate-in items-center gap-2",
+              "slide-in-from-bottom-2 fade-in rounded-2xl duration-200",
+              "bg-primary px-4 py-3 text-[13px] font-semibold",
+              "text-primary-foreground shadow-lg shadow-primary/25",
+              "transition-shadow hover:shadow-xl hover:shadow-primary/35",
+            )}
           >
-            {/* Kotak setinggi tombol jadi titik jangkar. */}
-            <div className="relative h-14 w-14">
-              {/* Jembatan tak terlihat menutup celah antara tombol dan chip
-                  terjauh, supaya kursor tidak pernah keluar area hover di
-                  tengah perjalanan ke atas. */}
-              <span
-                aria-hidden
-                style={{
-                  right: -8,
-                  bottom: 0,
-                  width: 160,
-                  height: 8 + (totalChip - 1) * TINGGI_CHIP + 70,
-                }}
-                className="pointer-events-auto absolute"
-              />
-            {saran.map((s, i) => {
-              const p = posisiBusur(i, totalChip);
-              return (
-                <button
-                  key={s}
-                  onClick={() => pilihSaran(s)}
-                  disabled={tunggu > 0}
-                  style={{
-                    right: p.right,
-                    bottom: p.bottom,
-                    animationDelay: `${i * 45}ms`,
-                  }}
-                  className={cn(
-                    "pointer-events-auto absolute w-max max-w-64 origin-bottom-right",
-                    "animate-in fade-in slide-in-from-bottom-2 duration-200",
-                    "rounded-2xl rounded-br-md border bg-card/95 px-4 py-3",
-                    "text-left text-[13px] leading-relaxed backdrop-blur-sm",
-                    "shadow-xl shadow-black/10 ring-1 ring-black/5",
-                    "transition-all hover:-translate-x-0.5 hover:border-primary/60",
-                    "hover:bg-primary/5 hover:shadow-primary/10",
-                    "disabled:pointer-events-none disabled:opacity-50",
-                  )}
-                >
-                  {s}
-                </button>
-              );
-            })}
-
-            {/* Pilihan terakhir: tanya sendiri. Dibedakan gayanya supaya tak
-                terbaca sebagai salah satu pertanyaan saran. */}
-            <button
-              onClick={tanyaSendiri}
-              style={{
-                ...posisiBusur(totalChip - 1, totalChip),
-                animationDelay: `${saran.length * 45}ms`,
-              }}
-              className={cn(
-                "pointer-events-auto absolute flex w-max items-center gap-2",
-                "origin-bottom-right animate-in fade-in slide-in-from-bottom-2",
-                "rounded-2xl rounded-br-md border border-primary/40 duration-200",
-                "bg-primary px-4 py-3 text-[13px] font-semibold",
-                "text-primary-foreground shadow-xl shadow-primary/25",
-                "transition-all hover:-translate-x-0.5 hover:shadow-primary/35",
-              )}
-            >
-                <MessageCirclePlus className="h-4 w-4 shrink-0" />
-                Tanya sendiri
-              </button>
-            </div>
-          </div>
-        </>
+            <MessageCirclePlus className="h-4 w-4 shrink-0" />
+            Tanya sendiri
+          </button>
+        </div>
       )}
 
       {/* Kartu chat */}
