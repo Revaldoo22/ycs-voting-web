@@ -33,8 +33,14 @@ type Jawab = {
 /** Ambang sisa token untuk memperingatkan sebelum benar-benar kena 429. */
 const AMBANG_TOKEN = 1500;
 
-/** Tinggi satu chip plus jeda, dipakai menjamin jarak vertikalnya. */
-const TINGGI_CHIP = 48;
+/**
+ * Jarak vertikal antar chip.
+ *
+ * 68px, bukan setinggi chip satu baris: pertanyaan saran sering membungkus
+ * jadi dua baris (~62px), dan jarak yang dihitung dari chip satu baris
+ * membuatnya saling menimpa.
+ */
+const TINGGI_CHIP = 68;
 
 /**
  * Posisi chip yang melengkung ke KIRI-ATAS tombol.
@@ -115,6 +121,14 @@ export function AdminAssistant() {
   const pathname = usePathname();
   /** tutup: hanya tombol. kipas: saran melengkung. chat: kartu percakapan. */
   const [mode, setMode] = React.useState<"tutup" | "kipas" | "chat">("tutup");
+  /**
+   * Penunda penutupan kipas.
+   *
+   * Kursor melintasi celah antara tombol dan chip saat bergerak ke atas.
+   * Tanpa jeda, kipas menutup tepat di celah itu dan chip tak pernah bisa
+   * diklik.
+   */
+  const tutupRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [turns, setTurns] = React.useState<Turn[]>([]);
   const [draft, setDraft] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -168,6 +182,29 @@ export function AdminAssistant() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mode]);
+
+  React.useEffect(() => {
+    return () => {
+      if (tutupRef.current) clearTimeout(tutupRef.current);
+    };
+  }, []);
+
+  function bukaKipas() {
+    if (tutupRef.current) {
+      clearTimeout(tutupRef.current);
+      tutupRef.current = null;
+    }
+    // Kipas hanya menimpa keadaan tertutup: kartu chat yang sedang terbuka
+    // tidak boleh tergeser hanya karena kursor melewati tombol.
+    setMode((m) => (m === "tutup" ? "kipas" : m));
+  }
+
+  function tundaTutupKipas() {
+    if (tutupRef.current) clearTimeout(tutupRef.current);
+    tutupRef.current = setTimeout(() => {
+      setMode((m) => (m === "kipas" ? "tutup" : m));
+    }, 260);
+  }
 
   // Kotak tanya tumbuh mengikuti isi, dibatasi supaya tidak menelan panel.
   function ukurUlang() {
@@ -233,17 +270,13 @@ export function AdminAssistant() {
 
   return (
     <>
-      {/* Lapisan penutup: sekali sentuh di luar untuk menutup. Saat kipas
-          dibuat bening supaya panitia tetap melihat halaman yang ditanyakan. */}
-      {mode !== "tutup" && (
+      {/* Lapisan penutup hanya untuk kartu chat. Kipas tidak memakainya:
+          lapisan penuh layar akan menelan hover, sehingga chip tak bisa
+          dijangkau kursor. */}
+      {mode === "chat" && (
         <div
           onClick={() => setMode("tutup")}
-          className={cn(
-            "fixed inset-0 z-30",
-            mode === "kipas"
-              ? "bg-transparent"
-              : "bg-black/40 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none",
-          )}
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none"
         />
       )}
 
@@ -286,9 +319,26 @@ export function AdminAssistant() {
           </div>
 
           {/* Layar lebar: melengkung ke kiri-atas tombol. */}
-          <div className="pointer-events-none fixed right-5 bottom-5 z-40 hidden sm:block">
+          <div
+            onMouseEnter={bukaKipas}
+            onMouseLeave={tundaTutupKipas}
+            className="pointer-events-none fixed right-5 bottom-5 z-40 hidden sm:block"
+          >
             {/* Kotak setinggi tombol jadi titik jangkar. */}
             <div className="relative h-14 w-14">
+              {/* Jembatan tak terlihat menutup celah antara tombol dan chip
+                  terjauh, supaya kursor tidak pernah keluar area hover di
+                  tengah perjalanan ke atas. */}
+              <span
+                aria-hidden
+                style={{
+                  right: -8,
+                  bottom: 0,
+                  width: 160,
+                  height: 8 + (totalChip - 1) * TINGGI_CHIP + 70,
+                }}
+                className="pointer-events-auto absolute"
+              />
             {saran.map((s, i) => {
               const p = posisiBusur(i, totalChip);
               return (
@@ -302,11 +352,13 @@ export function AdminAssistant() {
                     animationDelay: `${i * 45}ms`,
                   }}
                   className={cn(
-                    "pointer-events-auto absolute w-max max-w-60 origin-bottom-right",
-                    "animate-in fade-in zoom-in-90 duration-200",
-                    "rounded-2xl border bg-card px-3.5 py-2.5 text-left",
-                    "text-[13px] leading-snug font-medium shadow-lg shadow-black/5",
-                    "transition-colors hover:border-primary/50 hover:bg-primary/5",
+                    "pointer-events-auto absolute w-max max-w-64 origin-bottom-right",
+                    "animate-in fade-in slide-in-from-bottom-2 duration-200",
+                    "rounded-2xl rounded-br-md border bg-card/95 px-4 py-3",
+                    "text-left text-[13px] leading-relaxed backdrop-blur-sm",
+                    "shadow-xl shadow-black/10 ring-1 ring-black/5",
+                    "transition-all hover:-translate-x-0.5 hover:border-primary/60",
+                    "hover:bg-primary/5 hover:shadow-primary/10",
                     "disabled:pointer-events-none disabled:opacity-50",
                   )}
                 >
@@ -325,10 +377,11 @@ export function AdminAssistant() {
               }}
               className={cn(
                 "pointer-events-auto absolute flex w-max items-center gap-2",
-                "origin-bottom-right animate-in fade-in zoom-in-90 duration-200",
-                "rounded-2xl border border-primary/30 bg-primary/10 px-3.5 py-2.5",
-                "text-[13px] font-semibold text-primary shadow-lg shadow-primary/10",
-                "transition-colors hover:bg-primary/15",
+                "origin-bottom-right animate-in fade-in slide-in-from-bottom-2",
+                "rounded-2xl rounded-br-md border border-primary/40 duration-200",
+                "bg-primary px-4 py-3 text-[13px] font-semibold",
+                "text-primary-foreground shadow-xl shadow-primary/25",
+                "transition-all hover:-translate-x-0.5 hover:shadow-primary/35",
               )}
             >
                 <MessageCirclePlus className="h-4 w-4 shrink-0" />
@@ -524,11 +577,14 @@ export function AdminAssistant() {
         </div>
       )}
 
-      {/* Tombol utama. Selalu ada supaya jadi jangkar visual yang tetap. */}
+      {/* Tombol utama. Selalu ada supaya jadi jangkar visual yang tetap.
+          Hover membuka kipas saran, klik langsung membuka kartu chat. */}
       <button
-        onClick={() => setMode((m) => (m === "tutup" ? "kipas" : "tutup"))}
+        onMouseEnter={bukaKipas}
+        onMouseLeave={tundaTutupKipas}
+        onClick={() => setMode((m) => (m === "chat" ? "tutup" : "chat"))}
         aria-label={
-          mode === "tutup" ? "Tanya fitur halaman ini" : "Tutup asisten"
+          mode === "chat" ? "Tutup asisten" : "Tanya fitur halaman ini"
         }
         className={cn(
           "group fixed right-5 bottom-5 z-40 flex h-14 w-14 items-center",
@@ -539,10 +595,10 @@ export function AdminAssistant() {
         )}
       >
         <span className="absolute inset-0 scale-0 rounded-full bg-white/15 transition-transform duration-300 group-hover:scale-100" />
-        {mode === "tutup" ? (
-          <Sparkles className="relative h-6 w-6" />
-        ) : (
+        {mode === "chat" ? (
           <X className="relative h-6 w-6" />
+        ) : (
+          <Sparkles className="relative h-6 w-6" />
         )}
       </button>
     </>
