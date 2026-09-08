@@ -163,14 +163,24 @@ function NavLinkRow({
   link,
   active,
   onNavigate,
+  dalamGrup,
 }: {
   link: NavLink;
   active: boolean;
   onNavigate?: () => void;
+  /**
+   * Menu ini milik sebuah grup, bukan menu tunggal.
+   *
+   * Dipakai saat sidebar ringkas: tanpa label, ikon menu di dalam grup
+   * terlihat sama dengan menu tunggal seperti Dashboard, jadi tidak ada
+   * petunjuk bahwa ia berasal dari grup yang sedang terbuka.
+   */
+  dalamGrup?: boolean;
 }) {
   const Icon = link.icon;
   const ringkas = React.useContext(Ringkas);
-  return (
+
+  const isi = (
     <Link
       href={link.href}
       onClick={onNavigate}
@@ -190,6 +200,21 @@ function NavLinkRow({
       {!ringkas && link.label}
     </Link>
   );
+
+  // Garis penghubung di kiri, menandai menu ini menjorok dari grup di atasnya.
+  // Hanya saat ringkas: versi lebar sudah menandainya lewat indentasi label.
+  if (ringkas && dalamGrup) {
+    return (
+      <div className="relative">
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-1 w-px bg-border"
+        />
+        {isi}
+      </div>
+    );
+  }
+  return isi;
 }
 
 function NavGroupBlock({
@@ -226,14 +251,22 @@ function NavGroupBlock({
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           className={cn(
-            "flex w-full items-center justify-center rounded-lg px-2 py-2",
-            "transition-colors",
+            "relative flex w-full items-center justify-center rounded-lg",
+            "px-2 py-2 transition-colors",
             hasActive
               ? "text-primary"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
           <GroupIcon className="h-4 w-4 shrink-0" />
+          {/* Anak panah kecil: menandai ikon ini grup yang bisa dibuka,
+              bukan menu yang langsung membuka halaman. */}
+          <ChevronDown
+            className={cn(
+              "absolute right-0.5 bottom-0.5 h-2.5 w-2.5 transition-transform",
+              open ? "rotate-180" : "",
+            )}
+          />
         </button>
         {open &&
           group.items.map((l) => (
@@ -242,6 +275,7 @@ function NavGroupBlock({
               link={l}
               active={l.href === activeHref}
               onNavigate={onNavigate}
+              dalamGrup
             />
           ))}
       </div>
