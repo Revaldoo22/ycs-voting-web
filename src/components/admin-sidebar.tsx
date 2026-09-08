@@ -330,7 +330,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   );
 
   return (
-    <nav className="flex-1 space-y-2 overflow-y-auto p-3">
+    <nav className="no-scrollbar flex-1 space-y-2 overflow-y-auto p-3">
       <div className="space-y-1">
         {TOP.map((l) => (
           <NavLinkRow

@@ -163,3 +163,18 @@
     display: flex;
   }
 }
+
+/*
+ * Sembunyikan batang gulir tanpa mematikan gulirnya.
+ *
+ * Dipakai sidebar admin: daftar menunya lebih panjang dari layar pendek,
+ * jadi gulir tetap perlu, tapi batangnya membelah sidebar jadi dua dan
+ * terlihat seperti garis pemisah yang tidak dimaksudkan.
+ */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE dan Edge lama */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
