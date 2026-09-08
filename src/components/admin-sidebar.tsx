@@ -196,13 +196,10 @@ function NavGroupBlock({
   group,
   activeHref,
   onNavigate,
-  onLebarkan,
 }: {
   group: NavGroup;
   activeHref: string;
   onNavigate?: () => void;
-  /** Melebarkan sidebar, dipakai saat ikon grup ditekan di mode ringkas. */
-  onLebarkan?: () => void;
 }) {
   const hasActive = group.items.some((i) => i.href === activeHref);
   const [open, setOpen] = React.useState(hasActive);
@@ -214,28 +211,40 @@ function NavGroupBlock({
     if (hasActive) setOpen(true);
   }, [hasActive]);
 
-  // Saat ringkas, hanya ikon grupnya yang tampil dan isinya tetap tertutup.
-  // Menekannya melebarkan sidebar lalu membuka grup itu, jadi panitia tidak
-  // terjebak di mode ringkas tanpa cara menjangkau isinya.
+  // Saat ringkas, keadaan buka/tutup grup tetap dihormati: yang sudah
+  // terbuka sebelum diringkas tetap menampilkan isinya, yang tertutup tetap
+  // menyisakan ikon grupnya saja. Memaksa semuanya tertutup membuat panitia
+  // kehilangan menu yang sengaja dia biarkan terbuka.
   if (ringkas) {
     return (
-      <button
-        type="button"
-        title={group.label}
-        onClick={() => {
-          onLebarkan?.();
-          setOpen(true);
-        }}
-        className={cn(
-          "flex w-full items-center justify-center rounded-lg px-2 py-2",
-          "transition-colors",
-          hasActive
-            ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        )}
-      >
-        <GroupIcon className="h-4 w-4 shrink-0" />
-      </button>
+      <div className="space-y-1">
+        <button
+          type="button"
+          title={
+            open ? `${group.label} (tutup)` : `${group.label} (buka)`
+          }
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className={cn(
+            "flex w-full items-center justify-center rounded-lg px-2 py-2",
+            "transition-colors",
+            hasActive
+              ? "text-primary"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <GroupIcon className="h-4 w-4 shrink-0" />
+        </button>
+        {open &&
+          group.items.map((l) => (
+            <NavLinkRow
+              key={l.href}
+              link={l}
+              active={l.href === activeHref}
+              onNavigate={onNavigate}
+            />
+          ))}
+      </div>
     );
   }
 
@@ -272,13 +281,7 @@ function NavGroupBlock({
   );
 }
 
-function NavItems({
-  onNavigate,
-  onLebarkan,
-}: {
-  onNavigate?: () => void;
-  onLebarkan?: () => void;
-}) {
+function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   // Link aktif = match terpanjang, batas segmen (cegah /admin nyala di /admin/x).
@@ -310,7 +313,6 @@ function NavItems({
           group={g}
           activeHref={activeHref}
           onNavigate={onNavigate}
-          onLebarkan={onLebarkan}
         />
       ))}
     </nav>
@@ -377,10 +379,7 @@ function SidebarInner({
         )}
       </div>
 
-      <NavItems
-        onNavigate={onNavigate}
-        onLebarkan={ringkas ? onToggleRingkas : undefined}
-      />
+      <NavItems onNavigate={onNavigate} />
 
       <div className={cn("border-t border-border/60", ringkas ? "p-2" : "p-3")}>
         <Button
