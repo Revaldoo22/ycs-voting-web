@@ -196,10 +196,13 @@ function NavGroupBlock({
   group,
   activeHref,
   onNavigate,
+  onLebarkan,
 }: {
   group: NavGroup;
   activeHref: string;
   onNavigate?: () => void;
+  /** Melebarkan sidebar, dipakai saat ikon grup ditekan di mode ringkas. */
+  onLebarkan?: () => void;
 }) {
   const hasActive = group.items.some((i) => i.href === activeHref);
   const [open, setOpen] = React.useState(hasActive);
@@ -211,22 +214,28 @@ function NavGroupBlock({
     if (hasActive) setOpen(true);
   }, [hasActive]);
 
-  // Saat ringkas, header grup dilepas dan itemnya ditampilkan langsung.
-  // Header yang hanya berisi ikon tak bisa dibedakan dari menu, dan
-  // menyembunyikan menu di balik grup yang tertutup membuat sidebar ringkas
-  // justru lebih sulit dipakai daripada versi lebarnya.
+  // Saat ringkas, hanya ikon grupnya yang tampil dan isinya tetap tertutup.
+  // Menekannya melebarkan sidebar lalu membuka grup itu, jadi panitia tidak
+  // terjebak di mode ringkas tanpa cara menjangkau isinya.
   if (ringkas) {
     return (
-      <div className="space-y-1 border-t border-border/60 pt-2">
-        {group.items.map((l) => (
-          <NavLinkRow
-            key={l.href}
-            link={l}
-            active={l.href === activeHref}
-            onNavigate={onNavigate}
-          />
-        ))}
-      </div>
+      <button
+        type="button"
+        title={group.label}
+        onClick={() => {
+          onLebarkan?.();
+          setOpen(true);
+        }}
+        className={cn(
+          "flex w-full items-center justify-center rounded-lg px-2 py-2",
+          "transition-colors",
+          hasActive
+            ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        )}
+      >
+        <GroupIcon className="h-4 w-4 shrink-0" />
+      </button>
     );
   }
 
@@ -263,7 +272,13 @@ function NavGroupBlock({
   );
 }
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+function NavItems({
+  onNavigate,
+  onLebarkan,
+}: {
+  onNavigate?: () => void;
+  onLebarkan?: () => void;
+}) {
   const pathname = usePathname();
 
   // Link aktif = match terpanjang, batas segmen (cegah /admin nyala di /admin/x).
@@ -295,6 +310,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
           group={g}
           activeHref={activeHref}
           onNavigate={onNavigate}
+          onLebarkan={onLebarkan}
         />
       ))}
     </nav>
@@ -314,58 +330,59 @@ function SidebarInner({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Logo */}
-      <Link
-        href="/"
-        title={ringkas ? "Youth Character Summit" : undefined}
-        className={cn(
-          "flex items-center border-b border-border/60 py-4",
-          ringkas ? "justify-center px-2" : "gap-2 px-4",
-        )}
-        onClick={onNavigate}
-      >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-          <GraduationCap className="h-5 w-5" />
-        </span>
-        {!ringkas && (
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-bold leading-tight">
-              Youth Character Summit
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              Panel Admin
-            </span>
-          </span>
-        )}
-      </Link>
-
-      <NavItems onNavigate={onNavigate} />
-
+      {/* Kepala: logo, dan tombol ringkas di ujung kanannya. */}
       <div
         className={cn(
-          "space-y-1 border-t border-border/60",
-          ringkas ? "p-2" : "p-3",
+          "flex items-center border-b border-border/60 py-4",
+          ringkas ? "flex-col gap-3 px-2" : "gap-2 px-4",
         )}
       >
+        <Link
+          href="/"
+          title={ringkas ? "Youth Character Summit" : undefined}
+          className="flex min-w-0 flex-1 items-center gap-2"
+          onClick={onNavigate}
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <GraduationCap className="h-5 w-5" />
+          </span>
+          {!ringkas && (
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-bold leading-tight">
+                Youth Character Summit
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Panel Admin
+              </span>
+            </span>
+          )}
+        </Link>
         {onToggleRingkas && (
           <button
             onClick={onToggleRingkas}
+            aria-label={ringkas ? "Perlebar sidebar" : "Ringkas sidebar"}
             title={ringkas ? "Perlebar sidebar" : "Ringkas sidebar"}
             className={cn(
-              "flex w-full items-center rounded-lg py-2 text-sm font-medium",
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
               "text-muted-foreground transition-colors hover:bg-muted",
               "hover:text-foreground",
-              ringkas ? "justify-center px-2" : "gap-3 px-3",
             )}
           >
             {ringkas ? (
-              <PanelLeftOpen className="h-4 w-4 shrink-0" />
+              <PanelLeftOpen className="h-4 w-4" />
             ) : (
-              <PanelLeftClose className="h-4 w-4 shrink-0" />
+              <PanelLeftClose className="h-4 w-4" />
             )}
-            {!ringkas && "Ringkas"}
           </button>
         )}
+      </div>
+
+      <NavItems
+        onNavigate={onNavigate}
+        onLebarkan={ringkas ? onToggleRingkas : undefined}
+      />
+
+      <div className={cn("border-t border-border/60", ringkas ? "p-2" : "p-3")}>
         <Button
           variant="outline"
           title={ringkas ? "Keluar" : undefined}
