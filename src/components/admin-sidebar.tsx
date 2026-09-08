@@ -21,6 +21,8 @@ import {
   Coins,
   Megaphone,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
   School,
   ScrollText,
   Settings,
@@ -38,6 +40,65 @@ import { cn } from "@/lib/utils";
 
 type NavLink = { href: string; label: string; icon: typeof LayoutDashboard };
 type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavLink[] };
+
+/**
+ * Sidebar sedang diringkas jadi ikon saja.
+ *
+ * Dibagi lewat konteks, bukan prop berantai, karena keadaan ini dibutuhkan
+ * di tiga tingkat kedalaman (baris menu, blok grup, dan kerangkanya) dan
+ * drawer mobile harus selalu lebar apa pun keadaan di desktop.
+ */
+const Ringkas = React.createContext(false);
+
+/** Kunci localStorage, supaya pilihan panitia bertahan antar halaman. */
+const KUNCI = "ycs.adminSidebar.ringkas";
+
+type CtxSidebar = { ringkas: boolean; toggle: () => void };
+const SidebarCtx = React.createContext<CtxSidebar>({
+  ringkas: false,
+  toggle: () => {},
+});
+
+/** Dipakai layout untuk menyesuaikan margin kontennya. */
+export function useSidebarRingkas() {
+  return React.useContext(SidebarCtx).ringkas;
+}
+
+/**
+ * Pembungkus keadaan sidebar.
+ *
+ * Dipisah dari AdminSidebar supaya layout bisa membaca lebarnya tanpa
+ * mengandalkan atribut pada elemen html, yang tak bisa dijangkau selektor
+ * Tailwind dari elemen anak.
+ */
+export function SidebarProvider({ children }: { children: React.ReactNode }) {
+  const [ringkas, setRingkas] = React.useState(false);
+
+  // Dibaca setelah render pertama, bukan sebagai nilai awal state: nilai
+  // awal dipakai server saat render dan localStorage tak ada di sana.
+  React.useEffect(() => {
+    try {
+      if (localStorage.getItem(KUNCI) === "1") setRingkas(true);
+    } catch {
+      // Penyimpanan diblokir browser: sidebar tetap jalan dengan lebar biasa.
+    }
+  }, []);
+
+  const toggle = React.useCallback(() => {
+    setRingkas((r) => {
+      const next = !r;
+      try {
+        localStorage.setItem(KUNCI, next ? "1" : "0");
+      } catch {
+        // Pilihan tidak bertahan, tapi sidebar tetap berfungsi.
+      }
+      return next;
+    });
+  }, []);
+
+  const nilai = React.useMemo(() => ({ ringkas, toggle }), [ringkas, toggle]);
+  return <SidebarCtx.Provider value={nilai}>{children}</SidebarCtx.Provider>;
+}
 
 // Item tunggal (tanpa grup) di paling atas.
 const TOP: NavLink[] = [
@@ -108,20 +169,25 @@ function NavLinkRow({
   onNavigate?: () => void;
 }) {
   const Icon = link.icon;
+  const ringkas = React.useContext(Ringkas);
   return (
     <Link
       href={link.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
+      // title dipakai sebagai tooltip saat label disembunyikan: itu satu
+      // satunya cara panitia tahu ikon mana yang mana.
+      title={ringkas ? link.label : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        "flex items-center rounded-lg py-2 text-sm font-medium transition-colors",
+        ringkas ? "justify-center px-2" : "gap-3 px-3",
         active
           ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      {link.label}
+      {!ringkas && link.label}
     </Link>
   );
 }
@@ -138,11 +204,31 @@ function NavGroupBlock({
   const hasActive = group.items.some((i) => i.href === activeHref);
   const [open, setOpen] = React.useState(hasActive);
   const GroupIcon = group.icon;
+  const ringkas = React.useContext(Ringkas);
 
   // Buka grup otomatis saat halaman aktif pindah ke dalamnya.
   React.useEffect(() => {
     if (hasActive) setOpen(true);
   }, [hasActive]);
+
+  // Saat ringkas, header grup dilepas dan itemnya ditampilkan langsung.
+  // Header yang hanya berisi ikon tak bisa dibedakan dari menu, dan
+  // menyembunyikan menu di balik grup yang tertutup membuat sidebar ringkas
+  // justru lebih sulit dipakai daripada versi lebarnya.
+  if (ringkas) {
+    return (
+      <div className="space-y-1 border-t border-border/60 pt-2">
+        {group.items.map((l) => (
+          <NavLinkRow
+            key={l.href}
+            link={l}
+            active={l.href === activeHref}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -215,38 +301,82 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarInner({
+  onNavigate,
+  onToggleRingkas,
+}: {
+  onNavigate?: () => void;
+  /** Hanya diisi di desktop: drawer mobile selalu lebar. */
+  onToggleRingkas?: () => void;
+}) {
   const logout = useLogout();
+  const ringkas = React.useContext(Ringkas);
+
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
       <Link
         href="/"
-        className="flex items-center gap-2 border-b border-border/60 px-4 py-4"
+        title={ringkas ? "Youth Character Summit" : undefined}
+        className={cn(
+          "flex items-center border-b border-border/60 py-4",
+          ringkas ? "justify-center px-2" : "gap-2 px-4",
+        )}
         onClick={onNavigate}
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
           <GraduationCap className="h-5 w-5" />
         </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-bold leading-tight">
-            Youth Character Summit
+        {!ringkas && (
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-bold leading-tight">
+              Youth Character Summit
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              Panel Admin
+            </span>
           </span>
-          <span className="block text-xs text-muted-foreground">
-            Panel Admin
-          </span>
-        </span>
+        )}
       </Link>
 
       <NavItems onNavigate={onNavigate} />
 
-      <div className="border-t border-border/60 p-3">
+      <div
+        className={cn(
+          "space-y-1 border-t border-border/60",
+          ringkas ? "p-2" : "p-3",
+        )}
+      >
+        {onToggleRingkas && (
+          <button
+            onClick={onToggleRingkas}
+            title={ringkas ? "Perlebar sidebar" : "Ringkas sidebar"}
+            className={cn(
+              "flex w-full items-center rounded-lg py-2 text-sm font-medium",
+              "text-muted-foreground transition-colors hover:bg-muted",
+              "hover:text-foreground",
+              ringkas ? "justify-center px-2" : "gap-3 px-3",
+            )}
+          >
+            {ringkas ? (
+              <PanelLeftOpen className="h-4 w-4 shrink-0" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4 shrink-0" />
+            )}
+            {!ringkas && "Ringkas"}
+          </button>
+        )}
         <Button
           variant="outline"
-          className="w-full justify-start text-destructive hover:bg-destructive/5"
+          title={ringkas ? "Keluar" : undefined}
+          className={cn(
+            "w-full text-destructive hover:bg-destructive/5",
+            ringkas ? "justify-center px-2" : "justify-start",
+          )}
           onClick={logout}
         >
-          <LogOut className="h-4 w-4" /> Keluar
+          <LogOut className="h-4 w-4" />
+          {!ringkas && "Keluar"}
         </Button>
       </div>
     </div>
@@ -256,12 +386,21 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
 /** Sidebar admin: tetap di desktop, drawer di mobile. */
 export function AdminSidebar() {
   const [open, setOpen] = React.useState(false);
+  const { ringkas, toggle } = React.useContext(SidebarCtx);
 
   return (
     <>
       {/* Desktop */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 border-r border-border/60 bg-card lg:block">
-        <SidebarInner />
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-border/60",
+          "bg-card transition-[width] duration-200 lg:block",
+          ringkas ? "w-16" : "w-60",
+        )}
+      >
+        <Ringkas.Provider value={ringkas}>
+          <SidebarInner onToggleRingkas={toggle} />
+        </Ringkas.Provider>
       </aside>
 
       {/* Mobile top bar */}
@@ -293,7 +432,11 @@ export function AdminSidebar() {
             >
               <X className="h-4 w-4" />
             </button>
-            <SidebarInner onNavigate={() => setOpen(false)} />
+            {/* Drawer selalu lebar: di mobile tidak ada ruang yang perlu
+                dihemat, dan ikon tanpa label lebih sulit disentuh. */}
+            <Ringkas.Provider value={false}>
+              <SidebarInner onNavigate={() => setOpen(false)} />
+            </Ringkas.Provider>
           </div>
         </div>
       )}
