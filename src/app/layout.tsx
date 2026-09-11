@@ -5,19 +5,19 @@ import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
 import { HelpFab } from "@/components/help-fab";
+import { env } from "@/lib/env";
 
 // Google Analytics 4, bisa di-override / dimatikan lewat env.
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-FZZC7WVGJX";
+const GA_ID = env("NEXT_PUBLIC_GA_ID", "G-FZZC7WVGJX");
 // Microsoft Clarity (heatmap + session recording).
-const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID ?? "xj40fbpzhu";
+const CLARITY_ID = env("NEXT_PUBLIC_CLARITY_ID", "xj40fbpzhu");
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 // Fallback ke domain produksi, bukan localhost: metadataBase dipakai untuk
 // canonical & Open Graph. Kalau env lupa diset saat build produksi, canonical
 // "localhost" akan ditolak Google Search Console.
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://idola.stekom.ac.id";
+const siteUrl = env("NEXT_PUBLIC_SITE_URL", "https://idola.stekom.ac.id");
 const title = "Voting Peserta - Universitas STEKOM";
 const description =
   "Platform kompetisi karakter pelajar SMA/SMK. Dukung peserta favoritmu dan menangkan smartphone, sertifikat, & jadi Duta Teladan Universitas STEKOM!";

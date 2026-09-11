@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { HomeBody } from "./home-body";
+import { env } from "@/lib/env";
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://idola.stekom.ac.id";
+  env("NEXT_PUBLIC_SITE_URL", "https://idola.stekom.ac.id");
 
 const homeTitle =
   "Voting & Peringkat Peserta 2026 | Universitas STEKOM";

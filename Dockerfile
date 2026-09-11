@@ -12,10 +12,14 @@ COPY . .
 # karena nilainya ikut ter-bundle ke JavaScript yang dikirim ke browser.
 # Karena itu harus lewat build arg, bukan environment variable biasa.
 # Di Dokploy: isi di bagian Build Arguments, bukan Environment.
-ARG NEXT_PUBLIC_SITE_URL
-ARG NEXT_PUBLIC_GA_ID
-ARG NEXT_PUBLIC_CLARITY_ID
-ARG NEXT_PUBLIC_GOOGLE_VERIFICATION
+#
+# ARG diberi nilai bawaan, bukan dibiarkan kosong. ARG tanpa nilai disetel
+# Docker menjadi string KOSONG, bukan tidak ada, sehingga fallback di kode
+# terlewati dan build gagal jauh dari penyebabnya.
+ARG NEXT_PUBLIC_SITE_URL=https://idola.stekom.ac.id
+ARG NEXT_PUBLIC_GA_ID=
+ARG NEXT_PUBLIC_CLARITY_ID=
+ARG NEXT_PUBLIC_GOOGLE_VERIFICATION=
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID \
     NEXT_PUBLIC_CLARITY_ID=$NEXT_PUBLIC_CLARITY_ID \
