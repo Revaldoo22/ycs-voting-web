@@ -73,6 +73,57 @@ src/
 - **Pages stay thin** — import components/hooks, don't put logic in `page.tsx`.
 - **UI**: shadcn/ui in `components/ui/*`. Add via the shadcn CLI (`components.json`).
 
+## Deploy dengan Docker (Dokploy)
+
+Dockerfile memakai output `standalone` Next, jadi image runtime hanya memuat
+`server.js` beserta dependensi yang benar-benar dipakai.
+
+```bash
+docker build -t ycs-voting-web .
+docker run -p 3000:3000 --env-file .env ycs-voting-web
+```
+
+### Pembagian variabel: Environment vs Build Arguments
+
+Ini bagian yang paling mudah keliru. Next membaca dua jenis variabel pada
+waktu yang berbeda, jadi salah menaruhnya membuat nilainya diam diam
+diabaikan tanpa pesan kesalahan.
+
+**Environment** (dibaca saat container jalan):
+
+| Variabel | Keterangan |
+|---|---|
+| `API_PROXY_URL` | alamat backend, mis. `http://ycs-voting-api:4000` |
+| `JWT_SECRET` | **wajib sama persis dengan backend** |
+| `PORT` | opsional, bawaan 3000 |
+
+**Build Arguments** (ikut ter-bundle ke JavaScript browser):
+
+| Variabel | Keterangan |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | domain publik, untuk metadata dan tautan berbagi |
+| `NEXT_PUBLIC_GA_ID` | Google Analytics, boleh kosong |
+| `NEXT_PUBLIC_CLARITY_ID` | Microsoft Clarity, boleh kosong |
+| `NEXT_PUBLIC_GOOGLE_VERIFICATION` | token Search Console, boleh kosong |
+
+Yang `NEXT_PUBLIC_*` kalau ditaruh di Environment saja tidak akan terpakai:
+nilainya sudah terkunci sejak image dibuat, sehingga aplikasi memakai nilai
+bawaan di kode.
+
+`JWT_SECRET` sebaliknya wajib di Environment. Middleware memverifikasi cookie
+login sebelum halaman admin dibuka, jadi kalau nilainya beda dari backend,
+setiap login admin langsung ditendang kembali ke halaman login meski kata
+sandinya benar.
+
+### Menghubungkan ke backend
+
+Frontend meneruskan `/api/*` dan `/uploads/*` ke backend, jadi dari sisi
+browser semuanya satu domain dan cookie login bekerja seperti biasa.
+
+Di Dokploy, pastikan kedua service berada di jaringan Docker yang sama, lalu
+isi `API_PROXY_URL` dengan nama service backendnya, bukan `localhost`.
+`localhost` di dalam container menunjuk container itu sendiri, bukan backend.
+
 ## Scripts
 
 | Command            | Does            |
