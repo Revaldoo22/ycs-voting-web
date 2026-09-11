@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import "@fontsource-variable/plus-jakarta-sans";
 import Script from "next/script";
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
@@ -11,8 +11,6 @@ import { env } from "@/lib/env";
 const GA_ID = env("NEXT_PUBLIC_GA_ID", "G-FZZC7WVGJX");
 // Microsoft Clarity (heatmap + session recording).
 const CLARITY_ID = env("NEXT_PUBLIC_CLARITY_ID", "xj40fbpzhu");
-
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 // Fallback ke domain produksi, bukan localhost: metadataBase dipakai untuk
 // canonical & Open Graph. Kalau env lupa diset saat build produksi, canonical
@@ -76,7 +74,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={jakarta.className} suppressHydrationWarning>
+      <body className="font-sans font-normal antialiased" suppressHydrationWarning>
         <NextTopLoader
           color="hsl(24 95% 53%)"
           height={3}
