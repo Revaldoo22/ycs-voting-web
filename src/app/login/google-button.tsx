@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/i18n";
 
@@ -31,13 +31,21 @@ function GoogleIcon() {
 
 export function GoogleButton() {
   const t = useTranslation("login");
+  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next");
 
   useEffect(() => {
     if (params.get("sso") === "failed") {
       toast.error(t.googleLoginFailed);
+      // Bersihkan ?sso=failed dari URL: kalau tidak, refresh halaman
+      // menampilkan toast error lagi padahal errornya sudah basi.
+      const clean = new URLSearchParams(params);
+      clean.delete("sso");
+      const qs = clean.toString();
+      router.replace(qs ? `/login?${qs}` : "/login");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, t.googleLoginFailed]);
 
   return (
