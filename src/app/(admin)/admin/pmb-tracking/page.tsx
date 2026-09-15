@@ -87,6 +87,7 @@ export default function AdminPmbTrackingPage() {
 
   const job = detail?.job ?? null;
   const running = job?.status === "running";
+  const recentItems = detail?.recent_items ?? [];
 
   function startJob() {
     confirm({
@@ -272,7 +273,7 @@ export default function AdminPmbTrackingPage() {
             </div>
           )}
 
-          {detail && detail.recent_items.length > 0 && (
+          {recentItems.length > 0 && (
             <div className="overflow-hidden rounded-2xl border">
               <div className="border-b bg-muted/40 px-4 py-2 text-sm font-medium">
                 Log terbaru (50 data terakhir diproses)
@@ -288,7 +289,7 @@ export default function AdminPmbTrackingPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {detail.recent_items.map((it) => (
+                    {recentItems.map((it) => (
                       <tr key={it.id} className="border-t">
                         <td className="px-3 py-2 text-muted-foreground">
                           {new Date(it.created_at).toLocaleTimeString("id-ID")}
