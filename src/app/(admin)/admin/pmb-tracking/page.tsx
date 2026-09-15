@@ -22,6 +22,7 @@ type Job = {
   force: boolean;
   batch_size: number;
   delay_ms: number;
+  batch_delay_ms: number;
   total: number;
   processed: number;
   ok: number;
@@ -60,9 +61,18 @@ const STATUS_LABEL: Record<JobStatus, { label: string; variant: "success" | "war
   stopped: { label: "Dihentikan", variant: "outline" },
 };
 
-function fmtEta(remaining: number, batchSize: number, delayMs: number) {
-  const batches = Math.ceil(remaining / Math.max(batchSize, 1));
-  const ms = batches * delayMs;
+function fmtEta(remaining: number, batchSize: number, delayMs: number, batchDelayMs: number) {
+  const size = Math.max(batchSize, 1);
+  let ms = 0;
+  let left = remaining;
+  while (left > 0) {
+    const inThisBatch = Math.min(left, size);
+    // Di dalam batch: jeda antar data, (n-1) kali.
+    ms += Math.max(inThisBatch - 1, 0) * delayMs;
+    left -= inThisBatch;
+    // Masih ada batch berikutnya setelah ini? tambah jeda antar batch.
+    if (left > 0) ms += batchDelayMs;
+  }
   const totalMin = Math.ceil(ms / 60_000);
   if (totalMin < 60) return `${totalMin} menit`;
   const h = Math.floor(totalMin / 60);
@@ -74,8 +84,9 @@ export default function AdminPmbTrackingPage() {
   const [intent, setIntent] = React.useState("");
   const [awareness, setAwareness] = React.useState("");
   const [force, setForce] = React.useState(false);
-  const [batchSize, setBatchSize] = React.useState("1");
+  const [batchSize, setBatchSize] = React.useState("50");
   const [delaySec, setDelaySec] = React.useState("1");
+  const [batchDelaySec, setBatchDelaySec] = React.useState("10");
   const confirm = useConfirm();
   const qc = useQueryClient();
 
@@ -95,7 +106,7 @@ export default function AdminPmbTrackingPage() {
   function startJob() {
     confirm({
       title: "Mulai backfill tracking PMB?",
-      description: `Job akan berjalan di server, bisa berjam-jam tergantung jumlah data. Batch ${batchSize} data sekaligus, jeda ${delaySec} detik antar batch. Kamu bisa tutup halaman ini, job tetap lanjut.`,
+      description: `Job akan berjalan di server, bisa berjam-jam tergantung jumlah data. Tiap batch berisi ${batchSize} data, dikirim satu-satu dengan jeda ${delaySec} detik/data, lalu jeda ${batchDelaySec} detik sebelum batch berikutnya. Kamu bisa tutup halaman ini, job tetap lanjut.`,
       confirmText: "Mulai",
       onConfirm: doStart,
     });
@@ -111,6 +122,7 @@ export default function AdminPmbTrackingPage() {
           force,
           batch_size: Math.round(Number(batchSize)),
           delay_ms: Math.round(Number(delaySec) * 1000),
+          batch_delay_ms: Math.round(Number(batchDelaySec) * 1000),
         }),
       });
       toast.success("Job backfill dimulai.");
@@ -185,19 +197,19 @@ export default function AdminPmbTrackingPage() {
                     ]}
                   />
                 </FilterField>
-                <FilterField label="Batch (data sekaligus)">
+                <FilterField label="Ukuran batch (data/batch)">
                   <SelectBox
                     value={batchSize}
                     onChange={setBatchSize}
                     options={[
-                      { value: "1", label: "1 (satu-satu, disarankan)" },
-                      { value: "3", label: "3 per batch" },
-                      { value: "5", label: "5 per batch" },
-                      { value: "10", label: "10 per batch (lebih berisiko)" },
+                      { value: "20", label: "20 data/batch" },
+                      { value: "50", label: "50 data/batch (disarankan)" },
+                      { value: "100", label: "100 data/batch" },
+                      { value: "200", label: "200 data/batch" },
                     ]}
                   />
                 </FilterField>
-                <FilterField label="Jeda antar batch (detik)">
+                <FilterField label="Jeda antar data (detik)">
                   <SelectBox
                     value={delaySec}
                     onChange={setDelaySec}
@@ -206,6 +218,18 @@ export default function AdminPmbTrackingPage() {
                       { value: "0.5", label: "0,5 detik" },
                       { value: "1", label: "1 detik (disarankan)" },
                       { value: "2", label: "2 detik (paling aman)" },
+                    ]}
+                  />
+                </FilterField>
+                <FilterField label="Jeda antar batch (detik)">
+                  <SelectBox
+                    value={batchDelaySec}
+                    onChange={setBatchDelaySec}
+                    options={[
+                      { value: "5", label: "5 detik" },
+                      { value: "10", label: "10 detik (disarankan)" },
+                      { value: "30", label: "30 detik" },
+                      { value: "60", label: "60 detik (paling aman)" },
                     ]}
                   />
                 </FilterField>
@@ -248,7 +272,8 @@ export default function AdminPmbTrackingPage() {
               <p className="text-sm text-muted-foreground">
                 Filter: niat {INTENT_LABEL[job.filter_intent ?? ""] ?? "semua"} ·
                 {" "}kenal STEKOM {AWARE_LABEL[job.filter_awareness ?? ""] ?? "semua"} ·
-                {" "}batch {job.batch_size} · jeda {(job.delay_ms / 1000).toFixed(2)}d/batch
+                {" "}batch {job.batch_size} data · jeda {(job.delay_ms / 1000).toFixed(2)}d/data ·
+                {" "}{(job.batch_delay_ms / 1000).toFixed(0)}d/batch
                 {job.force ? " · kirim ulang yang sudah pernah" : ""}
                 {job.started_by ? ` · oleh ${job.started_by}` : ""}
               </p>
@@ -266,7 +291,7 @@ export default function AdminPmbTrackingPage() {
                   </span>
                   {running && remaining > 0 && (
                     <span className="text-muted-foreground">
-                      Sisa waktu: ± {fmtEta(remaining, job.batch_size, job.delay_ms)}
+                      Sisa waktu: ± {fmtEta(remaining, job.batch_size, job.delay_ms, job.batch_delay_ms)}
                     </span>
                   )}
                 </div>
