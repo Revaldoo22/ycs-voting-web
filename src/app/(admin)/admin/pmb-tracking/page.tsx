@@ -152,6 +152,11 @@ export default function AdminPmbTrackingPage() {
 
   const remaining = job ? Math.max(job.total - job.processed, 0) : 0;
   const pct = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
+  // Job lama (dibuat sebelum kolom batch_size/batch_delay_ms ada) bisa
+  // punya nilai null/undefined -> fallback ke default supaya tidak NaN.
+  const jobBatchSize = job?.batch_size || 50;
+  const jobDelayMs = job?.delay_ms || 1000;
+  const jobBatchDelayMs = job?.batch_delay_ms ?? 10_000;
 
   return (
     <div className="space-y-6">
@@ -272,8 +277,8 @@ export default function AdminPmbTrackingPage() {
               <p className="text-sm text-muted-foreground">
                 Filter: niat {INTENT_LABEL[job.filter_intent ?? ""] ?? "semua"} ·
                 {" "}kenal STEKOM {AWARE_LABEL[job.filter_awareness ?? ""] ?? "semua"} ·
-                {" "}batch {job.batch_size} data · jeda {(job.delay_ms / 1000).toFixed(2)}d/data ·
-                {" "}{(job.batch_delay_ms / 1000).toFixed(0)}d/batch
+                {" "}batch {jobBatchSize} data · jeda {(jobDelayMs / 1000).toFixed(2)}d/data ·
+                {" "}{(jobBatchDelayMs / 1000).toFixed(0)}d/batch
                 {job.force ? " · kirim ulang yang sudah pernah" : ""}
                 {job.started_by ? ` · oleh ${job.started_by}` : ""}
               </p>
@@ -291,7 +296,7 @@ export default function AdminPmbTrackingPage() {
                   </span>
                   {running && remaining > 0 && (
                     <span className="text-muted-foreground">
-                      Sisa waktu: ± {fmtEta(remaining, job.batch_size, job.delay_ms, job.batch_delay_ms)}
+                      Sisa waktu: ± {fmtEta(remaining, jobBatchSize, jobDelayMs, jobBatchDelayMs)}
                     </span>
                   )}
                 </div>
