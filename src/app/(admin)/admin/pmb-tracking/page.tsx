@@ -1,326 +1,321 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Loader2, Send } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Play, Square } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { FilterBar, FilterField } from "@/components/filter-bar";
 import { SelectBox } from "@/components/ui/select-box";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState, LoadingState } from "@/components/states";
+import { LoadingState } from "@/components/states";
 import { useConfirm } from "@/components/confirm-dialog";
 import { api } from "@/lib/api-client";
 
-type Lead = {
+type JobStatus = "running" | "stopped" | "done";
+
+type Job = {
   id: string;
+  status: JobStatus;
+  filter_intent: string | null;
+  filter_awareness: string | null;
+  force: boolean;
+  delay_ms: number;
+  total: number;
+  processed: number;
+  ok: number;
+  fail: number;
+  skipped: number;
+  started_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type JobItem = {
+  id: string;
+  profile_id: string;
   name: string | null;
-  phone_number: string | null;
-  email: string | null;
-  school_name: string | null;
-  voter_class: string | null;
-  voter_status: string | null;
-  kabupaten: string | null;
-  provinsi: string | null;
-  college_intent: string | null;
-  stekom_awareness: string | null;
-  stekom_source: string | null;
-  pmb_tracked_at: string | null;
+  status: "ok" | "fail" | "skipped";
+  error: string | null;
   created_at: string;
 };
 
-type SubmitResult = {
-  total: number;
-  skipped: number;
-  ok: number;
-  fail: number;
-  failed: { id: string; error: string }[];
-};
+type JobDetail = { job: Job; recent_items: JobItem[]; is_running: boolean };
 
-const INTENT_LABEL: Record<string, string> = {
-  ya: "Ya",
-  ragu: "Ragu",
-  tidak: "Tidak",
-};
 const AWARE_LABEL: Record<string, string> = {
   belum_tahu: "Belum tahu",
   pernah_dengar: "Pernah dengar",
   sudah_minat: "Sudah tertarik",
 };
+const INTENT_LABEL: Record<string, string> = {
+  ya: "Ya",
+  ragu: "Ragu",
+  tidak: "Tidak",
+};
 
-/**
- * Body yang dikirim ke pmb.stekom.ac.id/api/tracking/submit-direct untuk
- * SETIAP lead terpilih (dieksekusi di server, bukan browser). Ditampilkan
- * di sini hanya sebagai referensi, bukan yang benar-benar dikirim dari sini.
- */
-function previewBody(l: Lead) {
-  return {
-    source_page: "Idola Voter",
-    nama: l.name ?? "",
-    email: l.email ?? "",
-    phone: l.phone_number ?? "",
-    data: "admin_leads_submit",
-  };
+const STATUS_LABEL: Record<JobStatus, { label: string; variant: "success" | "warning" | "outline" }> = {
+  running: { label: "Berjalan", variant: "warning" },
+  done: { label: "Selesai", variant: "success" },
+  stopped: { label: "Dihentikan", variant: "outline" },
+};
+
+function fmtEta(remaining: number, delayMs: number) {
+  const ms = remaining * delayMs;
+  const totalMin = Math.ceil(ms / 60_000);
+  if (totalMin < 60) return `${totalMin} menit`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h} jam ${m} menit`;
 }
 
 export default function AdminPmbTrackingPage() {
   const [intent, setIntent] = React.useState("");
-  const [awareness, setAwareness] = React.useState("sudah_minat");
-  const [status, setStatus] = React.useState<"" | "belum" | "sudah">("belum");
-  const [q, setQ] = React.useState("");
-  const [selected, setSelected] = React.useState<Set<string>>(new Set());
-  const [submitting, setSubmitting] = React.useState(false);
-  const [lastResult, setLastResult] = React.useState<SubmitResult | null>(null);
+  const [awareness, setAwareness] = React.useState("");
+  const [force, setForce] = React.useState(false);
+  const [delaySec, setDelaySec] = React.useState("1");
   const confirm = useConfirm();
   const qc = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["leads", intent, awareness],
-    queryFn: () => {
-      const p = new URLSearchParams();
-      if (intent) p.set("intent", intent);
-      if (awareness) p.set("awareness", awareness);
-      return api<Lead[]>(`/api/admin/leads?${p}`);
-    },
+  const { data: detail, isLoading } = useQuery({
+    queryKey: ["pmb-tracking-job"],
+    queryFn: () => api<JobDetail | null>("/api/admin/leads/submit-pmb"),
+    // Polling: job ini bisa jalan berjam-jam di server, halaman perlu terus
+    // menampilkan progress terbaru tanpa admin harus reload manual.
+    refetchInterval: (query) =>
+      query.state.data?.job?.status === "running" ? 2000 : false,
   });
 
-  const filtered = React.useMemo(() => {
-    const kw = q.trim().toLowerCase();
-    return (data ?? []).filter((l) => {
-      if (status === "belum" && l.pmb_tracked_at) return false;
-      if (status === "sudah" && !l.pmb_tracked_at) return false;
-      if (!kw) return true;
-      return (
-        l.name?.toLowerCase().includes(kw) ||
-        l.phone_number?.toLowerCase().includes(kw) ||
-        l.email?.toLowerCase().includes(kw) ||
-        l.school_name?.toLowerCase().includes(kw)
-      );
-    });
-  }, [data, q, status]);
+  const job = detail?.job ?? null;
+  const running = job?.status === "running";
 
-  const allChecked = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
-
-  function toggleAll() {
-    setSelected(() => {
-      if (allChecked) return new Set();
-      return new Set(filtered.map((l) => l.id));
-    });
-  }
-
-  function toggleOne(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function submit() {
-    if (selected.size === 0) {
-      toast.error("Pilih minimal satu data dulu.");
-      return;
-    }
+  function startJob() {
     confirm({
-      title: "Kirim ke tracking PMB?",
-      description: `${selected.size} data akan dikirim ke pmb.stekom.ac.id sebagai lead. Yang sudah pernah terkirim otomatis dilewati.`,
-      confirmText: "Kirim",
-      onConfirm: doSubmit,
+      title: "Mulai backfill tracking PMB?",
+      description: `Job akan berjalan di server, bisa berjam-jam tergantung jumlah data dan jeda ${delaySec} detik/data. Kamu bisa tutup halaman ini, job tetap lanjut.`,
+      confirmText: "Mulai",
+      onConfirm: doStart,
     });
   }
 
-  async function doSubmit() {
-    setSubmitting(true);
-    setLastResult(null);
+  async function doStart() {
     try {
-      const result = await api<SubmitResult>("/api/admin/leads/submit-pmb", {
+      await api("/api/admin/leads/submit-pmb/start", {
         method: "POST",
-        body: JSON.stringify({ ids: Array.from(selected) }),
+        body: JSON.stringify({
+          intent: intent || undefined,
+          awareness: awareness || undefined,
+          force,
+          delay_ms: Math.round(Number(delaySec) * 1000),
+        }),
       });
-      setLastResult(result);
-      setSelected(new Set());
-      qc.invalidateQueries({ queryKey: ["leads"] });
-      if (result.fail > 0) {
-        toast.error(`${result.ok} sukses, ${result.fail} gagal, ${result.skipped} dilewati (sudah pernah).`);
-      } else {
-        toast.success(`${result.ok} data terkirim ke tracking PMB. ${result.skipped} dilewati (sudah pernah).`);
-      }
+      toast.success("Job backfill dimulai.");
+      qc.invalidateQueries({ queryKey: ["pmb-tracking-job"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal mengirim.");
-    } finally {
-      setSubmitting(false);
+      toast.error(e instanceof Error ? e.message : "Gagal memulai job.");
     }
   }
+
+  function stopJob() {
+    if (!job) return;
+    confirm({
+      title: "Hentikan job ini?",
+      description: "Data yang sudah terkirim tetap tersimpan. Bisa dilanjut nanti (yang sudah terkirim otomatis dilewati kalau belum force).",
+      confirmText: "Hentikan",
+      onConfirm: async () => {
+        try {
+          await api(`/api/admin/leads/submit-pmb/${job.id}/stop`, { method: "POST" });
+          toast.success("Job dihentikan.");
+          qc.invalidateQueries({ queryKey: ["pmb-tracking-job"] });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Gagal menghentikan job.");
+        }
+      },
+    });
+  }
+
+  const remaining = job ? Math.max(job.total - job.processed, 0) : 0;
+  const pct = job && job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Submit Tracking PMB</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Kirim data voter yang sudah onboarding ke pmb.stekom.ac.id sebagai
-            lead pendaftaran. {data ? `${filtered.length} data tampil.` : ""}
-          </p>
-        </div>
-        <Button onClick={submit} disabled={submitting || selected.size === 0}>
-          {submitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-          Kirim {selected.size > 0 ? `(${selected.size})` : ""}
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Submit Tracking PMB</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Backfill kirim data voter ke pmb.stekom.ac.id sebagai lead pendaftaran.
+          Job berjalan di server, bisa dibiarkan berjam-jam tanpa perlu halaman ini tetap terbuka.
+        </p>
       </div>
-
-      {lastResult && (
-        <div className="rounded-xl border bg-muted/30 p-4 text-sm">
-          <p className="font-medium">
-            Hasil kirim terakhir: {lastResult.ok} sukses, {lastResult.fail} gagal,{" "}
-            {lastResult.skipped} dilewati (sudah pernah terkirim), dari{" "}
-            {lastResult.total} dipilih.
-          </p>
-          {lastResult.failed.length > 0 && (
-            <ul className="mt-2 space-y-0.5 text-xs text-destructive">
-              {lastResult.failed.map((f) => (
-                <li key={f.id}>{f.id}: {f.error}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      <FilterBar>
-        <FilterField label="Cari" span={2}>
-          <Input
-            placeholder="Nama, WA, email, sekolah…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </FilterField>
-        <FilterField label="Niat Kuliah">
-          <SelectBox
-            value={intent}
-            onChange={setIntent}
-            placeholder="Semua niat"
-            options={[
-              { value: "", label: "Semua niat" },
-              { value: "ya", label: "Ya" },
-              { value: "ragu", label: "Ragu" },
-              { value: "tidak", label: "Tidak" },
-            ]}
-          />
-        </FilterField>
-        <FilterField label="Kenal Universitas STEKOM">
-          <SelectBox
-            value={awareness}
-            onChange={setAwareness}
-            placeholder="Semua"
-            options={[
-              { value: "", label: "Semua" },
-              { value: "belum_tahu", label: "Belum tahu" },
-              { value: "pernah_dengar", label: "Pernah dengar" },
-              { value: "sudah_minat", label: "Sudah tertarik" },
-            ]}
-          />
-        </FilterField>
-        <FilterField label="Status Tracking">
-          <SelectBox
-            value={status}
-            onChange={(v) => setStatus(v as typeof status)}
-            placeholder="Semua"
-            options={[
-              { value: "", label: "Semua" },
-              { value: "belum", label: "Belum terkirim" },
-              { value: "sudah", label: "Sudah terkirim" },
-            ]}
-          />
-        </FilterField>
-      </FilterBar>
 
       {isLoading ? (
         <LoadingState />
-      ) : filtered.length === 0 ? (
-        <EmptyState title="Tidak ada data" />
       ) : (
-        <div className="overflow-hidden rounded-2xl border">
-          <div className="max-h-[65vh] overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted/60 text-xs uppercase text-muted-foreground backdrop-blur">
-                <tr>
-                  <th className="w-10 px-3 py-2">
-                    <input
-                      type="checkbox"
-                      checked={allChecked}
-                      onChange={toggleAll}
-                      className="h-4 w-4 accent-[hsl(var(--primary))]"
-                    />
-                  </th>
-                  <th className="px-3 py-2 text-left font-medium">Nama</th>
-                  <th className="px-3 py-2 text-left font-medium">Kontak</th>
-                  <th className="px-3 py-2 text-left font-medium">Sekolah</th>
-                  <th className="px-3 py-2 text-left font-medium">Niat</th>
-                  <th className="px-3 py-2 text-left font-medium">
-                    Kenal Universitas STEKOM
-                  </th>
-                  <th className="px-3 py-2 text-left font-medium">Status Tracking</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((l) => (
-                  <tr key={l.id} className="border-t">
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(l.id)}
-                        onChange={() => toggleOne(l.id)}
-                        className="h-4 w-4 accent-[hsl(var(--primary))]"
-                      />
-                    </td>
-                    <td className="px-3 py-2 font-medium">{l.name ?? "-"}</td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      <span className="block">{l.phone_number ?? "-"}</span>
-                      <span className="block text-xs">{l.email ?? ""}</span>
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {l.school_name ?? "-"}
-                      {l.voter_class ? ` · ${l.voter_class}` : ""}
-                    </td>
-                    <td className="px-3 py-2">
-                      {INTENT_LABEL[l.college_intent ?? ""] ?? "-"}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {AWARE_LABEL[l.stekom_awareness ?? ""] ?? "-"}
-                    </td>
-                    <td className="px-3 py-2">
-                      {l.pmb_tracked_at ? (
-                        <Badge variant="success" className="gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          {new Date(l.pmb_tracked_at).toLocaleDateString("id-ID")}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">Belum</Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+        <>
+          {!running && (
+            <div className="space-y-4 rounded-2xl border p-4">
+              <h2 className="font-semibold">Mulai job baru</h2>
+              <FilterBar>
+                <FilterField label="Niat Kuliah">
+                  <SelectBox
+                    value={intent}
+                    onChange={setIntent}
+                    placeholder="Semua niat"
+                    options={[
+                      { value: "", label: "Semua niat" },
+                      { value: "ya", label: "Ya" },
+                      { value: "ragu", label: "Ragu" },
+                      { value: "tidak", label: "Tidak" },
+                    ]}
+                  />
+                </FilterField>
+                <FilterField label="Kenal Universitas STEKOM">
+                  <SelectBox
+                    value={awareness}
+                    onChange={setAwareness}
+                    placeholder="Semua"
+                    options={[
+                      { value: "", label: "Semua" },
+                      { value: "belum_tahu", label: "Belum tahu" },
+                      { value: "pernah_dengar", label: "Pernah dengar" },
+                      { value: "sudah_minat", label: "Sudah tertarik" },
+                    ]}
+                  />
+                </FilterField>
+                <FilterField label="Jeda antar data (detik)">
+                  <SelectBox
+                    value={delaySec}
+                    onChange={setDelaySec}
+                    options={[
+                      { value: "0.25", label: "0,25 detik (cepat, lebih berisiko)" },
+                      { value: "0.5", label: "0,5 detik" },
+                      { value: "1", label: "1 detik (disarankan)" },
+                      { value: "2", label: "2 detik (paling aman)" },
+                    ]}
+                  />
+                </FilterField>
+                <FilterField label="Yang sudah pernah terkirim">
+                  <SelectBox
+                    value={force ? "force" : "skip"}
+                    onChange={(v) => setForce(v === "force")}
+                    options={[
+                      { value: "skip", label: "Lewati (disarankan)" },
+                      { value: "force", label: "Kirim ulang juga" },
+                    ]}
+                  />
+                </FilterField>
+              </FilterBar>
+              <Button onClick={startJob}>
+                <Play className="h-4 w-4" />
+                Mulai Backfill
+              </Button>
+            </div>
+          )}
 
-      {/* Referensi payload, membantu debugging kalau ada yang gagal. */}
-      {filtered[0] && (
-        <details className="rounded-xl border bg-muted/20 p-3 text-xs">
-          <summary className="cursor-pointer font-medium text-muted-foreground">
-            Contoh body yang dikirim per data
-          </summary>
-          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all">
-            {JSON.stringify(previewBody(filtered[0]), null, 2)}
-          </pre>
-        </details>
+          {job && (
+            <div className="space-y-4 rounded-2xl border p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-semibold">Job Terakhir</h2>
+                  <Badge variant={STATUS_LABEL[job.status].variant}>
+                    {running && <Loader2 className="h-3 w-3 animate-spin" />}
+                    {STATUS_LABEL[job.status].label}
+                  </Badge>
+                </div>
+                {running && (
+                  <Button variant="destructive" size="sm" onClick={stopJob}>
+                    <Square className="h-4 w-4" />
+                    Hentikan
+                  </Button>
+                )}
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Filter: niat {INTENT_LABEL[job.filter_intent ?? ""] ?? "semua"} ·
+                {" "}kenal STEKOM {AWARE_LABEL[job.filter_awareness ?? ""] ?? "semua"} ·
+                {" "}jeda {(job.delay_ms / 1000).toFixed(2)}d/data
+                {job.force ? " · kirim ulang yang sudah pernah" : ""}
+                {job.started_by ? ` · oleh ${job.started_by}` : ""}
+              </p>
+
+              <div className="space-y-1.5">
+                <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span>
+                    {job.processed}/{job.total} diproses ({pct}%)
+                  </span>
+                  {running && remaining > 0 && (
+                    <span className="text-muted-foreground">
+                      Sisa waktu: ± {fmtEta(remaining, job.delay_ms)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                <div className="rounded-lg bg-emerald-500/10 p-3">
+                  <p className="text-lg font-bold text-emerald-600">{job.ok}</p>
+                  <p className="text-muted-foreground">Sukses</p>
+                </div>
+                <div className="rounded-lg bg-destructive/10 p-3">
+                  <p className="text-lg font-bold text-destructive">{job.fail}</p>
+                  <p className="text-muted-foreground">Gagal</p>
+                </div>
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-lg font-bold">{job.skipped}</p>
+                  <p className="text-muted-foreground">Dilewati</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {detail && detail.recent_items.length > 0 && (
+            <div className="overflow-hidden rounded-2xl border">
+              <div className="border-b bg-muted/40 px-4 py-2 text-sm font-medium">
+                Log terbaru (50 data terakhir diproses)
+              </div>
+              <div className="max-h-[50vh] overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-muted/60 text-xs uppercase text-muted-foreground backdrop-blur">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Waktu</th>
+                      <th className="px-3 py-2 text-left font-medium">Nama</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
+                      <th className="px-3 py-2 text-left font-medium">Error</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.recent_items.map((it) => (
+                      <tr key={it.id} className="border-t">
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {new Date(it.created_at).toLocaleTimeString("id-ID")}
+                        </td>
+                        <td className="px-3 py-2 font-medium">{it.name ?? "-"}</td>
+                        <td className="px-3 py-2">
+                          {it.status === "ok" ? (
+                            <Badge variant="success" className="gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Sukses
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="gap-1">
+                              <AlertCircle className="h-3.5 w-3.5" /> Gagal
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="max-w-xs truncate px-3 py-2 text-xs text-destructive">
+                          {it.error ?? ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
