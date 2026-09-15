@@ -56,7 +56,7 @@ const AWARE_LABEL: Record<string, string> = {
  */
 function previewBody(l: Lead) {
   return {
-    source_page: "Idola Lainnya",
+    source_page: "Idola Voter",
     nama: l.name ?? "",
     email: l.email ?? "",
     phone: l.phone_number ?? "",
