@@ -25,6 +25,7 @@ import {
   PanelLeftOpen,
   School,
   ScrollText,
+  Send,
   Settings,
   Ticket,
   Trophy,
@@ -129,6 +130,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/voters", label: "Voter", icon: Users },
       { href: "/admin/daerah", label: "Daerah", icon: MapPin },
       { href: "/admin/leads", label: "Leads PMB", icon: UserPlus },
+      { href: "/admin/pmb-tracking", label: "Submit Tracking PMB", icon: Send },
     ],
   },
   {
