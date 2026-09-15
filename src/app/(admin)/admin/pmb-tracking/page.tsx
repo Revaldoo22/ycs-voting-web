@@ -306,7 +306,7 @@ export default function AdminPmbTrackingPage() {
                             </Badge>
                           )}
                         </td>
-                        <td className="max-w-xs truncate px-3 py-2 text-xs text-destructive">
+                        <td className="max-w-md whitespace-pre-wrap break-words px-3 py-2 text-xs text-destructive">
                           {it.error ?? ""}
                         </td>
                       </tr>
