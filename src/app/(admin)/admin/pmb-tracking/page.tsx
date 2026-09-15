@@ -20,6 +20,7 @@ type Job = {
   filter_intent: string | null;
   filter_awareness: string | null;
   force: boolean;
+  batch_size: number;
   delay_ms: number;
   total: number;
   processed: number;
@@ -59,8 +60,9 @@ const STATUS_LABEL: Record<JobStatus, { label: string; variant: "success" | "war
   stopped: { label: "Dihentikan", variant: "outline" },
 };
 
-function fmtEta(remaining: number, delayMs: number) {
-  const ms = remaining * delayMs;
+function fmtEta(remaining: number, batchSize: number, delayMs: number) {
+  const batches = Math.ceil(remaining / Math.max(batchSize, 1));
+  const ms = batches * delayMs;
   const totalMin = Math.ceil(ms / 60_000);
   if (totalMin < 60) return `${totalMin} menit`;
   const h = Math.floor(totalMin / 60);
@@ -72,6 +74,7 @@ export default function AdminPmbTrackingPage() {
   const [intent, setIntent] = React.useState("");
   const [awareness, setAwareness] = React.useState("");
   const [force, setForce] = React.useState(false);
+  const [batchSize, setBatchSize] = React.useState("1");
   const [delaySec, setDelaySec] = React.useState("1");
   const confirm = useConfirm();
   const qc = useQueryClient();
@@ -92,7 +95,7 @@ export default function AdminPmbTrackingPage() {
   function startJob() {
     confirm({
       title: "Mulai backfill tracking PMB?",
-      description: `Job akan berjalan di server, bisa berjam-jam tergantung jumlah data dan jeda ${delaySec} detik/data. Kamu bisa tutup halaman ini, job tetap lanjut.`,
+      description: `Job akan berjalan di server, bisa berjam-jam tergantung jumlah data. Batch ${batchSize} data sekaligus, jeda ${delaySec} detik antar batch. Kamu bisa tutup halaman ini, job tetap lanjut.`,
       confirmText: "Mulai",
       onConfirm: doStart,
     });
@@ -106,6 +109,7 @@ export default function AdminPmbTrackingPage() {
           intent: intent || undefined,
           awareness: awareness || undefined,
           force,
+          batch_size: Math.round(Number(batchSize)),
           delay_ms: Math.round(Number(delaySec) * 1000),
         }),
       });
@@ -181,7 +185,19 @@ export default function AdminPmbTrackingPage() {
                     ]}
                   />
                 </FilterField>
-                <FilterField label="Jeda antar data (detik)">
+                <FilterField label="Batch (data sekaligus)">
+                  <SelectBox
+                    value={batchSize}
+                    onChange={setBatchSize}
+                    options={[
+                      { value: "1", label: "1 (satu-satu, disarankan)" },
+                      { value: "3", label: "3 per batch" },
+                      { value: "5", label: "5 per batch" },
+                      { value: "10", label: "10 per batch (lebih berisiko)" },
+                    ]}
+                  />
+                </FilterField>
+                <FilterField label="Jeda antar batch (detik)">
                   <SelectBox
                     value={delaySec}
                     onChange={setDelaySec}
@@ -232,7 +248,7 @@ export default function AdminPmbTrackingPage() {
               <p className="text-sm text-muted-foreground">
                 Filter: niat {INTENT_LABEL[job.filter_intent ?? ""] ?? "semua"} ·
                 {" "}kenal STEKOM {AWARE_LABEL[job.filter_awareness ?? ""] ?? "semua"} ·
-                {" "}jeda {(job.delay_ms / 1000).toFixed(2)}d/data
+                {" "}batch {job.batch_size} · jeda {(job.delay_ms / 1000).toFixed(2)}d/batch
                 {job.force ? " · kirim ulang yang sudah pernah" : ""}
                 {job.started_by ? ` · oleh ${job.started_by}` : ""}
               </p>
@@ -250,7 +266,7 @@ export default function AdminPmbTrackingPage() {
                   </span>
                   {running && remaining > 0 && (
                     <span className="text-muted-foreground">
-                      Sisa waktu: ± {fmtEta(remaining, job.delay_ms)}
+                      Sisa waktu: ± {fmtEta(remaining, job.batch_size, job.delay_ms)}
                     </span>
                   )}
                 </div>
