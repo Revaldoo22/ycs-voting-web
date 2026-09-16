@@ -95,12 +95,21 @@ export default function AdminPmbTrackingPage() {
     queryFn: () => api<JobDetail | null>("/api/admin/leads/submit-pmb"),
     // Polling: job ini bisa jalan berjam-jam di server, halaman perlu terus
     // menampilkan progress terbaru tanpa admin harus reload manual.
-    refetchInterval: (query) =>
-      query.state.data?.job?.status === "running" ? 2000 : false,
+    refetchInterval: (query) => {
+      const d = query.state.data;
+      // Hanya poll selama loop-nya benar-benar hidup. Job yatim (status
+      // "running" tapi prosesnya sudah mati) tak akan pernah berubah,
+      // jadi memollnya cuma membebani server tanpa guna.
+      return d?.job?.status === "running" && d?.is_running ? 2000 : false;
+    },
   });
 
   const job = detail?.job ?? null;
-  const running = job?.status === "running";
+  // is_running = loop-nya benar-benar hidup di server. Status "running" saja
+  // tidak cukup: kalau server restart di tengah job, barisnya bisa sempat
+  // tertinggal berstatus "running" padahal prosesnya sudah mati.
+  const running = job?.status === "running" && detail?.is_running === true;
+  const terputus = job?.status === "running" && detail?.is_running === false;
   const recentItems = detail?.recent_items ?? [];
 
   function startJob() {
@@ -172,6 +181,26 @@ export default function AdminPmbTrackingPage() {
         <LoadingState />
       ) : (
         <>
+          {terputus && (
+            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+              <p className="font-semibold">Job ini berhenti di tengah jalan.</p>
+              <p className="mt-1">
+                Server sempat dimulai ulang, jadi prosesnya tidak berjalan lagi
+                meski progresnya tercatat sampai {job?.processed ?? 0} data.
+                Data yang sudah terkirim tidak dikirim ulang, jadi job baru
+                akan melanjutkan dari sisanya.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={stopJob}
+              >
+                Tutup job ini
+              </Button>
+            </div>
+          )}
+
           {!running && (
             <div className="space-y-4 rounded-2xl border p-4">
               <h2 className="font-semibold">Mulai job baru</h2>
