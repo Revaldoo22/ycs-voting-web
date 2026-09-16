@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
     try {
       const { payload } = await jwtVerify(token, SECRET);
       if (payload.role !== "admin") {
-        return redirectTo(payload.role === "admin" ? "/admin" : "/");
+        return redirectTo("/");
       }
     } catch {
       return redirectTo("/login", true);
