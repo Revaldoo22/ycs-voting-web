@@ -98,8 +98,11 @@ export function ParticipantGrid() {
   if (isLoading) return <CardSkeletonGrid />;
   if (isError) return <ErrorState onRetry={() => refetch()} />;
 
+  // Peserta yang sudah lolos gelombang atau kena Golden Buzzer berhenti
+  // berkompetisi, jadi disembunyikan dari daftar dukungan. Mereka tetap
+  // tampil di halaman /lolos dan /golden-buzzer.
   const active = (data ?? [])
-    .filter((p) => p.status === "active")
+    .filter((p) => p.status === "active" && !p.qualified && !p.golden_buzzer)
     .sort((a, b) => a.name.localeCompare(b.name, "id"));
 
   // Filter lingkup (sekolahku / kabupatenku / semua) untuk voter login.
