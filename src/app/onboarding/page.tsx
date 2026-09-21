@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api-client";
 import { cn, trackEvent } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { REGISTER_URL } from "@/lib/event-links";
 import type { Dictionary } from "@/lib/i18n/types";
 
 type Me = {
@@ -228,6 +229,10 @@ export default function OnboardingPage() {
   const [intent, setIntent] = React.useState("");
   const [awareness, setAwareness] = React.useState("");
   const [stekomSource, setStekomSource] = React.useState("");
+  // Banyak orang mendarat di sini padahal niatnya mendaftar jadi peserta.
+  // Centang ini syarat lanjut, supaya tak ada yang selesai mengisi lalu
+  // mengira dirinya sudah terdaftar sebagai peserta.
+  const [awareVoter, setAwareVoter] = React.useState(false);
 
   // Wilayah bertingkat (kode BPS) + sekolah terpilih.
   const [provinces, setProvinces] = React.useState<Region[]>([]);
@@ -272,6 +277,7 @@ export default function OnboardingPage() {
       if (d.intent) setIntent(d.intent);
       if (d.awareness) setAwareness(d.awareness);
       if (d.stekomSource) setStekomSource(d.stekomSource);
+      if (d.awareVoter) setAwareVoter(true);
       if (typeof d.step === "number") setStep(d.step);
     } catch {
       /* draft rusak, abaikan */
@@ -286,6 +292,7 @@ export default function OnboardingPage() {
     const draft = {
       name, phone, provinceCode, regencyCode, school, schoolManual,
       classManual, kelas, status, intent, awareness, stekomSource, step,
+      awareVoter,
     };
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -294,7 +301,7 @@ export default function OnboardingPage() {
     }
   }, [
     name, phone, provinceCode, regencyCode, school, schoolManual, classManual,
-    kelas, status, intent, awareness, stekomSource, step,
+    kelas, status, intent, awareness, stekomSource, step, awareVoter,
   ]);
 
   // Guard: must be logged in; already-onboarded users go home.
@@ -362,6 +369,7 @@ export default function OnboardingPage() {
       if (name.trim().length < 2) return t.errNameMin;
       if (!/^[0-9+\-\s().]{8,20}$/.test(phone.trim()))
         return t.errPhoneInvalid;
+      if (!awareVoter) return t.errConfirmVoter;
     }
     if (s === 1) {
       if (!provinceCode) return t.errChooseProvince;
@@ -531,6 +539,34 @@ export default function OnboardingPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {t.whatsappNote}
+                </p>
+              </div>
+
+              {/* Pemisah niat: yang mau jadi PESERTA harus keluar ke situs
+                  event. Wajib dicentang supaya tak ada yang selesai mengisi
+                  formulir ini lalu mengira sudah terdaftar jadi peserta. */}
+              <div className="space-y-2 rounded-lg border border-amber-400/50 bg-amber-50/60 p-3 dark:bg-amber-950/20">
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={awareVoter}
+                    onChange={(e) => setAwareVoter(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                  />
+                  <span className="text-sm leading-snug">
+                    {t.confirmVoterLabel}
+                  </span>
+                </label>
+                <p className="pl-[26px] text-xs text-muted-foreground">
+                  {t.confirmVoterHint}{" "}
+                  <a
+                    href={REGISTER_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-primary underline underline-offset-2 hover:no-underline"
+                  >
+                    {t.confirmVoterLink}
+                  </a>
                 </p>
               </div>
             </>

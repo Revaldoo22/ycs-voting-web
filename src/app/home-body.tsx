@@ -16,6 +16,7 @@ import { Navbar } from "@/components/navbar";
 import { HeroVideo } from "@/components/hero-video";
 import { ParticipantGrid } from "@/components/participant-grid";
 import { JoinPopup } from "@/components/join-popup";
+import { RegisterBar } from "@/components/register-bar";
 import { ClaimCouponDialog } from "@/components/claim-coupon-dialog";
 import { MaintenanceOverlay } from "@/components/maintenance-overlay";
 import { EventClosedOverlay } from "@/components/event-closed-overlay";
@@ -132,6 +133,7 @@ export function HomeBody() {
       <MaintenanceOverlay />
       <EventClosedOverlay />
       <JoinPopup />
+      <RegisterBar />
       <Navbar />
 
       {/* Video pembuka (audio on, volume mengecil saat di-scroll). */}

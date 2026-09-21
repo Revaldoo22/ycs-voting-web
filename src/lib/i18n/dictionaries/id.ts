@@ -201,6 +201,9 @@ const id = {
     homePage: "halaman utama",
     googleLoginFailed: "Login Google gagal. Coba lagi.",
     signInAsVoter: "Masuk sebagai Voter",
+    registerAsParticipant: "Daftar sebagai Peserta",
+    registerHint: "Belum jadi peserta? Pendaftaran dibuka di situs event.",
+    or: "atau",
   },
   topVoter: {
     title: "Top Voter Teraktif",
@@ -224,6 +227,10 @@ const id = {
     support: "Dukung",
   },
   home: {
+    registerBarQuestion: "Mau jadi peserta?",
+    registerBarText:
+      "Halaman ini untuk memberi dukungan. Pendaftaran peserta ada di situs event.",
+    registerBarCta: "Daftar di sini",
     badge: "Universitas STEKOM",
     heroTitle: "Dukung Pelajar Favoritmu di Voting 2026",
     registerBacklink: "Info & Tautan Resmi",
@@ -423,6 +430,12 @@ const id = {
     errFillSchoolOrigin: "Isi asal sekolahmu.",
     errFillClass: "Isi kelasmu.",
     errChooseIntent: "Pilih niat kuliahmu.",
+    errConfirmVoter:
+      "Centang dulu kotak konfirmasi bahwa kamu mendaftar sebagai pendukung.",
+    confirmVoterLabel:
+      "Saya sadar formulir ini untuk mendaftar sebagai pendukung (voter), bukan sebagai peserta lomba.",
+    confirmVoterHint: "Mau mendaftar jadi peserta?",
+    confirmVoterLink: "Klik di sini",
     profileComplete: "Profil lengkap. Selamat mendukung!",
     saveProfileFailed: "Gagal menyimpan profil.",
     completeProfileTitle: "Lengkapi Profilmu",
@@ -431,7 +444,8 @@ const id = {
     fullName: "Nama Lengkap",
     namePlaceholder: "Nama sesuai identitas",
     whatsappNumber: "Nomor WhatsApp",
-    whatsappNote: "Dipakai sebagai identitas vote-mu (1 nomor = 1 nama).",
+    whatsappNote:
+      "Nomor ini dipakai untuk menghubungimu kalau kamu menang undian atau hadiah, pastikan nomornya benar dan aktif.",
     province: "Provinsi",
     searchProvince: "Cari provinsi…",
     provinceNotFound: "Provinsi tak ditemukan.",

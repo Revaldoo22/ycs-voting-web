@@ -203,6 +203,9 @@ const en: Dictionary = {
     homePage: "home page",
     googleLoginFailed: "Google login failed. Please try again.",
     signInAsVoter: "Log in as Voter",
+    registerAsParticipant: "Register as Participant",
+    registerHint: "Not a participant yet? Registration is open on the event site.",
+    or: "or",
   },
   topVoter: {
     title: "Most Active Top Voters",
@@ -226,6 +229,10 @@ const en: Dictionary = {
     support: "Support",
   },
   home: {
+    registerBarQuestion: "Want to join as a participant?",
+    registerBarText:
+      "This page is for showing support. Participant registration is on the event site.",
+    registerBarCta: "Register here",
     badge: "Universitas STEKOM",
     heroTitle: "Support Your Favorite Student in the 2026 Vote",
     registerBacklink: "Info & Official Links",
@@ -425,6 +432,12 @@ const en: Dictionary = {
     errFillSchoolOrigin: "Fill in your school.",
     errFillClass: "Fill in your grade.",
     errChooseIntent: "Choose your college intent.",
+    errConfirmVoter:
+      "Please tick the box confirming you are registering as a supporter.",
+    confirmVoterLabel:
+      "I understand this form registers me as a supporter (voter), not as a competition participant.",
+    confirmVoterHint: "Want to register as a participant?",
+    confirmVoterLink: "Click here",
     profileComplete: "Profile complete. Happy supporting!",
     saveProfileFailed: "Failed to save profile.",
     completeProfileTitle: "Complete Your Profile",
@@ -433,7 +446,8 @@ const en: Dictionary = {
     fullName: "Full Name",
     namePlaceholder: "Name matching your ID",
     whatsappNumber: "WhatsApp Number",
-    whatsappNote: "Used as your voting identity (1 number = 1 name).",
+    whatsappNote:
+      "We use this number to contact you if you win a prize or raffle, so make sure it is correct and active.",
     province: "Province",
     searchProvince: "Search province…",
     provinceNotFound: "Province not found.",

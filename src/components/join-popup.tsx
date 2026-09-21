@@ -4,6 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { REGISTER_URL } from "@/lib/event-links";
 
 /** Waktu terakhir ditutup, disimpan supaya jeda tetap berlaku antar refresh. */
 const DISMISS_AT_KEY = "ycs.joinPopup.dismissedAt";
@@ -13,7 +14,6 @@ const SNOOZE_MS = 5 * 60 * 1000;
 const SHOW_AFTER_MS = 6000;
 /** Sudah mengklik banner: anggap selesai, jangan diganggu lagi hari itu. */
 const CLICKED_SNOOZE_MS = 24 * 60 * 60 * 1000;
-const REGISTER_URL = "https://events.stekom.ac.id/ycs2026";
 
 /**
  * Ajakan mendaftar jadi peserta YCS untuk SEMUA pengunjung home, termasuk
