@@ -27,7 +27,7 @@ export function HelpFab() {
   const waLink = csWaLink(t.waMessage);
 
   return (
-    <div className="fixed right-0 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-2">
+    <div className="fixed right-0 top-1/2 z-50 flex -translate-y-1/2 flex-col items-end gap-2">
       {/* Tombol 1: Daftar Peserta (Orange) */}
       <a
         href="/daftar-peserta"
