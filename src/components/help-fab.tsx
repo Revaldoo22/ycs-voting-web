@@ -56,16 +56,16 @@ export function HelpFab() {
         </span>
       </a>
 
-      {/* Tombol 3: FAQ / Konsultasi (Dark Blue) */}
+      {/* Tombol 3: Pusat Panduan (Dark Blue) */}
       <a
-        href="/faq"
+        href="http://localhost:3001/panduan"
         onClick={() => trackEvent("fab_faq_click", { path: pathname ?? "" })}
         className="group flex items-center rounded-l-2xl bg-[#0F4C75] p-3 text-white shadow-md shadow-black/20 transition-all duration-300 hover:pr-5 hover:bg-[#0A3350]"
-        title="Pusat Bantuan & FAQ"
+        title="Pusat Panduan"
       >
         <Headset className="h-6 w-6 shrink-0" />
         <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-2">
-          Pusat Bantuan
+          Pusat Panduan
         </span>
       </a>
     </div>
