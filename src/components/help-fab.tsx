@@ -36,7 +36,7 @@ export function HelpFab() {
         title="Daftar Peserta"
       >
         <ClipboardCheck className="h-6 w-6 shrink-0" />
-        <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-2">
+        <span className="max-w-0 overflow-hidden whitespace-nowrap text-base font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-3">
           Daftar Peserta
         </span>
       </a>
@@ -48,11 +48,11 @@ export function HelpFab() {
         rel="noopener noreferrer"
         onClick={() => trackEvent("fab_wa_click", { path: pathname ?? "" })}
         className="group flex items-center rounded-l-2xl bg-[#25D366] p-3 text-white shadow-md shadow-black/20 transition-all duration-300 hover:pr-5 hover:bg-[#1DA851]"
-        title={t.label || "Bantuan WhatsApp"}
+        title="WhatsApp"
       >
         <WhatsAppIcon />
-        <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-2">
-          {t.label || "Bantuan WhatsApp"}
+        <span className="max-w-0 overflow-hidden whitespace-nowrap text-base font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-3">
+          WhatsApp
         </span>
       </a>
 
@@ -64,7 +64,7 @@ export function HelpFab() {
         title="Pusat Panduan"
       >
         <Headset className="h-6 w-6 shrink-0" />
-        <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-2">
+        <span className="max-w-0 overflow-hidden whitespace-nowrap text-base font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-3">
           Pusat Panduan
         </span>
       </a>
