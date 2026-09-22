@@ -4,7 +4,45 @@ import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { csWaLink } from "@/lib/contact";
-import { ClipboardCheck, Headset } from "lucide-react";
+import { Headset } from "lucide-react";
+import { REGISTER_URL } from "@/lib/event-links";
+
+/**
+ * Ikon "daftar peserta": papan klip berisi foto orang, baris isian, dan
+ * pensil. Digambar sendiri karena Lucide tidak punya glyph papan klip +
+ * orang sekaligus; yang tersedia hanya salah satunya.
+ *
+ * Mengikuti kaidah Lucide (kanvas 24x24, stroke 2, ujung membulat) supaya
+ * bobot garisnya sama persis dengan ikon Headset di tombol sebelahnya.
+ */
+function ClipboardPersonIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6 shrink-0"
+      aria-hidden
+    >
+      {/* Papan klip. Sisi kanan sengaja terputus di bawah pensil supaya
+          kedua bentuk tidak saling tabrak. */}
+      <path d="M9 4H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h7.5" />
+      <path d="M15 4h1a2 2 0 0 1 2 2v2" />
+      {/* Jepitan kertas di atas. */}
+      <rect x="8" y="2" width="6" height="4" rx="1" />
+      {/* Foto orang: kepala dan bahu. */}
+      <circle cx="9" cy="10.5" r="1.75" />
+      <path d="M6.25 15.25a2.75 2.75 0 0 1 5.5 0" />
+      {/* Baris isian formulir. */}
+      <path d="M7 18.5h4" />
+      {/* Pensil di kanan bawah. */}
+      <path d="M21.4 13.6a1 1 0 0 0-1.4-1.4l-4 4a1.5 1.5 0 0 0-.38.64l-.6 2.05a.4.4 0 0 0 .5.5l2.05-.6a1.5 1.5 0 0 0 .64-.38z" />
+    </svg>
+  );
+}
 
 /** Logo WhatsApp (glyph resmi, SVG) agar langsung dikenali. */
 function WhatsAppIcon() {
@@ -30,12 +68,14 @@ export function HelpFab() {
     <div className="fixed right-0 top-1/2 z-50 flex -translate-y-1/2 flex-col items-end gap-2">
       {/* Tombol 1: Daftar Peserta (Orange) */}
       <a
-        href="/daftar-peserta"
+        href={REGISTER_URL}
+        target="_blank"
+        rel="noopener noreferrer"
         onClick={() => trackEvent("fab_daftar_click", { path: pathname ?? "" })}
         className="group flex items-center rounded-l-2xl bg-[#F59E0B] p-3 text-white shadow-md shadow-black/20 transition-all duration-300 hover:pr-5 hover:bg-[#D97706]"
         title="Daftar Peserta"
       >
-        <ClipboardCheck className="h-6 w-6 shrink-0" />
+        <ClipboardPersonIcon />
         <span className="max-w-0 overflow-hidden whitespace-nowrap text-base font-semibold transition-all duration-300 group-hover:max-w-xs group-hover:ml-3">
           Daftar Peserta
         </span>
@@ -58,7 +98,7 @@ export function HelpFab() {
 
       {/* Tombol 3: Pusat Panduan (Dark Blue) */}
       <a
-        href="http://localhost:3001/panduan"
+        href="/panduan"
         onClick={() => trackEvent("fab_faq_click", { path: pathname ?? "" })}
         className="group flex items-center rounded-l-2xl bg-[#0F4C75] p-3 text-white shadow-md shadow-black/20 transition-all duration-300 hover:pr-5 hover:bg-[#0A3350]"
         title="Pusat Panduan"

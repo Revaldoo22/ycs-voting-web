@@ -29,7 +29,11 @@ function PrizeBanner() {
   const t = useTranslation("home");
   const tPeserta = useTranslation("peserta");
   const { data: me } = useMyProfile();
-  const { data: voterToday } = useVoterToday(true);
+  // Endpoint ini butuh login. Tanpa penjaga !!me, setiap pengunjung yang
+  // belum login ikut memanggilnya dan balasannya 401 (terlihat di log server),
+  // padahal hasilnya cuma dipakai untuk alreadyVoted yang memang tak berarti
+  // bagi pengunjung anonim.
+  const { data: voterToday } = useVoterToday(!!me);
   const [claimOpen, setClaimOpen] = React.useState(false);
 
   const isParticipant = !!me?.is_participant;
