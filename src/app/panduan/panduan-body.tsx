@@ -168,6 +168,7 @@ export function PanduanBody() {
   const [search, setSearch] = React.useState("");
 
   const tocItems = [
+    { href: "#cara-daftar", label: "Cara Daftar & Reward" },
     { href: "#pendaftaran-gratis", label: t.tocFree },
     { href: "#untuk-pendukung", label: t.tocSupporter },
     { href: "#untuk-peserta", label: t.tocParticipant },
@@ -180,6 +181,17 @@ export function PanduanBody() {
   // Teks pencarian per section: judul + seluruh isi (subpoin) yang relevan,
   // diratakan jadi satu string supaya searchbar bisa memindai tiap poin.
   const sectionSearchText = {
+    "cara-daftar": flattenToSearchText([
+      "Cara Mendaftar Peserta & Kesempatan ke Bali",
+      "Bagi kamu pelajar SMA/SMK sederajat yang memiliki bakat",
+      "Grand Prize Spesial",
+      "liburan gratis ke Bali",
+      "Langkah-langkah Pendaftaran",
+      "Kunjungi portal pendaftaran resmi",
+      "Isi formulir pendaftaran",
+      "Unggah portofolio",
+      "Tunggu proses verifikasi",
+    ]),
     "pendaftaran-gratis": flattenToSearchText([
       t.freeTitle,
       t.freeDescBold,
@@ -342,10 +354,51 @@ export function PanduanBody() {
               </div>
             )}
 
-            {/* ---------------------- 1. Pendaftaran Gratis ---------------------- */}
+            {/* ---------------------- 0. Cara Daftar & Reward ---------------------- */}
+            <SectionCard
+              id="cara-daftar"
+              n={1}
+              icon={<Award className="h-5 w-5 shrink-0 text-amber-500" />}
+              title="Cara Mendaftar Peserta & Kesempatan ke Bali"
+              accent="primary"
+              hidden={false}
+            >
+              <div className="space-y-4 text-sm text-muted-foreground">
+                <p>
+                  Bagi kamu pelajar SMA/SMK sederajat yang memiliki bakat, prestasi, atau karya yang membanggakan, ini adalah kesempatan emas! Daftar sekarang juga sebagai peserta <b>Youth Character Summit 2026</b>.
+                </p>
+                
+                <div className="rounded-xl border bg-primary/5 p-4 text-primary">
+                  <p className="font-bold flex items-center gap-2 mb-2">
+                    <Ticket className="h-4 w-4" /> Grand Prize Spesial
+                  </p>
+                  <p className="text-sm">
+                    Selain memperebutkan gelar juara dan beasiswa jutaan rupiah, peserta terbaik yang terpilih akan mendapatkan <b>kesempatan eksklusif liburan gratis ke Bali</b> bersama Universitas STEKOM! Seluruh akomodasi dan biaya perjalanan ditanggung sepenuhnya.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-semibold text-foreground">Langkah-langkah Pendaftaran:</p>
+                  <ol className="list-decimal pl-5 space-y-1">
+                    <li>Kunjungi portal pendaftaran resmi melalui tombol di bawah ini.</li>
+                    <li>Isi formulir pendaftaran dengan data diri dan asal sekolah.</li>
+                    <li>Unggah portofolio, foto, atau video bakat/karya terbaikmu.</li>
+                    <li>Tunggu proses verifikasi dari panitia. Pendaftaran ini <b>100% GRATIS</b>.</li>
+                  </ol>
+                </div>
+
+                <Button asChild className="w-full sm:w-auto mt-2" size="lg">
+                  <a href="https://events.stekom.ac.id/ycs2026" target="_blank" rel="noopener noreferrer">
+                    Daftar Sebagai Peserta Sekarang
+                  </a>
+                </Button>
+              </div>
+            </SectionCard>
+
+            {/* ---------------------- 2. Pendaftaran Gratis ---------------------- */}
             <SectionCard
               id="pendaftaran-gratis"
-              n={1}
+              n={2}
               icon={<Wallet className="h-5 w-5 shrink-0 text-emerald-600" />}
               title={t.freeTitle}
               accent="emerald"
@@ -375,10 +428,10 @@ export function PanduanBody() {
               </p>
             </SectionCard>
 
-            {/* ------------------- 2. Panduan pendukung umum ------------------- */}
+            {/* ------------------- 3. Panduan pendukung umum ------------------- */}
             <SectionCard
               id="untuk-pendukung"
-              n={2}
+              n={3}
               icon={<UserRound className="h-5 w-5 shrink-0 text-primary" />}
               title={t.supporterCardTitle}
               desc={t.supporterCardDesc}
@@ -402,10 +455,10 @@ export function PanduanBody() {
               </div>
             </SectionCard>
 
-            {/* --------------------- 3. Panduan peserta --------------------- */}
+            {/* --------------------- 4. Panduan peserta --------------------- */}
             <SectionCard
               id="untuk-peserta"
-              n={3}
+              n={4}
               icon={<GraduationCap className="h-5 w-5 shrink-0 text-accent" />}
               title={
                 <span className="flex flex-wrap items-center gap-2">
@@ -431,10 +484,10 @@ export function PanduanBody() {
               </div>
             </SectionCard>
 
-            {/* ---------------- 4. Timeline & info kegiatan YCS 2026 ---------------- */}
+            {/* ---------------- 5. Timeline & info kegiatan YCS 2026 ---------------- */}
             <SectionCard
               id="timeline"
-              n={4}
+              n={5}
               icon={<CalendarDays className="h-5 w-5 shrink-0 text-primary" />}
               title={t.timelineTitle}
               desc={t.timelineSubtitle}
@@ -487,10 +540,10 @@ export function PanduanBody() {
               </div>
             </SectionCard>
 
-            {/* ------------- 5. Akumulasi slot antar gelombang ------------- */}
+            {/* ------------- 6. Akumulasi slot antar gelombang ------------- */}
             <SectionCard
               id="akumulasi-slot"
-              n={5}
+              n={6}
               icon={<Layers className="h-5 w-5 shrink-0 text-primary" />}
               title={t.slotTitle}
               desc={t.slotSubtitle}
@@ -543,10 +596,10 @@ export function PanduanBody() {
               </div>
             </SectionCard>
 
-            {/* -------- 6. FAQ biaya: teks jawaban sinkron dengan FAQ_JSON_LD -------- */}
+            {/* -------- 7. FAQ biaya: teks jawaban sinkron dengan FAQ_JSON_LD -------- */}
             <SectionCard
               id="faq-biaya"
-              n={6}
+              n={7}
               icon={<Wallet className="h-5 w-5 shrink-0 text-emerald-600" />}
               title={t.faqTitle}
               desc={t.faqSubtitle}
@@ -563,10 +616,10 @@ export function PanduanBody() {
               </dl>
             </SectionCard>
 
-            {/* ------------------------- 7. Bantuan ------------------------- */}
+            {/* ------------------------- 8. Bantuan ------------------------- */}
             <SectionCard
               id="bantuan"
-              n={7}
+              n={8}
               icon={<Heart className="h-5 w-5 shrink-0 text-emerald-600" />}
               title={t.helpTitle}
               desc={t.helpDesc}
