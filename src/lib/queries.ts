@@ -645,6 +645,29 @@ export type QualifiedParticipant = {
   points: number;
 };
 
+/** Baris ekspor peserta lolos (admin), termasuk kontak. */
+export type QualifiedExportRow = {
+  via: "golden_buzzer" | "round";
+  participant_id: string;
+  participant_name: string;
+  phone_number: string | null;
+  email: string | null;
+  external_id: string | null;
+  description: string | null;
+  photo_url: string | null;
+  school_name: string | null;
+  school_npsn: string | null;
+  school_jenjang: string | null;
+  region_name: string | null;
+  province_name: string | null;
+  round_name: string | null;
+  sequence: number | null;
+  points: number;
+  total_points: number;
+  decided_at: string | null;
+  registered_at: string;
+};
+
 /** Peserta yang dipilih panitia sebagai Golden Buzzer (langsung lolos). */
 export type GoldenBuzzer = {
   id: string;

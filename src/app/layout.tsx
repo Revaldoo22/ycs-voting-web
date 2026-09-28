@@ -57,16 +57,14 @@ export const metadata: Metadata = {
     shortcut: ["/favicon.ico"],
   },
   manifest: "/manifest.webmanifest",
-  // Verifikasi Google Search Console lewat metode "HTML tag". Isi
-  // NEXT_PUBLIC_GOOGLE_VERIFICATION dengan value token dari GSC, lalu build.
-  // Kalau kosong, tag-nya tidak dirender sama sekali.
-  ...(process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION
-    ? {
-        verification: {
-          google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
-        },
-      }
-    : {}),
+  // Verifikasi Google Search Console lewat metode "HTML tag". Token ini memang
+  // tampil publik di HTML, jadi aman ditulis langsung sebagai bawaan supaya
+  // tidak hilang kalau build arg di Dokploy lupa diisi. Env tetap menang.
+  verification: {
+    google:
+      process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION ||
+      "i7LtO1GdCUuK54wpIg3FipatvZmFn7AGMba25OZQits",
+  },
 };
 
 export default function RootLayout({

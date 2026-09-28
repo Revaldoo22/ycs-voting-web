@@ -25,8 +25,10 @@ import {
   useQualified,
   useRounds,
   useRoundStandings,
+  type QualifiedExportRow,
   type RoundStanding,
 } from "@/lib/queries";
+import { dateStamp, exportToExcel } from "@/lib/export-excel";
 import { cn, formatNumber } from "@/lib/utils";
 
 export default function AdminHasilPage() {
@@ -525,42 +527,56 @@ function QualifiedAllRounds() {
   // Peserta unik: satu orang yang lolos di dua gelombang tetap dihitung satu.
   const uniquePeople = new Set(filtered.map((r) => r.participant_id)).size;
 
-  function exportCsv() {
-    const head = [
-      "Peringkat",
-      "Nama Peserta",
-      "Sekolah",
-      "Kabupaten",
-      "Provinsi",
-      "Lolos dari",
-      "Poin",
-    ];
-    // Escape RFC 4180: bungkus tanda kutip, kutip di dalam digandakan.
-    const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-    const body = filtered.map((r, i) =>
-      [
-        i + 1,
-        r.participant_name,
-        r.school_name,
-        r.region_name,
-        r.province_name,
-        r.round_name,
-        r.points,
-      ]
-        .map(cell)
-        .join(","),
-    );
-    // BOM agar Excel membaca UTF-8 (nama dengan karakter non-ASCII).
-    const csv =
-      "﻿" + [head.map(cell).join(","), ...body].join("\r\n");
-    const url = URL.createObjectURL(
-      new Blob([csv], { type: "text/csv;charset=utf-8;" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `peserta-lolos-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const [exporting, setExporting] = React.useState(false);
+
+  // Data kontak (no WA, email) tidak ikut di daftar biasa, jadi diambil
+  // khusus saat ekspor. Filter gelombang ikut; pencarian teks tidak, karena
+  // panitia biasanya butuh semuanya.
+  async function exportExcel() {
+    setExporting(true);
+    try {
+      const list = await api<QualifiedExportRow[]>(
+        `/api/admin/rounds/qualified/export${roundFilter ? `?round_id=${roundFilter}` : ""}`,
+      );
+      if (list.length === 0) {
+        toast.error("Tidak ada peserta lolos untuk diekspor.");
+        return;
+      }
+      const fmtDate = (v: string | null) =>
+        v ? new Date(v).toLocaleString("id-ID") : "";
+      exportToExcel(
+        list.map((r, i) => ({
+          No: i + 1,
+          "Nama Peserta": r.participant_name,
+          "Nomor WA": r.phone_number ?? "",
+          Email: r.email ?? "",
+          Sekolah: r.school_name ?? "",
+          NPSN: r.school_npsn ?? "",
+          Jenjang: r.school_jenjang ?? "",
+          Kabupaten: r.region_name ?? "",
+          Provinsi: r.province_name ?? "",
+          "Lolos Lewat":
+            r.via === "golden_buzzer" ? "Golden Buzzer" : "Gelombang",
+          Gelombang: r.round_name ?? "",
+          "Poin Gelombang": r.points,
+          "Total Poin": r.total_points,
+          "Tanggal Lolos": fmtDate(r.decided_at),
+          "Tanggal Daftar": fmtDate(r.registered_at),
+          "ID Pendaftaran": r.external_id ?? "",
+          Deskripsi: r.description ?? "",
+          Foto: r.photo_url ?? "",
+        })),
+        {
+          fileName: `peserta-lolos-${dateStamp()}.xlsx`,
+          sheetName: "Peserta Lolos",
+        },
+      );
+      toast.success(`${formatNumber(list.length)} peserta diekspor.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ekspor gagal.");
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -580,11 +596,15 @@ function QualifiedAllRounds() {
           <Button
             variant="outline"
             size="sm"
-            onClick={exportCsv}
-            disabled={filtered.length === 0}
+            onClick={exportExcel}
+            disabled={rows.length === 0 || exporting}
           >
-            <Download className="h-4 w-4" />
-            Ekspor CSV
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Ekspor Excel
           </Button>
         </div>
 
