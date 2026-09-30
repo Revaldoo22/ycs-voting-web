@@ -45,7 +45,9 @@ export function CredentialLogin({
       return;
     }
     toast.success("Berhasil masuk.");
-    router.push(next ?? data.redirect ?? "/");
+    // replace: halaman login tidak boleh tertinggal di riwayat, kalau tidak
+    // tombol Kembali dari halaman tujuan malah memunculkan form login lagi.
+    router.replace(next ?? data.redirect ?? "/");
     router.refresh();
   }
 

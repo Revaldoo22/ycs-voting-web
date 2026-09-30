@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { ConfirmProvider } from "@/components/confirm-dialog";
 import { LocaleProvider } from "@/lib/i18n";
+import { NavTracker } from "@/lib/url-state";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = React.useState(
@@ -21,6 +22,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <LocaleProvider>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
         <QueryClientProvider client={client}>
+          <NavTracker />
           <ConfirmProvider>{children}</ConfirmProvider>
           <Toaster
             position="top-right"

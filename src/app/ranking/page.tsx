@@ -27,7 +27,12 @@ export default function RankingPage() {
   React.useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     if (tab === "sekolah") sp.set("tab", "sekolah");
-    else sp.delete("tab");
+    else {
+      sp.delete("tab");
+      // Param milik tab sekolah tidak boleh tertinggal di tab peserta.
+      sp.delete("lingkup");
+      sp.delete("kabupaten");
+    }
     const qs = sp.toString();
     window.history.replaceState(
       window.history.state,

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { cn, formatNumber } from "@/lib/utils";
 import { RankMedal, podiumRowClass } from "@/components/rank-medal";
 import { useTranslation } from "@/lib/i18n";
+import { getParam, useSyncSearchParams } from "@/lib/url-state";
 
 /**
  * Dropdown kabupaten yang bisa dicari: ketik nama, muncul rekomendasi,
@@ -172,17 +173,37 @@ export function SchoolRankings() {
   const voterReady = !!me && me.role === "voter" && me.onboarded;
   const { data: myRank } = useMySchoolRank(voterReady);
 
-  const [tab, setTab] = React.useState<"kab" | "nasional">("nasional");
-  const [regionId, setRegionId] = React.useState<string>("");
+  // Pilihan lingkup & kabupaten disimpan di URL supaya tombol Kembali dari
+  // halaman sekolah memulihkannya (bukan balik ke default).
+  const urlScope = getParam("lingkup");
+  const [tab, setTab] = React.useState<"kab" | "nasional">(
+    urlScope === "kab" ? "kab" : "nasional",
+  );
+  const [regionId, setRegionId] = React.useState<string>(
+    () => getParam("kabupaten") ?? "",
+  );
   const { data: regions } = useRegions();
+
+  // Default kabupaten milik voter hanya berlaku selama pengunjung belum
+  // memilih sendiri (lewat klik atau lewat URL).
+  const chosen = React.useRef(urlScope === "kab" || urlScope === "nasional");
+  const pick = (next: "kab" | "nasional") => {
+    chosen.current = true;
+    setTab(next);
+  };
 
   // Voter login: default ke tab kabupatennya.
   React.useEffect(() => {
     if (myRank?.region_id) {
       setRegionId((v) => v || myRank.region_id!);
-      setTab("kab");
+      if (!chosen.current) setTab("kab");
     }
   }, [myRank]);
+
+  useSyncSearchParams({
+    lingkup: tab === "kab" ? "kab" : null,
+    kabupaten: tab === "kab" ? regionId : null,
+  });
 
   const activeRegion = tab === "kab" ? regionId || undefined : undefined;
   const { data: rows, isLoading } = useSchoolRankings(activeRegion);
@@ -203,7 +224,7 @@ export function SchoolRankings() {
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
           )}
-          onClick={() => setTab("kab")}
+          onClick={() => pick("kab")}
         >
           <MapPin className="h-4 w-4" />
           {t.tabRegion}
@@ -215,7 +236,7 @@ export function SchoolRankings() {
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
           )}
-          onClick={() => setTab("nasional")}
+          onClick={() => pick("nasional")}
         >
           <Trophy className="h-4 w-4" />
           {t.tabNational}

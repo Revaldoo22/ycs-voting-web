@@ -64,6 +64,7 @@ import {
 } from "@/components/claim-coupon-dialog";
 import type { ParticipantWithSchool, Quest } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
+import { useSmartBack } from "@/lib/url-state";
 import type { Dictionary } from "@/lib/i18n/types";
 
 export default function PublicParticipantPage({
@@ -95,6 +96,7 @@ export default function PublicParticipantPage({
   const votePending = myVote?.status === "pending";
 
   const router = useRouter();
+  const goBack = useSmartBack("/");
 
   // Aksi dukung/quest wajib login sebagai pendukung.
   // gate = null berarti boleh lanjut; selain itu fungsi pengalihan.
@@ -161,14 +163,8 @@ export default function PublicParticipantPage({
       <Navbar />
       <main className="container max-w-3xl space-y-6 py-8">
         {/* Kembali ke halaman sebelumnya (scroll & state utuh via history);
-            fallback ke beranda kalau dibuka langsung dari link. */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            window.history.length > 1 ? router.back() : router.push("/")
-          }
-        >
+            fallback ke beranda kalau dibuka langsung dari link luar. */}
+        <Button variant="ghost" size="sm" onClick={goBack}>
           <ArrowLeft className="h-4 w-4" /> {t.back}
         </Button>
 

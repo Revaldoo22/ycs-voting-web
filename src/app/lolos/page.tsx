@@ -18,6 +18,15 @@ import {
 } from "@/lib/queries";
 import { cn, formatNumber } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { getParam, useSyncSearchParams } from "@/lib/url-state";
+
+/** "Gelombang B" -> "gelombang-b", dipakai sebagai ?gelombang= di URL. */
+const slugOf = (name: string) =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 export default function PublicQualifiedPage() {
   const t = useTranslation("lolos");
@@ -27,22 +36,47 @@ export default function PublicQualifiedPage() {
   // Dibungkus useMemo: `data ?? []` bikin array baru tiap render, sehingga
   // memo di bawahnya ikut dihitung ulang terus.
   const rows = React.useMemo(() => data ?? [], [data]);
-  const [q, setQ] = React.useState("");
-  const [round, setRound] = React.useState<string>("");
+  const [q, setQ] = React.useState(() => getParam("q") ?? "");
+  // Gelombang terpilih disimpan di URL (?gelombang=gelombang-b), jadi tiap
+  // gelombang punya tautan sendiri dan Kembali dari halaman peserta tidak
+  // melempar pengunjung ke gelombang lain.
+  const [roundKey, setRoundKey] = React.useState(
+    () => getParam("gelombang") ?? "",
+  );
 
-  // Gelombang yang sudah punya peserta lolos, jadi tab pemilih.
+  // Gelombang yang sudah punya peserta lolos, urut dari yang paling awal.
   const rounds = React.useMemo(() => {
-    const seen = new Map<string, { id: string; name: string }>();
+    const seen = new Map<
+      string,
+      { id: string; name: string; slug: string; sequence: number }
+    >();
     for (const r of rows) {
-      seen.set(r.round_id, { id: r.round_id, name: r.round_name });
+      seen.set(r.round_id, {
+        id: r.round_id,
+        name: r.round_name,
+        slug: slugOf(r.round_name) || r.round_id,
+        sequence: r.sequence ?? 0,
+      });
     }
-    return Array.from(seen.values());
+    return Array.from(seen.values()).sort((a, b) => a.sequence - b.sequence);
   }, [rows]);
 
-  // Default: gelombang pertama yang punya hasil.
-  React.useEffect(() => {
-    if (!round && rounds.length > 0) setRound(rounds[0].id);
-  }, [rounds, round]);
+  // Default: gelombang terbaru yang sudah punya hasil. Key dari URL boleh
+  // berupa slug nama atau id; key yang tidak dikenal jatuh ke default.
+  const selectedRound = React.useMemo(() => {
+    if (rounds.length === 0) return null;
+    return (
+      rounds.find((r) => r.slug === roundKey || r.id === roundKey) ??
+      rounds[rounds.length - 1]
+    );
+  }, [rounds, roundKey]);
+  const round = selectedRound?.id ?? "";
+
+  useSyncSearchParams({
+    // Sebelum data siap, pertahankan nilai dari URL supaya tidak terhapus.
+    gelombang: selectedRound ? selectedRound.slug : roundKey,
+    q: q.trim() ? q : null,
+  });
 
   /**
    * Sisa slot gelombang terpilih: kuota (top_n) dikurangi jumlah yang lolos.
@@ -140,7 +174,7 @@ export default function PublicQualifiedPage() {
               {rounds.map((r) => (
                 <button
                   key={r.id}
-                  onClick={() => setRound(r.id)}
+                  onClick={() => setRoundKey(r.slug)}
                   className={cn(
                     "cursor-pointer rounded-full border px-5 py-2 text-sm font-semibold transition-colors",
                     round === r.id

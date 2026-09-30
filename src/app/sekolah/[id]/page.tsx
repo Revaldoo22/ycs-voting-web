@@ -23,6 +23,7 @@ import { api } from "@/lib/api-client";
 import { useParticipants } from "@/lib/queries";
 import { formatNumber } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { useSmartBack } from "@/lib/url-state";
 
 type SchoolDetail = {
   school_id: string;
@@ -43,6 +44,9 @@ export default function SchoolPage({
 }) {
   const { id } = use(params);
   const t = useTranslation("sekolah");
+  // Kembali ke peringkat persis seperti ditinggalkan (tab & kabupaten utuh);
+  // buka langsung dari link -> ke tab sekolah di /ranking.
+  const goBack = useSmartBack("/ranking?tab=sekolah");
   const {
     data: school,
     isLoading,
@@ -65,10 +69,8 @@ export default function SchoolPage({
       <Navbar />
 
       <main className="container max-w-3xl space-y-6 py-8">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/peringkat-sekolah">
-            <ArrowLeft className="h-4 w-4" /> {t.backToRanking}
-          </Link>
+        <Button variant="ghost" size="sm" onClick={goBack}>
+          <ArrowLeft className="h-4 w-4" /> {t.backToRanking}
         </Button>
 
         {isLoading ? (

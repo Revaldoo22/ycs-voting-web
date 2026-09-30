@@ -30,6 +30,7 @@ import {
 import { cn, formatNumber } from "@/lib/utils";
 import { RankMedal, podiumRowClass } from "@/components/rank-medal";
 import { useTranslation } from "@/lib/i18n";
+import { getParam, useSyncSearchParams } from "@/lib/url-state";
 
 /** Node drill-down (provinsi/kabupaten), key stabil walau id null. */
 type DrillGroup = {
@@ -232,34 +233,89 @@ function StudentBoard({
 
 type Crumb = { key: string; name: string };
 
+const provKey = (r: RoundStanding) => r.province_id ?? "none";
+const regKey = (r: RoundStanding) => r.region_id ?? "none";
+const schKey = (r: RoundStanding) => r.school_id ?? "none";
+
 export default function PublicRoundsPage() {
   const t = useTranslation("gelombang");
   const { data: rounds, isLoading } = usePublicRounds();
-  const [selected, setSelected] = React.useState<string>("");
 
-  // Drill-down: nasional → provinsi → kabupaten → sekolah → siswa.
-  const [province, setProvince] = React.useState<Crumb | null>(null);
-  const [region, setRegion] = React.useState<Crumb | null>(null);
-  const [school, setSchool] = React.useState<Crumb | null>(null);
+  // Seluruh posisi halaman (gelombang, tab, level drill-down) disimpan di URL.
+  // Kalau hanya di state React, membuka seorang peserta lalu menekan Kembali
+  // mengembalikan halaman ke awal (nasional, gelombang default).
+  const [selected, setSelected] = React.useState<string>(
+    () => getParam("g") ?? "",
+  );
+  // Tab utama: "top" = daftar peserta terbaik langsung (yang menentukan
+  // lolos), "wilayah" = jelajah provinsi → kabupaten → sekolah → siswa.
+  const [tab, setTab] = React.useState<"top" | "wilayah">(() =>
+    getParam("tab") === "wilayah" ? "wilayah" : "top",
+  );
 
-  // Default: round aktif, kalau tidak ada → yang terbaru.
+  // Drill-down: nasional → provinsi → kabupaten → sekolah → siswa. Yang
+  // disimpan hanya key-nya; nama untuk breadcrumb diturunkan dari standings.
+  const [provinceKey, setProvinceKey] = React.useState<string | null>(() =>
+    getParam("prov"),
+  );
+  const [regionKey, setRegionKey] = React.useState<string | null>(() =>
+    getParam("kab"),
+  );
+  const [schoolKey, setSchoolKey] = React.useState<string | null>(() =>
+    getParam("sek"),
+  );
+
+  // Default: round aktif, kalau tidak ada → yang terbaru. Juga dipakai kalau
+  // gelombang dari URL sudah tidak ada.
   React.useEffect(() => {
-    if (!selected && rounds && rounds.length > 0) {
-      const active = rounds.find((r) => r.status === "active");
-      setSelected((active ?? rounds[0]).id);
-    }
+    if (!rounds || rounds.length === 0) return;
+    if (selected && rounds.some((r) => r.id === selected)) return;
+    const active = rounds.find((r) => r.status === "active");
+    setSelected((active ?? rounds[0]).id);
   }, [rounds, selected]);
 
   const round = rounds?.find((r) => r.id === selected);
   const { data: results, isLoading: loadingResults } = useRoundResults(selected);
   const { data: me } = useMyProfile();
 
-  // Tab utama: "top" = daftar peserta terbaik langsung (yang menentukan
-  // lolos), "wilayah" = jelajah provinsi → kabupaten → sekolah → siswa.
-  const [tab, setTab] = React.useState<"top" | "wilayah">("top");
+  // Level dianggap valid hanya kalau induknya ada dan barisnya ditemukan di
+  // standings. Key basi dari URL (gelombang lain, data berubah) jatuh ke
+  // level di atasnya, bukan menampilkan daftar kosong.
+  const province = React.useMemo<Crumb | null>(() => {
+    if (!provinceKey) return null;
+    const row = (results ?? []).find((r) => provKey(r) === provinceKey);
+    if (!row) return loadingResults || !results ? { key: provinceKey, name: "" } : null;
+    return { key: provinceKey, name: row.province_name };
+  }, [provinceKey, results, loadingResults]);
 
-  const provKey = (r: RoundStanding) => r.province_id ?? "none";
-  const regKey = (r: RoundStanding) => r.region_id ?? "none";
+  const region = React.useMemo<Crumb | null>(() => {
+    if (!province || !regionKey) return null;
+    const row = (results ?? []).find(
+      (r) => regKey(r) === regionKey && provKey(r) === province.key,
+    );
+    if (!row) return loadingResults || !results ? { key: regionKey, name: "" } : null;
+    return { key: regionKey, name: row.region_name };
+  }, [province, regionKey, results, loadingResults]);
+
+  const school = React.useMemo<Crumb | null>(() => {
+    if (!region || !schoolKey) return null;
+    const row = (results ?? []).find(
+      (r) =>
+        schKey(r) === schoolKey &&
+        regKey(r) === region.key &&
+        (!province || provKey(r) === province.key),
+    );
+    if (!row) return loadingResults || !results ? { key: schoolKey, name: "" } : null;
+    return { key: schoolKey, name: row.school_name };
+  }, [province, region, schoolKey, results, loadingResults]);
+
+  useSyncSearchParams({
+    g: selected,
+    tab: tab === "wilayah" ? "wilayah" : null,
+    prov: province?.key,
+    kab: region?.key,
+    sek: school?.key,
+  });
 
   // Peringkat peserta se-Indonesia. Inilah yang dipakai menentukan lolos:
   // top_n peserta teratas, tanpa dipecah per sekolah/kabupaten.
@@ -327,7 +383,7 @@ export default function PublicRoundsPage() {
       }
     >();
     for (const r of rows) {
-      const key = r.school_id ?? "none";
+      const key = schKey(r);
       const g =
         map.get(key) ??
         {
@@ -353,7 +409,7 @@ export default function PublicRoundsPage() {
   const students = React.useMemo(() => {
     if (!school) return [];
     return (results ?? [])
-      .filter((r) => (r.school_id ?? "none") === school.key)
+      .filter((r) => schKey(r) === school.key)
       .sort(
         (a, b) =>
           b.points - a.points ||
@@ -363,24 +419,24 @@ export default function PublicRoundsPage() {
 
   function selectRound(id: string) {
     setSelected(id);
-    setProvince(null);
-    setRegion(null);
-    setSchool(null);
+    setProvinceKey(null);
+    setRegionKey(null);
+    setSchoolKey(null);
   }
 
   function back() {
-    if (school) return setSchool(null);
-    if (region) return setRegion(null);
-    if (province) return setProvince(null);
+    if (school) return setSchoolKey(null);
+    if (region) return setRegionKey(null);
+    if (province) return setProvinceKey(null);
   }
 
   const crumbs: { label: string; onClick?: () => void }[] = [
     {
       label: t.national,
       onClick: () => {
-        setProvince(null);
-        setRegion(null);
-        setSchool(null);
+        setProvinceKey(null);
+        setRegionKey(null);
+        setSchoolKey(null);
       },
     },
     ...(province
@@ -388,13 +444,13 @@ export default function PublicRoundsPage() {
           {
             label: province.name,
             onClick: () => {
-              setRegion(null);
-              setSchool(null);
+              setRegionKey(null);
+              setSchoolKey(null);
             },
           },
         ]
       : []),
-    ...(region ? [{ label: region.name, onClick: () => setSchool(null) }] : []),
+    ...(region ? [{ label: region.name, onClick: () => setSchoolKey(null) }] : []),
     ...(school ? [{ label: school.name }] : []),
   ];
 
@@ -563,12 +619,7 @@ export default function PublicRoundsPage() {
                     {schools.map((row, i) => (
                       <button
                         key={row.school_id ?? "none"}
-                        onClick={() =>
-                          setSchool({
-                            key: row.school_id ?? "none",
-                            name: row.school_name,
-                          })
-                        }
+                        onClick={() => setSchoolKey(row.school_id ?? "none")}
                         className={cn(
                           "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary/5",
                           row.lolos > 0 &&
@@ -619,7 +670,7 @@ export default function PublicRoundsPage() {
                         mineLabel={
                           g.key === mine.regionKey ? t.yourRegency : undefined
                         }
-                        onClick={() => setRegion({ key: g.key, name: g.name })}
+                        onClick={() => setRegionKey(g.key)}
                       />
                     ))}
                   </div>
@@ -636,7 +687,7 @@ export default function PublicRoundsPage() {
                         mineLabel={
                           g.key === mine.provinceKey ? t.yourProvince : undefined
                         }
-                        onClick={() => setProvince({ key: g.key, name: g.name })}
+                        onClick={() => setProvinceKey(g.key)}
                       />
                     ))}
                   </div>
