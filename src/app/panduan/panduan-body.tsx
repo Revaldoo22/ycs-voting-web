@@ -208,6 +208,7 @@ export function PanduanBody() {
       t.supporterNote1,
       t.supporterNote2Pre,
       t.supporterNote2Bold,
+      t.chromeLoginNote,
     ]),
     "untuk-peserta": flattenToSearchText([
       t.participantCardTitle,
@@ -442,6 +443,23 @@ export function PanduanBody() {
                   <Step key={s.title} n={i + 1} title={s.title} desc={s.desc} />
                 ))}
               </ol>
+              <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+                <p className="flex items-start gap-2 font-semibold text-foreground">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  {t.chromeLoginNote.title}
+                </p>
+                <p className="text-muted-foreground">
+                  {t.chromeLoginNote.description}
+                </p>
+                <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+                  {t.chromeLoginNote.steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <p className="text-xs text-muted-foreground">
+                  {t.chromeLoginNote.reminder}
+                </p>
+              </div>
               <div className="space-y-1.5 rounded-xl border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <p>
                   <b>{t.supporterNote1Bold}</b> {t.supporterNote1}

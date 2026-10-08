@@ -674,6 +674,18 @@ const en: Dictionary = {
     supporterNote2Pre: "Your raffle coupon can be viewed in the account menu under",
     supporterNote2Bold: "My Coupons",
     supporterNote2End: ".",
+    chromeLoginNote: {
+      title: "If Chrome asks you to sign in",
+      description:
+        "Use the Google account with the exact same email address you used to register for YCS.",
+      steps: [
+        "Click the profile picture or person icon in the top-right corner of Chrome, then choose Sign in to Chrome or Add account.",
+        "Choose or enter the Google email address you used to register for YCS. If you have multiple accounts, check the email address before choosing.",
+        "This applies when opening both Event and Idola. If either site asks you to sign in with Google, choose the same account. Signing in to Chrome alone may not automatically sign you in to the site.",
+      ],
+      reminder:
+        "Do not use a different email or create a new account. If you forgot your registration email or can no longer access it, contact the admin.",
+    },
     participantCardTitle: "For YCS Participants",
     participantBadge: "Participant",
     participantCardDesc:

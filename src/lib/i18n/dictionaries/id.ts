@@ -672,6 +672,18 @@ const id = {
     supporterNote2Pre: "Kupon undianmu bisa dilihat di menu akun bagian",
     supporterNote2Bold: "Kupon Saya",
     supporterNote2End: ".",
+    chromeLoginNote: {
+      title: "Jika Chrome meminta kamu login",
+      description:
+        "Gunakan akun Google dengan alamat email yang sama persis seperti saat kamu mendaftar YCS.",
+      steps: [
+        "Klik foto profil atau ikon orang di kanan atas Chrome, lalu pilih Masuk ke Chrome atau Tambahkan akun.",
+        "Pilih atau masukkan email Google yang kamu gunakan untuk mendaftar YCS. Jika ada beberapa akun, periksa alamat email sebelum memilih.",
+        "Aturan ini berlaku saat membuka Event maupun Idola. Jika situs meminta login Google lagi, pilih akun yang sama. Login ke Chrome saja belum tentu otomatis membuatmu masuk ke situs.",
+      ],
+      reminder:
+        "Jangan gunakan email lain atau membuat akun baru. Jika lupa email pendaftaran atau tidak bisa mengaksesnya, hubungi admin.",
+    },
     participantCardTitle: "Untuk Peserta YCS",
     participantBadge: "Peserta",
     participantCardDesc:
